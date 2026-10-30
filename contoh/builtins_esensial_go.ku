@@ -1,0 +1,46 @@
+paket utama
+
+pakai "cetak"
+
+fungsi modifikasiLewatPointer(ptr) {
+    var lama = alamat.baca(ptr)
+    alamat.ubah(ptr, lama * 10)
+}
+
+fungsi utama() {
+    cetak.tulis("========================================")
+    cetak.tulis(" FUNGSI BAWAAN MURNI ALA GO DI BAHASA KU")
+    cetak.tulis("========================================")
+
+    // 1. make() ala Go -> buat()
+    var daftarAlokasi = buat("daftar", 3, 10)
+    cetak.format("Daftar baru via buat(): panjang=%d, kapasitas=%d\n", panjang(daftarAlokasi), kapasitas(daftarAlokasi))
+
+    // 2. copy() ala Go -> salin()
+    var sumberData = [100, 200, 300]
+    var tujuanData = [0, 0, 0]
+    var totalDisalin = salin(tujuanData, sumberData)
+    cetak.format("Hasil salin(): %d elemen disalin -> %v\n", totalDisalin, tujuanData)
+
+    // 3. Pointer aman ala Go -> alamat
+    var skor = 50
+    var ptrSkor = alamat.pointer(skor)
+    cetak.tulis("Skor sebelum diubah lewat pointer:", alamat.baca(ptrSkor))
+    modifikasiLewatPointer(ptrSkor)
+    cetak.tulis("Skor setelah diubah lewat pointer:", alamat.baca(ptrSkor))
+
+    // 4. fallthrough ala Go -> teruskan
+    cetak.tulis("\nUji coba 'teruskan' (fallthrough) pada pilih:")
+    var tingkat = 1
+    pilih tingkat {
+    kasus 1:
+        cetak.tulis("- Menjalankan Tugas Tingkat 1")
+        teruskan
+    kasus 2:
+        cetak.tulis("- Menjalankan Tugas Tingkat 2 (Diteruskan otomatis)")
+    kasus 3:
+        cetak.tulis("- Menjalankan Tugas Tingkat 3 (Tidak dieksekusi)")
+    }
+
+    cetak.tulis("\nSemua fungsi bawaan esensial Go sukses dijalankan! ✨")
+}

@@ -483,24 +483,27 @@ fungsi utama() {
     cetak.tulis(nama, umur, tinggi, aktif, PI)
 }</code></pre>
 
-        <h3>Array (Larik) & Map (Kamus)</h3>
-        <pre><code>// Larik (Array)
-var buah = ["Apel", "Mangga", "Jeruk"]
-tambah(buah, "Pisang")
-cetak.tulis("Jumlah buah:", panjang(buah))
-cetak.tulis("Buah pertama:", buah[0])
+        <h3>Array (Larik), Map (Kamus) & Built-in ala Go</h3>
+        <p>Bahasa Ku menyediakan fungsi bawaan global setara dengan Go universe:</p>
+        <pre><code>// 1. Alokasi kapasitas awal dengan buat() (make)
+var s = buat("daftar", 3, 10) // panjang 3, kapasitas 10
+cetak.tulis("Panjang:", panjang(s), "| Kapasitas:", kapasitas(s))
 
-// Slicing Larik
-var sub = buah[1:3] // Mengambil indeks 1 hingga 2
+// 2. Salin array dengan salin() (copy)
+var sumber = [1, 2, 3]
+var tujuan = [0, 0, 0]
+var n = salin(tujuan, sumber) // n = 3 elemen
 
-// Kamus (Map)
-var profil = {
-    "nama": "Andi",
-    "pekerjaan": "Programmer"
-}
-profil["kota"] = "Jakarta"
-hapus(profil, "pekerjaan")
-cetak.tulis(profil["nama"])</code></pre>
+// 3. Kamus (Map) & hapus() (delete)
+var profil = buat("peta")
+profil["nama"] = "Andi"
+hapus(profil, "nama")
+
+// 4. Pointer aman dengan alamat
+var angka = 42
+var ptr = alamat.pointer(angka)
+alamat.ubah(ptr, 100) // Mengubah nilai referensi
+cetak.tulis("Nilai baru:", alamat.baca(ptr)) // 100</code></pre>
       </section>
 
       <!-- Percabangan -->
@@ -515,11 +518,13 @@ cetak.tulis(profil["nama"])</code></pre>
     cetak.tulis("Predikat: C")
 }</code></pre>
 
-        <h3>2. Pilih / Kasus (`switch` / `case`)</h3>
+        <h3>2. Pilih / Kasus (`pilih` / `kasus`) & `teruskan` (fallthrough)</h3>
+        <p>Kasus di Bahasa Ku otomatis berhenti (<em>break by default</em>). Gunakan <code>teruskan</code> untuk sengaja mengeksekusi blok kasus berikutnya:</p>
         <pre><code>pilih peran {
     kasus "admin":
         cetak.tulis("Akses penuh sistem")
-    kasus "editor", "penulis":
+        teruskan // Sengaja lanjut ke kasus berikutnya (ala fallthrough di Go)
+    kasus "editor":
         cetak.tulis("Akses tulis konten")
     bawaan:
         cetak.tulis("Akses pengunjung biasa")

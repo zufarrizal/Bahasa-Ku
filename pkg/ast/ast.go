@@ -89,6 +89,13 @@ type ContinueStatement struct {
 func (cs *ContinueStatement) statementNode()       {}
 func (cs *ContinueStatement) TokenLiteral() string { return cs.Token.Literal }
 
+type FallthroughStatement struct {
+	Token token.Token // token.TERUSKAN
+}
+
+func (fs *FallthroughStatement) statementNode()       {}
+func (fs *FallthroughStatement) TokenLiteral() string { return fs.Token.Literal }
+
 type DeferStatement struct {
 	Token      token.Token // token.TUNDA
 	Expression Expression

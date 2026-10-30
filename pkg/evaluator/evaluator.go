@@ -56,6 +56,7 @@ const (
 	STRUCT_INST_OBJ  = "STRUCT_INST"
 	BREAK_OBJ        = "BREAK"
 	CONTINUE_OBJ     = "CONTINUE"
+	FALLTHROUGH_OBJ  = "FALLTHROUGH"
 	PANIC_OBJ        = "PANIC"
 	CHANNEL_OBJ      = "CHANNEL"
 )
@@ -118,6 +119,11 @@ type Continue struct{}
 
 func (c *Continue) Type() ObjectType { return CONTINUE_OBJ }
 func (c *Continue) Inspect() string  { return "lanjut" }
+
+type Fallthrough struct{}
+
+func (f *Fallthrough) Type() ObjectType { return FALLTHROUGH_OBJ }
+func (f *Fallthrough) Inspect() string  { return "teruskan" }
 
 type ReturnValue struct {
 	Value  Object
@@ -4446,6 +4452,159 @@ func InitGlobalEnvironment() *Environment {
 		},
 	})
 
+	// Bawaan: kapasitas (cap() ala Go)
+	env.Set("kapasitas", &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) != 1 {
+				return &Integer{Value: 0}
+			}
+			switch arg := args[0].(type) {
+			case *Array:
+				return &Integer{Value: int64(cap(arg.Elements))}
+			case *Map:
+				if capObj, ok := arg.Pairs["_kapasitas"]; ok {
+					if i, isInt := capObj.(*Integer); isInt {
+						return i
+					}
+				}
+				return &Integer{Value: int64(len(arg.Pairs))}
+			}
+			return &Integer{Value: 0}
+		},
+	})
+
+	// Bawaan: salin (copy(dst, src) ala Go)
+	env.Set("salin", &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return &Integer{Value: 0}
+			}
+			dst, okDst := args[0].(*Array)
+			src, okSrc := args[1].(*Array)
+			if !okDst || !okSrc {
+				return &Integer{Value: 0}
+			}
+			n := len(dst.Elements)
+			if len(src.Elements) < n {
+				n = len(src.Elements)
+			}
+			for i := 0; i < n; i++ {
+				dst.Elements[i] = src.Elements[i]
+			}
+			return &Integer{Value: int64(n)}
+		},
+	})
+
+	// Bawaan: buat (make() ala Go)
+	env.Set("buat", &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return NIL
+			}
+			tipe := strings.ToLower(strings.TrimSpace(args[0].Inspect()))
+			switch tipe {
+			case "daftar", "larik", "array", "slice":
+				panjang := int64(0)
+				kapasitas := int64(0)
+				if len(args) >= 2 {
+					if p, ok := args[1].(*Integer); ok {
+						panjang = p.Value
+					}
+				}
+				kapasitas = panjang
+				if len(args) >= 3 {
+					if k, ok := args[2].(*Integer); ok && k.Value > panjang {
+						kapasitas = k.Value
+					}
+				}
+				elems := make([]Object, panjang, kapasitas)
+				for i := int64(0); i < panjang; i++ {
+					elems[i] = &Integer{Value: 0}
+				}
+				return &Array{Elements: elems}
+			case "peta", "map":
+				m := &Map{Pairs: make(map[string]Object)}
+				if len(args) >= 2 {
+					if capVal, ok := args[1].(*Integer); ok {
+						m.Pairs["_kapasitas"] = capVal
+					}
+				}
+				return m
+			case "kanal", "channel":
+				capVal := int64(0)
+				if len(args) >= 2 {
+					if c, ok := args[1].(*Integer); ok {
+						capVal = c.Value
+					}
+				}
+				if kObj, ok := env.Get("kanal"); ok {
+					if km, ok := kObj.(*Map); ok {
+						if buatFn, ok := km.Pairs["buat"].(*Builtin); ok {
+							return buatFn.Fn(&Integer{Value: capVal})
+						}
+					}
+				}
+				return NIL
+			default:
+				return NIL
+			}
+		},
+	})
+
+	// Modul alamat (Pointer Aman ala Go)
+	alamatMap := &Map{Pairs: make(map[string]Object)}
+	alamatMap.Pairs["pointer"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return NIL
+			}
+			ptrMap := &Map{Pairs: make(map[string]Object)}
+			ptrMap.Pairs["_isPointer"] = TRUE
+			ptrMap.Pairs["nilai"] = args[0]
+			ptrMap.Pairs["ambil"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					return ptrMap.Pairs["nilai"]
+				},
+			}
+			ptrMap.Pairs["atur"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					if len(mArgs) > 0 {
+						ptrMap.Pairs["nilai"] = mArgs[0]
+					}
+					return NIL
+				},
+			}
+			return ptrMap
+		},
+	}
+	alamatMap.Pairs["dari"] = alamatMap.Pairs["pointer"]
+	alamatMap.Pairs["baca"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return NIL
+			}
+			if m, ok := args[0].(*Map); ok {
+				if val, exists := m.Pairs["nilai"]; exists {
+					return val
+				}
+			}
+			return args[0]
+		},
+	}
+	alamatMap.Pairs["ubah"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return NIL
+			}
+			if m, ok := args[0].(*Map); ok {
+				m.Pairs["nilai"] = args[1]
+				return TRUE
+			}
+			return FALSE
+		},
+	}
+	env.Set("alamat", alamatMap)
+
 	// Modul kanal (Go Channel)
 	kanalMap := &Map{Pairs: make(map[string]Object)}
 	kanalMap.Pairs["buat"] = &Builtin{
@@ -6228,6 +6387,9 @@ func Eval(node ast.Node, env *Environment) Object {
 	case *ast.ContinueStatement:
 		return &Continue{}
 
+	case *ast.FallthroughStatement:
+		return &Fallthrough{}
+
 	case *ast.TryCatchStatement:
 		// Simpan panic sebelumnya jika ada
 		prevPanic := GetGlobalPanic()
@@ -6295,7 +6457,7 @@ func Eval(node ast.Node, env *Environment) Object {
 			result = Eval(stmt, env)
 			if result != nil {
 				rt := result.Type()
-				if rt == RETURN_VALUE_OBJ || rt == BREAK_OBJ || rt == CONTINUE_OBJ || rt == PANIC_OBJ {
+				if rt == RETURN_VALUE_OBJ || rt == BREAK_OBJ || rt == CONTINUE_OBJ || rt == FALLTHROUGH_OBJ || rt == PANIC_OBJ {
 					return result
 				}
 			}
@@ -6400,11 +6562,18 @@ func Eval(node ast.Node, env *Environment) Object {
 		if n.Value != nil {
 			targetVal = Eval(n.Value, env)
 		}
-		for _, c := range n.Cases {
+		fallthroughNext := false
+		for idx, c := range n.Cases {
 			val := Eval(c.Value, env)
-			if objectsEqual(targetVal, val) {
-				return Eval(c.Body, env)
+			if fallthroughNext || objectsEqual(targetVal, val) {
+				res := Eval(c.Body, env)
+				if res != nil && res.Type() == FALLTHROUGH_OBJ {
+					fallthroughNext = true
+					continue
+				}
+				return res
 			}
+			_ = idx
 		}
 		if n.Default != nil {
 			return Eval(n.Default, env)

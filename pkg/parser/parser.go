@@ -160,6 +160,12 @@ func (p *Parser) parseStatement() ast.Statement {
 			p.nextToken()
 		}
 		return stmt
+	case token.TERUSKAN:
+		stmt := &ast.FallthroughStatement{Token: p.curToken}
+		if p.peekTokenIs(token.SEMICOLON) {
+			p.nextToken()
+		}
+		return stmt
 	default:
 		return p.parseExpressionOrAssignStatement()
 	}

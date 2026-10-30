@@ -90,6 +90,7 @@ const (
 	TUNDA      = "TUNDA"
 	HENTI      = "HENTI"
 	LANJUT     = "LANJUT"
+	TERUSKAN   = "TERUSKAN"
 	COBA       = "COBA"
 	TANGKAP    = "TANGKAP"
 	AKHIRNYA   = "AKHIRNYA"
@@ -125,9 +126,11 @@ var keywords = map[string]TokenType{
 	"bawaan":     BAWAAN,
 	"kembalikan": KEMBALIKAN,
 	"tunda":      TUNDA,
-	"henti":      HENTI,
-	"berhenti":   HENTI,
-	"lanjut":     LANJUT,
+	"henti":       HENTI,
+	"berhenti":    HENTI,
+	"lanjut":      LANJUT,
+	"teruskan":    TERUSKAN,
+	"fallthrough": TERUSKAN,
 	"coba":       COBA,
 	"tangkap":    TANGKAP,
 	"akhirnya":   AKHIRNYA,
