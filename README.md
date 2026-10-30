@@ -27,15 +27,36 @@
 
 ## 📦 Cara Memasang & Menggunakan
 
-Pengguna **TIDAK PERLU** memasang Go jika hanya ingin menjalankan Bahasa Ku. Anda cukup mengunduh file biner siap pakai:
+### ⚡ Cara Instan 1 Baris (Sangat Direkomendasikan)
+Pengguna **tidak perlu mengunduh file satu per satu, tidak perlu mengatur PATH secara manual, dan tidak perlu memasang ekstensi VS Code secara manual**. Cukup jalankan perintah 1 baris berikut di terminal:
 
-### 1. Unduh Binary Siap Pakai (Windows, Linux, macOS)
-Kunjungi halaman **[Rilis Resmi GitHub](https://github.com/zufarrizal/Bahasa-Ku/releases/tag/v0.2.0)**, lalu unduh sesuai sistem operasi Anda:
-- **Windows (x64):** Unduh `ku-windows-amd64.exe` (dapat diganti nama menjadi `ku.exe`).
-- **Linux (x64):** Unduh `ku-linux-amd64` (jalankan `chmod +x ku-linux-amd64`).
-- **macOS (Apple Silicon M1/M2/M3):** Unduh `ku-darwin-arm64`.
+#### 🪟 Windows (PowerShell):
+Buka **PowerShell**, salin dan tempel perintah ini lalu tekan Enter:
+```powershell
+irm https://raw.githubusercontent.com/zufarrizal/Bahasa-Ku/main/pasang.ps1 | iex
+```
+> **Apa yang dilakukan skrip ini secara otomatis?**
+> 1. Mengunduh `ku.exe` versi resmi terbaru.
+> 2. Mendaftarkan `ku` ke variabel lingkungan `PATH` Windows Anda secara otomatis (langsung bisa dipanggil di folder mana pun).
+> 3. Otomatis memasang ekstensi VS Code Bahasa Ku (*syntax highlighting* & ikon).
 
-### 2. Atau Pasang Menggunakan Go (Jika Memiliki Go di Komputer)
+#### 🐧 Linux & 🍎 macOS (Terminal):
+```bash
+curl -fsSL https://raw.githubusercontent.com/zufarrizal/Bahasa-Ku/main/pasang.sh | bash
+```
+
+---
+
+### Alternatif Pemasangan Manual:
+
+#### 1. Unduh Binary Siap Pakai (Windows, Linux, macOS)
+Kunjungi halaman **[Rilis Resmi GitHub](https://github.com/zufarrizal/Bahasa-Ku/releases/tag/v0.2.0)**:
+- **Windows:** `ku-windows-amd64.exe`
+- **Linux:** `ku-linux-amd64`
+- **macOS:** `ku-darwin-arm64`
+- **Ekstensi VS Code:** `bahasa-ku-vscode-0.1.0.vsix`
+
+#### 2. Atau Pasang Menggunakan Go (Jika Memiliki Go di Komputer)
 ```bash
 go install github.com/zufarrizal/bahasa-ku/cmd/ku@latest
 ```
