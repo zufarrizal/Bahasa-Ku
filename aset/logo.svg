@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
-  <!-- Background Dark Squircle -->
+  <!-- Background Dark Squircle Proporsi 1:1 Sempurna -->
   <rect width="512" height="512" rx="128" fill="#0A0E17" />
 
   <defs>
-    <!-- Gradient Biru Cyan Modern Khas Go -->
+    <!-- Gradient Cyan ke Electric Blue -->
     <linearGradient id="kuStrokeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#00F0FF" />
       <stop offset="60%" stop-color="#00A3FF" />
@@ -16,28 +16,29 @@
     </filter>
   </defs>
 
-  <!-- Sketsa Bentuk Persis Gambar Pengguna: Huruf k kecil dengan kaki kanan melengkung ke bawah dan naik jadi 'u' -->
+  <!-- Sketsa Simetris Kotak 1:1 (Lebar ~360, Tinggi ~360, Center di Kanvas 512x512) -->
   <g filter="url(#kuGlow)">
-    <!-- 1. Batang Kiri Huruf k (Tinggi, Vertikal Lembut) -->
-    <path d="M 124,84 L 124,420" 
+    <!-- 1. Batang Kiri k (Tinggi proporsional, tidak jangkung: Y=96 sampai Y=416) -->
+    <path d="M 120,96 L 120,416" 
+          stroke="url(#kuStrokeGrad)" 
+          stroke-width="58" 
+          stroke-linecap="round" />
+
+    <!-- 2. Lengan Atas k (Sudut pas 45 derajat menuju X=290, Y=96) -->
+    <path d="M 148,220 L 290,96" 
           stroke="url(#kuStrokeGrad)" 
           stroke-width="56" 
           stroke-linecap="round" />
 
-    <!-- 2. Lengan Atas k (Diagonal ke Kanan Atas) -->
-    <path d="M 148,220 L 296,88" 
+    <!-- 3. Kaki Kanan k yang melengkung jadi 'u' (Tinggi ekor sejajar tengah/bawah, proporsi 1:1 lebar x tinggi) -->
+    <!-- Turun dari Y=230, melengkung di dasar Y=416, naik ke ekor u di Y=240 (seimbang, tidak kepanjangan) -->
+    <path d="M 166,236 
+             C 230,240 256,270 264,320 
+             C 272,375 304,416 356,416 
+             C 406,416 430,375 426,300 
+             L 426,240" 
           stroke="url(#kuStrokeGrad)" 
-          stroke-width="54" 
-          stroke-linecap="round" />
-
-    <!-- 3. Kaki Kanan k yang Mengalir Melengkung Membentuk Huruf u -->
-    <!-- Dimulai dari sambungan tengah, turun meliuk ke bawah lalu melengkung naik membentuk huruf 'u' persis sketsa -->
-    <path d="M 174,236 
-             C 240,240 270,280 276,330 
-             C 284,395 330,446 388,432 
-             C 434,420 448,356 440,270" 
-          stroke="url(#kuStrokeGrad)" 
-          stroke-width="54" 
+          stroke-width="56" 
           stroke-linecap="round" 
           stroke-linejoin="round"
           fill="none" />

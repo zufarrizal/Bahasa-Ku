@@ -2,10 +2,10 @@
   <rect width="64" height="64" rx="16" fill="#0A0E17" />
   <g stroke="#00F0FF" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none">
     <!-- Batang Vertikal k -->
-    <path d="M 16,11 L 16,52" />
+    <path d="M 15,12 L 15,52" />
     <!-- Lengan Atas k -->
-    <path d="M 19,28 L 37,12" />
-    <!-- Kaki k melengkung jadi u -->
-    <path d="M 22,29 C 30,30 34,35 35,41 C 36,49 42,55 49,53 C 55,51 56,43 55,34" />
+    <path d="M 19,28 L 36,12" />
+    <!-- Kaki k melengkung jadi u seimbang 1:1 -->
+    <path d="M 21,30 C 29,30 32,34 33,40 C 34,47 38,52 45,52 C 51,52 54,47 53,38 L 53,30" />
   </g>
 </svg>
