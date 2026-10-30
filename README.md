@@ -37,6 +37,9 @@ go install github.com/zufarrizal/bahasa-ku/cmd/ku@latest
 ## 🛠️ Menjalankan Program dengan CLI `ku`
 
 ```bash
+# Membuka REPL Terminal Interaktif (ketik langsung tanpa berkas)
+ku
+
 # Menjalankan program berkas .ku
 ku jalankan contoh/halo.ku
 ku jalankan contoh/logika.ku
@@ -49,6 +52,17 @@ ku buat contoh/tunda.ku hasil.go
 # Memeriksa versi
 ku versi
 ```
+
+---
+
+## 🎨 Dukungan Editor VS Code (Syntax Highlighting)
+
+Agar penulisan kode `.ku` memiliki warna sintaksis (*syntax highlighting*) dan pelengkap otomatis di Visual Studio Code:
+1. Buka folder `ekstensi-vscode` di proyek ini.
+2. Salin folder tersebut ke direktori ekstensi VS Code Anda:
+   - **Windows:** `%USERPROFILE%\.vscode\extensions\bahasa-ku`
+   - **Linux/macOS:** `~/.vscode/extensions/bahasa-ku`
+3. Buka berkas `.ku` apa pun di VS Code, maka seluruh kata kunci, teks, fungsi, dan komentar akan otomatis berwarna indah!
 
 ---
 

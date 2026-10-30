@@ -1,0 +1,35 @@
+{
+  "name": "bahasa-ku-vscode",
+  "displayName": "Dukungan Bahasa Ku",
+  "description": "Syntax Highlighting & Snippet untuk Bahasa Pemrograman Ku",
+  "version": "0.1.0",
+  "publisher": "zufarrizal",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "ku",
+        "aliases": [
+          "Bahasa Ku",
+          "ku"
+        ],
+        "extensions": [
+          ".ku"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "ku",
+        "scopeName": "source.ku",
+        "path": "./syntaxes/ku.tmLanguage.json"
+      }
+    ]
+  }
+}

@@ -9,6 +9,7 @@ import (
 	"github.com/zufarrizal/bahasa-ku/pkg/evaluator"
 	"github.com/zufarrizal/bahasa-ku/pkg/lexer"
 	"github.com/zufarrizal/bahasa-ku/pkg/parser"
+	"github.com/zufarrizal/bahasa-ku/pkg/repl"
 	"github.com/zufarrizal/bahasa-ku/pkg/transpiler"
 )
 
@@ -18,13 +19,15 @@ func main() {
 	args := os.Args[1:]
 
 	if len(args) == 0 {
-		printHelp()
+		repl.Start(os.Stdin, os.Stdout, version)
 		return
 	}
 
 	command := args[0]
 
 	switch command {
+	case "repl":
+		repl.Start(os.Stdin, os.Stdout, version)
 	case "versi", "-v", "--version":
 		fmt.Println("Bahasa Ku versi", version)
 
@@ -54,11 +57,13 @@ func main() {
 
 func printHelp() {
 	fmt.Printf(`Penggunaan CLI Bahasa Ku (Go Native):
-  ku jalankan <berkas.ku>
-  ku buat <berkas.ku> [tujuan.go]
-  ku versi
+  ku                       Membuka REPL (terminal interaktif)
+  ku jalankan <berkas.ku>  Menjalankan berkas kode .ku
+  ku buat <berkas.ku>      Mengonversi berkas .ku ke .go
+  ku versi                 Menampilkan versi
 
 Contoh:
+  ku
   ku jalankan contoh/halo.ku
   ku buat contoh/tunda.ku hasil.go
 `)

@@ -1,0 +1,97 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Bahasa Ku",
+  "patterns": [
+    {
+      "include": "#keywords"
+    },
+    {
+      "include": "#strings"
+    },
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#numbers"
+    },
+    {
+      "include": "#functions"
+    }
+  ],
+  "repository": {
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.ku",
+          "match": "\\b(jika|lainnya|untuk|selama|pilih|kasus|bawaan|kembalikan|tunda|henti|lanjut)\\b"
+        },
+        {
+          "name": "keyword.declaration.ku",
+          "match": "\\b(paket|pakai|impor|fungsi|var|variabel|tetap|konst|tipe|struktur)\\b"
+        },
+        {
+          "name": "constant.language.ku",
+          "match": "\\b(benar|salah|kosong|nihil)\\b"
+        },
+        {
+          "name": "support.class.ku",
+          "match": "\\b(cetak|web|jendela|basisdata|panjang|tambah)\\b"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.ku",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.ku",
+              "match": "\\\\."
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.raw.ku",
+          "begin": "`",
+          "end": "`"
+        }
+      ]
+    },
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.ku",
+          "match": "//.*$"
+        },
+        {
+          "name": "comment.block.ku",
+          "begin": "/\\*",
+          "end": "\\*/"
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.ku",
+          "match": "\\b[0-9]+(\\.[0-9]+)?\\b"
+        }
+      ]
+    },
+    "functions": {
+      "patterns": [
+        {
+          "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(",
+          "captures": {
+            "1": {
+              "name": "entity.name.function.ku"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "scopeName": "source.ku"
+}
