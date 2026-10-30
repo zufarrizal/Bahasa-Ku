@@ -1,6 +1,7 @@
 package evaluator
 
 import (
+	"bufio"
 	"crypto/md5"
 	"crypto/rand"
 	"crypto/sha256"
@@ -40,6 +41,8 @@ const (
 	MAP_OBJ          = "MAP"
 	STRUCT_DEF_OBJ   = "STRUCT_DEF"
 	STRUCT_INST_OBJ  = "STRUCT_INST"
+	BREAK_OBJ        = "BREAK"
+	CONTINUE_OBJ     = "CONTINUE"
 )
 
 type Object interface {
@@ -76,6 +79,16 @@ type Nil struct{}
 
 func (n *Nil) Type() ObjectType { return NIL_OBJ }
 func (n *Nil) Inspect() string  { return "kosong" }
+
+type Break struct{}
+
+func (b *Break) Type() ObjectType { return BREAK_OBJ }
+func (b *Break) Inspect() string  { return "henti" }
+
+type Continue struct{}
+
+func (c *Continue) Type() ObjectType { return CONTINUE_OBJ }
+func (c *Continue) Inspect() string  { return "lanjut" }
 
 type ReturnValue struct{ Value Object }
 
@@ -932,6 +945,31 @@ func InitGlobalEnvironment() *Environment {
 	}
 	env.Set("konversi", konversiMap)
 
+	// Modul masukan (Terminal Input / Scanner)
+	masukanMap := &Map{Pairs: make(map[string]Object)}
+	masukanMap.Pairs["baca"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			scanner := bufio.NewScanner(os.Stdin)
+			if scanner.Scan() {
+				return &String{Value: scanner.Text()}
+			}
+			return &String{Value: ""}
+		},
+	}
+	masukanMap.Pairs["tanya"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) >= 1 {
+				fmt.Print(args[0].Inspect())
+			}
+			scanner := bufio.NewScanner(os.Stdin)
+			if scanner.Scan() {
+				return &String{Value: scanner.Text()}
+			}
+			return &String{Value: ""}
+		},
+	}
+	env.Set("masukan", masukanMap)
+
 	// Bawaan: panjang & tambah
 	env.Set("panjang", &Builtin{
 		Fn: func(args ...Object) Object {
@@ -961,6 +999,21 @@ func InitGlobalEnvironment() *Environment {
 				return &Array{Elements: newElems}
 			}
 			return NIL
+		},
+	})
+
+	// Bawaan: hapus (Go delete pada Map)
+	env.Set("hapus", &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return NIL
+			}
+			if m, ok := args[0].(*Map); ok {
+				keyStr := args[1].Inspect()
+				delete(m.Pairs, keyStr)
+				return TRUE
+			}
+			return FALSE
 		},
 	})
 
@@ -1076,12 +1129,21 @@ func Eval(node ast.Node, env *Environment) Object {
 		env.Set(n.Name.Value, fn)
 		return fn
 
+	case *ast.BreakStatement:
+		return &Break{}
+
+	case *ast.ContinueStatement:
+		return &Continue{}
+
 	case *ast.BlockStatement:
 		var result Object = NIL
 		for _, stmt := range n.Statements {
 			result = Eval(stmt, env)
-			if result != nil && result.Type() == RETURN_VALUE_OBJ {
-				return result
+			if result != nil {
+				rt := result.Type()
+				if rt == RETURN_VALUE_OBJ || rt == BREAK_OBJ || rt == CONTINUE_OBJ {
+					return result
+				}
 			}
 		}
 		return result
@@ -1108,8 +1170,16 @@ func Eval(node ast.Node, env *Environment) Object {
 						loopEnv.Set(n.Value.Value, elem)
 					}
 					res := Eval(n.Body, loopEnv)
-					if res != nil && res.Type() == RETURN_VALUE_OBJ {
-						return res
+					if res != nil {
+						if res.Type() == RETURN_VALUE_OBJ {
+							return res
+						}
+						if res.Type() == BREAK_OBJ {
+							break
+						}
+						if res.Type() == CONTINUE_OBJ {
+							continue
+						}
 					}
 				}
 				return NIL
@@ -1122,8 +1192,16 @@ func Eval(node ast.Node, env *Environment) Object {
 						loopEnv.Set(n.Value.Value, v)
 					}
 					res := Eval(n.Body, loopEnv)
-					if res != nil && res.Type() == RETURN_VALUE_OBJ {
-						return res
+					if res != nil {
+						if res.Type() == RETURN_VALUE_OBJ {
+							return res
+						}
+						if res.Type() == BREAK_OBJ {
+							break
+						}
+						if res.Type() == CONTINUE_OBJ {
+							continue
+						}
 					}
 				}
 				return NIL
@@ -1143,14 +1221,25 @@ func Eval(node ast.Node, env *Environment) Object {
 				}
 			}
 			result = Eval(n.Body, loopEnv)
-			if result != nil && result.Type() == RETURN_VALUE_OBJ {
-				return result
+			if result != nil {
+				if result.Type() == RETURN_VALUE_OBJ {
+					return result
+				}
+				if result.Type() == BREAK_OBJ {
+					break
+				}
+				if result.Type() == CONTINUE_OBJ {
+					if n.Post != nil {
+						Eval(n.Post, loopEnv)
+					}
+					continue
+				}
 			}
 			if n.Post != nil {
 				Eval(n.Post, loopEnv)
 			}
 		}
-		return result
+		return NIL
 
 	case *ast.SwitchStatement:
 		var targetVal Object = TRUE

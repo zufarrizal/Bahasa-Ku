@@ -72,6 +72,8 @@ const (
 	BAWAAN     = "BAWAAN"
 	KEMBALIKAN = "KEMBALIKAN"
 	TUNDA      = "TUNDA"
+	HENTI      = "HENTI"
+	LANJUT     = "LANJUT"
 	BENAR      = "BENAR"
 	SALAH      = "SALAH"
 	KOSONG     = "KOSONG"
@@ -99,6 +101,8 @@ var keywords = map[string]TokenType{
 	"bawaan":     BAWAAN,
 	"kembalikan": KEMBALIKAN,
 	"tunda":      TUNDA,
+	"henti":      HENTI,
+	"lanjut":     LANJUT,
 	"benar":      BENAR,
 	"salah":      SALAH,
 	"kosong":     KOSONG,

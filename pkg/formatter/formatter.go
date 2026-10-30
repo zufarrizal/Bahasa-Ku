@@ -143,6 +143,12 @@ func (f *Formatter) Format(node ast.Node) string {
 		}
 		return "kembalikan"
 
+	case *ast.BreakStatement:
+		return "henti"
+
+	case *ast.ContinueStatement:
+		return "lanjut"
+
 	case *ast.DeferStatement:
 		return fmt.Sprintf("tunda %s", f.Format(n.Expression))
 

@@ -23,6 +23,9 @@
 - **Formatter Kode Otomatis (`ku rapi`):** Merapikan format spasi, tab, dan kurung kurawal secara otomatis (mirip `gofmt`).
 - **Generator Proyek Otomatis (`ku inisiasi`):** Menyiapkan kerangka kerja proyek baru (`web`, `desktop`, `cli`) secara instan.
 - **Sintaks Berbahasa Indonesia:** Kata kunci natural seperti `paket`, `fungsi`, `var`, `jika`, `lainnya`, `untuk`, `pilih`, `kembalikan`, dan `tunda`.
+- **Kontrol Perulangan Lengkap:** Didukung kata kunci `henti` (*break*) dan `lanjut` (*continue*).
+- **Interaksi Masukan Pengguna (`masukan`):** Mengambil input keyboard dari terminal melalui `masukan.tanya()` dan `masukan.baca()`.
+- **Manipulasi Koleksi Lengkap:** Fungsi bawaan `panjang()`, `tambah()`, dan `hapus()` untuk Array dan Map.
 - **Dukungan Server Web HTTP & REST API (`web`):** Siap digunakan untuk membuat web server dan API JSON.
 - **Dukungan Klien Jaringan HTTP (`jaringan`):** Melakukan panggilan HTTP GET / POST JSON ke API eksternal secara native.
 - **Dukungan Aplikasi Desktop GUI (`jendela`):** Membuka dialog native dan jendela aplikasi desktop modern tanpa Electron.
@@ -133,10 +136,13 @@ Agar penulisan kode `.ku` memiliki warna sintaksis (*syntax highlighting*) dan i
 | `if` / `else` | `jika` / `lainnya` | Percabangan kondisi |
 | `switch` / `case` / `default` | `pilih` / `kasus` / `bawaan` | Percabangan seleksi |
 | `for i, v := range arr` | `untuk i, v dalam arr` | Perulangan koleksi (range loop) |
+| `break` | `henti` | Keluar dari perulangan |
+| `continue` | `lanjut` | Lewati ke iterasi berikutnya |
 | `defer` | `tunda` | Eksekusi LIFO di akhir fungsi |
 | `return` | `kembalikan` | Mengembalikan nilai fungsi |
 | `len(arr)` | `panjang(arr)` | Menghitung panjang array/string/map |
 | `append(arr, item)` | `tambah(arr, item)` | Menambah elemen ke array/slice |
+| `delete(map, key)` | `hapus(map, key)` | Menghapus kunci dari map |
 | `true` / `false` | `benar` / `salah` | Nilai boolean |
 | `nil` | `kosong` / `nihil` | Nilai null/kosong |
 

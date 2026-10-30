@@ -1,0 +1,31 @@
+paket utama
+
+pakai "cetak"
+
+fungsi utama() {
+    cetak.tulis("=== Uji Coba Henti, Lanjut, dan Hapus ===")
+
+    // 1. Uji Lanjut (continue) dan Henti (break)
+    cetak.tulis("--- Perulangan dengan Lanjut & Henti ---")
+    untuk i := 1; i <= 10; i++ {
+        jika i % 2 == 0 {
+            lanjut // lewati angka genap
+        }
+        jika i > 7 {
+            henti // hentikan perulangan jika lebih dari 7
+        }
+        cetak.tulis("Angka ganjil terpilih:", i)
+    }
+
+    // 2. Uji Hapus (delete key dari Map)
+    cetak.tulis("\n--- Penghapusan Elemen Map (hapus) ---")
+    var data = {
+        "nama": "Zufar",
+        "peran": "Pembuat Bahasa Ku",
+        "sementara": "akan dihapus"
+    }
+    cetak.tulis("Data awal:", data)
+
+    hapus(data, "sementara")
+    cetak.tulis("Data setelah hapus('sementara'):", data)
+}

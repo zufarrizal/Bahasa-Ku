@@ -161,6 +161,12 @@ func (t *Transpiler) Transpile(node ast.Node) string {
 		}
 		return "return"
 
+	case *ast.BreakStatement:
+		return "break"
+
+	case *ast.ContinueStatement:
+		return "continue"
+
 	case *ast.DeferStatement:
 		return fmt.Sprintf("defer %s", t.Transpile(n.Expression))
 
@@ -177,6 +183,8 @@ func (t *Transpiler) Transpile(node ast.Node) string {
 			fn = "len"
 		} else if fn == "tambah" {
 			fn = "append"
+		} else if fn == "hapus" {
+			fn = "delete"
 		}
 		args := []string{}
 		for _, a := range n.Arguments {
