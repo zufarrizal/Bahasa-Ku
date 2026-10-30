@@ -509,22 +509,27 @@ cetak.tulis("Nilai baru:", alamat.baca(ptr)) // 100</code></pre>
       <!-- Percabangan -->
       <section id="percabangan" class="docs-section">
         <h2>Percabangan (Kondisi)</h2>
-        <h3>1. Jika / Lainnya (`if` / `else`)</h3>
-        <pre><code>jika nilai >= 85 {
+        <h3>1. Jika / Lainnya (`jika` / `lainnya`) & Short Statement</h3>
+        <p>Mendukung inisialisasi statement awal berpemisah titik-koma (ala <code>if err := ...; err != nil</code> di Go):</p>
+        <pre><code>// 1. Jika Standar
+jika nilai >= 85 {
     cetak.tulis("Predikat: A")
-} lainnya jika nilai >= 70 {
-    cetak.tulis("Predikat: B")
 } lainnya {
     cetak.tulis("Predikat: C")
+}
+
+// 2. Jika dengan Short-Statement Initialization (Cakupan variabel terisolasi)
+jika var err = simpanDatabase(); err == kosong {
+    cetak.tulis("Data berhasil tersimpan dengan aman!")
 }</code></pre>
 
-        <h3>2. Pilih / Kasus (`pilih` / `kasus`) & `teruskan` (fallthrough)</h3>
-        <p>Kasus di Bahasa Ku otomatis berhenti (<em>break by default</em>). Gunakan <code>teruskan</code> untuk sengaja mengeksekusi blok kasus berikutnya:</p>
+        <h3>2. Pilih / Kasus (`pilih` / `kasus`), Multi-Case & `teruskan` (fallthrough)</h3>
+        <p>Kasus di Bahasa Ku mendukung multi-nilai berpemisah koma dan kata kunci <code>teruskan</code>:</p>
         <pre><code>pilih peran {
-    kasus "admin":
+    kasus "admin", "superadmin":
         cetak.tulis("Akses penuh sistem")
         teruskan // Sengaja lanjut ke kasus berikutnya (ala fallthrough di Go)
-    kasus "editor":
+    kasus "editor", "penulis":
         cetak.tulis("Akses tulis konten")
     bawaan:
         cetak.tulis("Akses pengunjung biasa")

@@ -372,7 +372,31 @@ func (p *Parser) parseBlockStatement() *ast.BlockStatement {
 func (p *Parser) parseIfStatement() ast.Statement {
 	stmt := &ast.IfStatement{Token: p.curToken}
 	p.nextToken()
-	stmt.Condition = p.parseExpression(LOWEST)
+
+	// Dukungan Go-style If with short statement initialization:
+	// jika var x = ...; x != ... { ... } ATAU jika x := ...; x != ... { ... }
+	if p.curTokenIs(token.VAR) {
+		stmt.Init = p.parseVarStatement()
+		// Setelah parseVarStatement, parser berada di token sebelum atau sesudah ';'
+		if p.curTokenIs(token.SEMICOLON) {
+			p.nextToken()
+		}
+		stmt.Condition = p.parseExpression(LOWEST)
+	} else {
+		firstExprOrStmt := p.parseExpressionOrAssignStatement()
+		if p.peekTokenIs(token.SEMICOLON) {
+			stmt.Init = firstExprOrStmt
+			p.nextToken() // ke ';'
+			p.nextToken() // ke ekspresi kondisi
+			stmt.Condition = p.parseExpression(LOWEST)
+		} else {
+			if exprStmt, ok := firstExprOrStmt.(*ast.ExpressionStatement); ok {
+				stmt.Condition = exprStmt.Expression
+			} else {
+				stmt.Condition = p.parseExpression(LOWEST)
+			}
+		}
+	}
 
 	if !p.expectPeek(token.LBRACE) {
 		return nil
@@ -499,6 +523,13 @@ func (p *Parser) parseSwitchStatement() ast.Statement {
 		if p.curTokenIs(token.KASUS) {
 			p.nextToken()
 			val := p.parseExpression(LOWEST)
+			vals := []ast.Expression{val}
+			// Dukung multi-value per kasus: kasus "a", "b", "c":
+			for p.peekTokenIs(token.COMMA) {
+				p.nextToken() // ke ','
+				p.nextToken() // ke nilai ekspresi berikutnya
+				vals = append(vals, p.parseExpression(LOWEST))
+			}
 			p.expectPeek(token.COLON)
 			caseBody := &ast.BlockStatement{Token: p.curToken, Statements: []ast.Statement{}}
 			for !p.peekTokenIs(token.KASUS) && !p.peekTokenIs(token.BAWAAN) && !p.peekTokenIs(token.RBRACE) && !p.peekTokenIs(token.EOF) {
@@ -508,7 +539,7 @@ func (p *Parser) parseSwitchStatement() ast.Statement {
 					caseBody.Statements = append(caseBody.Statements, s)
 				}
 			}
-			stmt.Cases = append(stmt.Cases, ast.SwitchCase{Value: val, Body: caseBody})
+			stmt.Cases = append(stmt.Cases, ast.SwitchCase{Value: val, Values: vals, Body: caseBody})
 		} else if p.curTokenIs(token.BAWAAN) {
 			p.expectPeek(token.COLON)
 			defBody := &ast.BlockStatement{Token: p.curToken, Statements: []ast.Statement{}}

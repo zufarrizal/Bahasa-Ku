@@ -186,6 +186,7 @@ func (fl *FunctionLiteral) TokenLiteral() string { return fl.Token.Literal }
 
 type IfStatement struct {
 	Token       token.Token // token.JIKA
+	Init        Statement   // Statement inisialisasi opsional: jika var err = ...; err != kosong { ... }
 	Condition   Expression
 	Consequence *BlockStatement
 	Alternative Statement // BlockStatement or IfStatement
@@ -212,8 +213,9 @@ func (fs *ForStatement) statementNode()       {}
 func (fs *ForStatement) TokenLiteral() string { return fs.Token.Literal }
 
 type SwitchCase struct {
-	Value Expression
-	Body  *BlockStatement
+	Value  Expression   // Nilai tunggal utama (backward-compatible)
+	Values []Expression // Multi-nilai: kasus "a", "b", "c":
+	Body   *BlockStatement
 }
 
 type SwitchStatement struct {

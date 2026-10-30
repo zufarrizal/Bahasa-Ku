@@ -6465,11 +6465,16 @@ func Eval(node ast.Node, env *Environment) Object {
 		return result
 
 	case *ast.IfStatement:
-		cond := Eval(n.Condition, env)
+		ifEnv := env
+		if n.Init != nil {
+			ifEnv = NewEnclosedEnvironment(env)
+			Eval(n.Init, ifEnv)
+		}
+		cond := Eval(n.Condition, ifEnv)
 		if isTruthy(cond) {
-			return Eval(n.Consequence, env)
+			return Eval(n.Consequence, ifEnv)
 		} else if n.Alternative != nil {
-			return Eval(n.Alternative, env)
+			return Eval(n.Alternative, ifEnv)
 		}
 		return NIL
 
@@ -6564,8 +6569,25 @@ func Eval(node ast.Node, env *Environment) Object {
 		}
 		fallthroughNext := false
 		for idx, c := range n.Cases {
-			val := Eval(c.Value, env)
-			if fallthroughNext || objectsEqual(targetVal, val) {
+			matched := fallthroughNext
+			if !matched {
+				if len(c.Values) > 0 {
+					for _, vExpr := range c.Values {
+						val := Eval(vExpr, env)
+						if objectsEqual(targetVal, val) {
+							matched = true
+							break
+						}
+					}
+				} else if c.Value != nil {
+					val := Eval(c.Value, env)
+					if objectsEqual(targetVal, val) {
+						matched = true
+					}
+				}
+			}
+
+			if matched {
 				res := Eval(c.Body, env)
 				if res != nil && res.Type() == FALLTHROUGH_OBJ {
 					fallthroughNext = true
@@ -6573,6 +6595,7 @@ func Eval(node ast.Node, env *Environment) Object {
 				}
 				return res
 			}
+			fallthroughNext = false
 			_ = idx
 		}
 		if n.Default != nil {
