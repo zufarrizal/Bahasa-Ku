@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/zufarrizal/bahasa-ku/pkg/ast"
 	"github.com/zufarrizal/bahasa-ku/pkg/evaluator"
 	"github.com/zufarrizal/bahasa-ku/pkg/formatter"
 	"github.com/zufarrizal/bahasa-ku/pkg/lexer"
@@ -17,6 +18,25 @@ import (
 )
 
 const version = "0.2.0 (Go Native Edition)"
+
+func init() {
+	evaluator.RegisterSubFileEvaluator(func(path string, env *evaluator.Environment) {
+		content, err := os.ReadFile(path)
+		if err != nil {
+			return
+		}
+		l := lexer.New(string(content))
+		p := parser.New(l)
+		prog := p.ParseProgram()
+		if len(p.Errors()) == 0 {
+			for _, stmt := range prog.Statements {
+				if _, isPaket := stmt.(*ast.PaketStatement); !isPaket {
+					evaluator.Eval(stmt, env)
+				}
+			}
+		}
+	})
+}
 
 func main() {
 	args := os.Args[1:]

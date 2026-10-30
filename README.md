@@ -433,6 +433,31 @@ fungsi utama() {
 }
 ```
 
+### 11. Impor Berkas Lokal, Modul JSON, & Modul Larik Fungsional (`contoh/dasar_multiberkas_json.ku`)
+```ku
+paket utama
+
+pakai "cetak"
+pakai "json"
+pakai "larik"
+pakai "./contoh/pembantu.ku"
+
+fungsi utama() {
+    // 1. Memanggil fungsi dari berkas .ku lokal yang diimpor
+    var hasil = kalikanTiga(10) // dari pembantu.ku -> 30
+
+    // 2. Serialisasi & Deserialisasi JSON
+    var data = {"nama": "Ahmad", "skor": 100}
+    var jsonTeks = json.kodekan(data) // '{"nama":"Ahmad","skor":100}'
+    var obj = json.urai(jsonTeks)
+
+    // 3. Manipulasi Array Fungsional (Filter & Map)
+    var angka = [1, 2, 3, 4, 5, 6]
+    var genap = larik.saring(angka, fungsi(x) { kembalikan x % 2 == 0 }) // [2, 4, 6]
+    var kaliDua = larik.petakan(genap, fungsi(x) { kembalikan x * 2 })   // [4, 8, 12]
+}
+```
+
 ---
 
 ## 📂 Struktur Proyek

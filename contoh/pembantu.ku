@@ -1,0 +1,9 @@
+paket matematika_pembantu
+
+fungsi kalikanTiga(x) {
+    kembalikan x * 3
+}
+
+fungsi jumlahkan(a, b) {
+    kembalikan a + b
+}

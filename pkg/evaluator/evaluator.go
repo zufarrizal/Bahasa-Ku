@@ -170,6 +170,14 @@ func (e *Environment) Update(name string, val Object) bool {
 
 var globalPanic Object = nil
 
+type SubFileEvaluator func(path string, env *Environment)
+
+var subFileRunner SubFileEvaluator
+
+func RegisterSubFileEvaluator(sfe SubFileEvaluator) {
+	subFileRunner = sfe
+}
+
 func SetGlobalPanic(p Object) {
 	globalPanic = p
 }
@@ -1190,6 +1198,27 @@ func InitGlobalEnvironment() *Environment {
 					return val
 				},
 			}
+			chInst.Pairs["terimaDenganWaktu"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					timeoutSec := float64(1)
+					if len(mArgs) > 0 {
+						if i, ok := mArgs[0].(*Integer); ok {
+							timeoutSec = float64(i.Value)
+						} else if f, ok := mArgs[0].(*Float); ok {
+							timeoutSec = f.Value
+						}
+					}
+					select {
+					case val := <-ch:
+						if val == nil {
+							return NIL
+						}
+						return val
+					case <-time.After(time.Duration(timeoutSec * float64(time.Second))):
+						return NIL
+					}
+				},
+			}
 			chInst.Pairs["tutup"] = &Builtin{
 				Fn: func(mArgs ...Object) Object {
 					close(ch)
@@ -1200,6 +1229,132 @@ func InitGlobalEnvironment() *Environment {
 		},
 	}
 	env.Set("kanal", kanalMap)
+
+	// Modul json (Serialisasi & Deserialisasi JSON)
+	jsonMap := &Map{Pairs: make(map[string]Object)}
+	jsonMap.Pairs["kodekan"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) == 0 {
+				return &String{Value: "null"}
+			}
+			goObj := convertKuToGoObject(args[0])
+			b, err := json.Marshal(goObj)
+			if err != nil {
+				return &String{Value: "{}"}
+			}
+			return &String{Value: string(b)}
+		},
+	}
+	jsonMap.Pairs["kodekanRapi"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) == 0 {
+				return &String{Value: "null"}
+			}
+			goObj := convertKuToGoObject(args[0])
+			b, err := json.MarshalIndent(goObj, "", "  ")
+			if err != nil {
+				return &String{Value: "{}"}
+			}
+			return &String{Value: string(b)}
+		},
+	}
+	jsonMap.Pairs["urai"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) == 0 {
+				return NIL
+			}
+			jsonStr := strings.TrimSpace(args[0].Inspect())
+			var raw interface{}
+			err := json.Unmarshal([]byte(jsonStr), &raw)
+			if err != nil {
+				return NIL
+			}
+			return convertGoToKuObject(raw)
+		},
+	}
+	env.Set("json", jsonMap)
+
+	// Modul larik (Operasi Array Fungsional)
+	larikMap := &Map{Pairs: make(map[string]Object)}
+	larikMap.Pairs["saring"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return &Array{Elements: []Object{}}
+			}
+			arr, isArr := args[0].(*Array)
+			fn, isFn := args[1].(*Function)
+			if !isArr || !isFn {
+				return args[0]
+			}
+			res := []Object{}
+			for _, elem := range arr.Elements {
+				if isTruthy(applyFunction(fn, []Object{elem}, env)) {
+					res = append(res, elem)
+				}
+			}
+			return &Array{Elements: res}
+		},
+	}
+	larikMap.Pairs["petakan"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return &Array{Elements: []Object{}}
+			}
+			arr, isArr := args[0].(*Array)
+			fn, isFn := args[1].(*Function)
+			if !isArr || !isFn {
+				return args[0]
+			}
+			res := []Object{}
+			for _, elem := range arr.Elements {
+				res = append(res, applyFunction(fn, []Object{elem}, env))
+			}
+			return &Array{Elements: res}
+		},
+	}
+	larikMap.Pairs["reduksi"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return NIL
+			}
+			arr, isArr := args[0].(*Array)
+			fn, isFn := args[1].(*Function)
+			if !isArr || !isFn {
+				return NIL
+			}
+			var acc Object = NIL
+			startIdx := 0
+			if len(args) >= 3 {
+				acc = args[2]
+			} else if len(arr.Elements) > 0 {
+				acc = arr.Elements[0]
+				startIdx = 1
+			}
+			for i := startIdx; i < len(arr.Elements); i++ {
+				acc = applyFunction(fn, []Object{acc, arr.Elements[i]}, env)
+			}
+			return acc
+		},
+	}
+	larikMap.Pairs["temukan"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return NIL
+			}
+			arr, isArr := args[0].(*Array)
+			fn, isFn := args[1].(*Function)
+			if !isArr || !isFn {
+				return NIL
+			}
+			for _, elem := range arr.Elements {
+				if isTruthy(applyFunction(fn, []Object{elem}, env)) {
+					return elem
+				}
+			}
+			return NIL
+		},
+	}
+	env.Set("larik", larikMap)
 
 	// Modul uji (Unit Testing Internal)
 	ujiMap := &Map{Pairs: make(map[string]Object)}
@@ -1240,6 +1395,42 @@ func InitGlobalEnvironment() *Environment {
 	env.Set("uji", ujiMap)
 
 	return env
+}
+
+func convertKuToGoObject(obj Object) interface{} {
+	if obj == nil || obj == NIL {
+		return nil
+	}
+	switch o := obj.(type) {
+	case *Integer:
+		return o.Value
+	case *Float:
+		return o.Value
+	case *Boolean:
+		return o.Value
+	case *String:
+		return o.Value
+	case *Array:
+		res := []interface{}{}
+		for _, e := range o.Elements {
+			res = append(res, convertKuToGoObject(e))
+		}
+		return res
+	case *Map:
+		res := make(map[string]interface{})
+		for k, v := range o.Pairs {
+			res[k] = convertKuToGoObject(v)
+		}
+		return res
+	case *StructInstance:
+		res := make(map[string]interface{})
+		for k, v := range o.Fields {
+			res[k] = convertKuToGoObject(v)
+		}
+		return res
+	default:
+		return o.Inspect()
+	}
 }
 
 func convertGoToKuObject(val interface{}) Object {
@@ -1304,7 +1495,14 @@ func Eval(node ast.Node, env *Environment) Object {
 		}
 		return result
 
-	case *ast.PaketStatement, *ast.PakaiStatement:
+	case *ast.PaketStatement:
+		return NIL
+
+	case *ast.PakaiStatement:
+		// Jika mengimpor berkas .ku lokal, misal: pakai "./helper.ku" atau pakai "util.ku"
+		if strings.HasSuffix(n.Path, ".ku") && subFileRunner != nil {
+			subFileRunner(n.Path, env)
+		}
 		return NIL
 
 	case *ast.TypeStructStatement:
@@ -1890,10 +2088,34 @@ func objectsEqual(a, b Object) bool {
 	switch av := a.(type) {
 	case *Integer:
 		return av.Value == b.(*Integer).Value
+	case *Float:
+		return av.Value == b.(*Float).Value
 	case *String:
 		return av.Value == b.(*String).Value
 	case *Boolean:
 		return av.Value == b.(*Boolean).Value
+	case *Array:
+		bv := b.(*Array)
+		if len(av.Elements) != len(bv.Elements) {
+			return false
+		}
+		for i := range av.Elements {
+			if !objectsEqual(av.Elements[i], bv.Elements[i]) {
+				return false
+			}
+		}
+		return true
+	case *Map:
+		bv := b.(*Map)
+		if len(av.Pairs) != len(bv.Pairs) {
+			return false
+		}
+		for k, v := range av.Pairs {
+			if bvVal, exists := bv.Pairs[k]; !exists || !objectsEqual(v, bvVal) {
+				return false
+			}
+		}
+		return true
 	}
 	return false
 }
