@@ -31,8 +31,10 @@
     .nav-container { max-width: 1400px; margin: auto; display: flex; justify-content: space-between; align-items: center; }
     .logo-brand { display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 1.25rem; color: var(--text); text-decoration: none; }
     .logo-brand img { width: 34px; height: 34px; }
-    .nav-links a { color: var(--muted); text-decoration: none; font-weight: 500; font-size: 0.9rem; margin-left: 20px; transition: color 0.2s; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-weight: 500; font-size: 0.95rem; margin-left: 20px; transition: color 0.2s; }
     .nav-links a:hover, .nav-links a.active { color: var(--accent); }
+    .nav-btn { background: rgba(0, 240, 255, 0.1); border: 1px solid rgba(0, 240, 255, 0.3); color: var(--accent) !important; padding: 6px 14px; border-radius: 6px; font-weight: 600 !important; }
+    .nav-btn:hover { background: rgba(0, 240, 255, 0.2); }
 
     /* Layout Wrapper */
     .docs-layout { display: flex; max-width: 1400px; margin: auto; min-height: calc(100vh - 65px); }
@@ -136,9 +138,10 @@
       <nav class="nav-links">
         <a href="index.html">Beranda</a>
         <a href="index.html#playground">Playground</a>
+        <a href="index.html#fitur">Fitur</a>
         <a href="dokumentasi.html" class="active">Dokumentasi</a>
         <a href="https://github.com/zufarrizal/Bahasa-Ku" target="_blank">GitHub</a>
-        <a href="https://github.com/zufarrizal/Bahasa-Ku/releases" target="_blank">Unduh v0.2.0</a>
+        <a href="https://github.com/zufarrizal/Bahasa-Ku/releases" target="_blank" class="nav-btn">Unduh v0.2.0</a>
       </nav>
     </div>
   </header>
