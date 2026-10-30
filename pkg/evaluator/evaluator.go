@@ -30,6 +30,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 	"unicode"
 
@@ -1534,6 +1535,53 @@ func InitGlobalEnvironment() *Environment {
 			return kunciMap
 		},
 	}
+	sistemMap.Pairs["kunciBacaTulis"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			var rw sync.RWMutex
+			kunciMap := &Map{Pairs: make(map[string]Object)}
+			kunciMap.Pairs["kunci"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					rw.Lock()
+					return NIL
+				},
+			}
+			kunciMap.Pairs["buka"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					rw.Unlock()
+					return NIL
+				},
+			}
+			kunciMap.Pairs["kunciBaca"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					rw.RLock()
+					return NIL
+				},
+			}
+			kunciMap.Pairs["bukaBaca"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					rw.RUnlock()
+					return NIL
+				},
+			}
+			kunciMap.Pairs["cobaKunci"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					if rw.TryLock() {
+						return TRUE
+					}
+					return FALSE
+				},
+			}
+			kunciMap.Pairs["cobaKunciBaca"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					if rw.TryRLock() {
+						return TRUE
+					}
+					return FALSE
+				},
+			}
+			return kunciMap
+		},
+	}
 	sistemMap.Pairs["apakahWindows"] = &Builtin{
 		Fn: func(args ...Object) Object {
 			return &Boolean{Value: runtime.GOOS == "windows"}
@@ -3011,12 +3059,72 @@ func InitGlobalEnvironment() *Environment {
 			return &Boolean{Value: args[0].Type() == MAP_OBJ}
 		},
 	}
+	konversiMap.Pairs["apakahStruktur"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return FALSE
+			}
+			return &Boolean{Value: args[0].Type() == STRUCT_INST_OBJ}
+		},
+	}
+	konversiMap.Pairs["apakahKanal"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return FALSE
+			}
+			return &Boolean{Value: args[0].Type() == CHANNEL_OBJ}
+		},
+	}
+	konversiMap.Pairs["apakahTipe"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			// type assertion helper: konversi.apakahTipe(obj, "struktur") atau konversi.apakahTipe(obj, "Orang")
+			if len(args) < 2 {
+				return FALSE
+			}
+			expected := strings.ToLower(args[1].Inspect())
+			actualTipe := strings.ToLower(formatTipeIndo(args[0]))
+			if actualTipe == expected {
+				return TRUE
+			}
+			if si, ok := args[0].(*StructInstance); ok && si.Def != nil {
+				if strings.ToLower(si.Def.Name) == expected {
+					return TRUE
+				}
+			}
+			return FALSE
+		},
+	}
 	konversiMap.Pairs["apakahKosong"] = &Builtin{
 		Fn: func(args ...Object) Object {
 			if len(args) < 1 {
 				return TRUE
 			}
 			return &Boolean{Value: args[0] == nil || args[0].Type() == NIL_OBJ}
+		},
+	}
+	konversiMap.Pairs["nilaiAwal"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			// Zero value generator: konversi.nilaiAwal("angka") -> 0, "teks" -> "", "boolean" -> salah, "daftar" -> []
+			if len(args) < 1 {
+				return NIL
+			}
+			t := strings.ToLower(strings.TrimSpace(args[0].Inspect()))
+			switch t {
+			case "angka", "int", "integer":
+				return &Integer{Value: 0}
+			case "pecahan", "desimal", "float":
+				return &Float{Value: 0.0}
+			case "teks", "string":
+				return &String{Value: ""}
+			case "boolean", "bool":
+				return FALSE
+			case "daftar", "larik", "array", "slice":
+				return &Array{Elements: []Object{}}
+			case "peta", "map":
+				return &Map{Pairs: make(map[string]Object)}
+			default:
+				return NIL
+			}
 		},
 	}
 	konversiMap.Pairs["formatBita"] = &Builtin{
@@ -4408,7 +4516,224 @@ func InitGlobalEnvironment() *Environment {
 			return chInst
 		},
 	}
+	kanalMap.Pairs["pilih"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) == 0 {
+				return NIL
+			}
+			var chList []*Map
+			var defaultFn *Function
+			timeoutSec := float64(-1)
+			var timeoutFn *Function
+
+			for _, a := range args {
+				if m, ok := a.(*Map); ok {
+					// Apakah ini opsi kasus kanal?
+					if _, hasKanal := m.Pairs["kanal"]; hasKanal {
+						chList = append(chList, m)
+					} else if df, hasBawaan := m.Pairs["bawaan"]; hasBawaan {
+						if fn, isFn := df.(*Function); isFn {
+							defaultFn = fn
+						}
+					} else if _, hasWaktu := m.Pairs["batasWaktu"]; hasWaktu {
+						if tVal, ok := m.Pairs["batasWaktu"].(*Integer); ok {
+							timeoutSec = float64(tVal.Value) / 1000.0
+						} else if tValF, ok := m.Pairs["batasWaktu"].(*Float); ok {
+							timeoutSec = tValF.Value / 1000.0
+						}
+						if fn, isFn := m.Pairs["aksi"].(*Function); isFn {
+							timeoutFn = fn
+						}
+					}
+				}
+			}
+
+			// Jika ada non-blocking default, coba cek sekali
+			if defaultFn != nil && timeoutSec < 0 {
+				for _, chM := range chList {
+					if chRaw, ok := chM.Pairs["kanal"].(*Map); ok {
+						if terimaFn, ok := chRaw.Pairs["cobaTerima"].(*Builtin); ok {
+							res := terimaFn.Fn()
+							if ret, ok := res.(*ReturnValue); ok && len(ret.Values) > 1 {
+								if ret.Values[1] == TRUE {
+									val := ret.Values[0]
+									if aksi, hasAksi := chM.Pairs["aksi"].(*Function); hasAksi {
+										return applyFunction(aksi, []Object{val}, env)
+									}
+									return val
+								}
+							}
+						}
+					}
+				}
+				return applyFunction(defaultFn, []Object{}, env)
+			}
+
+			// Polling wait dengan batas waktu jika ada
+			start := time.Now()
+			for {
+				for _, chM := range chList {
+					if chRaw, ok := chM.Pairs["kanal"].(*Map); ok {
+						if terimaFn, ok := chRaw.Pairs["cobaTerima"].(*Builtin); ok {
+							res := terimaFn.Fn()
+							if ret, ok := res.(*ReturnValue); ok && len(ret.Values) > 1 {
+								if ret.Values[1] == TRUE {
+									val := ret.Values[0]
+									if aksi, hasAksi := chM.Pairs["aksi"].(*Function); hasAksi {
+										return applyFunction(aksi, []Object{val}, env)
+									}
+									return val
+								}
+							}
+						}
+					}
+				}
+				if timeoutSec >= 0 && time.Since(start).Seconds() >= timeoutSec {
+					if timeoutFn != nil {
+						return applyFunction(timeoutFn, []Object{}, env)
+					}
+					return NIL
+				}
+				time.Sleep(2 * time.Millisecond)
+			}
+			return NIL
+		},
+	}
 	env.Set("kanal", kanalMap)
+
+	// Modul atomik (Operasi Lock-free Atomic Concurrency ala sync/atomic Go)
+	atomikMap := &Map{Pairs: make(map[string]Object)}
+	atomikMap.Pairs["tambah"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return NIL
+			}
+			delta := int64(1)
+			if d, ok := args[1].(*Integer); ok {
+				delta = d.Value
+			}
+			if ptr, ok := args[0].(*Integer); ok {
+				newVal := atomic.AddInt64(&ptr.Value, delta)
+				return &Integer{Value: newVal}
+			}
+			return NIL
+		},
+	}
+	atomikMap.Pairs["baca"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &Integer{Value: 0}
+			}
+			if ptr, ok := args[0].(*Integer); ok {
+				val := atomic.LoadInt64(&ptr.Value)
+				return &Integer{Value: val}
+			}
+			return &Integer{Value: 0}
+		},
+	}
+	atomikMap.Pairs["simpan"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return NIL
+			}
+			val := int64(0)
+			if v, ok := args[1].(*Integer); ok {
+				val = v.Value
+			}
+			if ptr, ok := args[0].(*Integer); ok {
+				atomic.StoreInt64(&ptr.Value, val)
+				return &Integer{Value: val}
+			}
+			return NIL
+		},
+	}
+	atomikMap.Pairs["tukar"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			// CompareAndSwap: atomik.tukar(ptr, nilaiLama, nilaiBaru)
+			if len(args) < 3 {
+				return FALSE
+			}
+			oldVal := int64(0)
+			newVal := int64(0)
+			if o, ok := args[1].(*Integer); ok {
+				oldVal = o.Value
+			}
+			if n, ok := args[2].(*Integer); ok {
+				newVal = n.Value
+			}
+			if ptr, ok := args[0].(*Integer); ok {
+				swapped := atomic.CompareAndSwapInt64(&ptr.Value, oldVal, newVal)
+				if swapped {
+					return TRUE
+				}
+				return FALSE
+			}
+			return FALSE
+		},
+	}
+	env.Set("atomik", atomikMap)
+
+	// Modul konteks (Manajemen Batas Waktu dan Pembatalan ala context.Context Go)
+	konteksMap := &Map{Pairs: make(map[string]Object)}
+	konteksMap.Pairs["latarBelakang"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			ctxInst := &Map{Pairs: make(map[string]Object)}
+			ctxInst.Pairs["selesai"] = &Boolean{Value: false}
+			ctxInst.Pairs["apakahBatal"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					return ctxInst.Pairs["selesai"]
+				},
+			}
+			return ctxInst
+		},
+	}
+	konteksMap.Pairs["denganBatasWaktu"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			ms := int64(1000)
+			if len(args) > 0 {
+				if i, ok := args[0].(*Integer); ok {
+					ms = i.Value
+				} else if f, ok := args[0].(*Float); ok {
+					ms = int64(f.Value)
+				}
+			}
+			ctxInst := &Map{Pairs: make(map[string]Object)}
+			ctxInst.Pairs["selesai"] = &Boolean{Value: false}
+			ctxInst.Pairs["alasan"] = &String{Value: ""}
+
+			batalFn := &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					ctxInst.Pairs["selesai"] = TRUE
+					ctxInst.Pairs["alasan"] = &String{Value: "dibatalkan secara manual"}
+					return NIL
+				},
+			}
+
+			go func() {
+				time.Sleep(time.Duration(ms) * time.Millisecond)
+				if ctxInst.Pairs["selesai"] == FALSE {
+					ctxInst.Pairs["selesai"] = TRUE
+					ctxInst.Pairs["alasan"] = &String{Value: "batas waktu terlampaui"}
+				}
+			}()
+
+			ctxInst.Pairs["batal"] = batalFn
+			ctxInst.Pairs["apakahBatal"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					return ctxInst.Pairs["selesai"]
+				},
+			}
+			ctxInst.Pairs["galat"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					return ctxInst.Pairs["alasan"]
+				},
+			}
+
+			// Mengembalikan pasangan [ctx, batal]
+			return &ReturnValue{Value: ctxInst, Values: []Object{ctxInst, batalFn}}
+		},
+	}
+	env.Set("konteks", konteksMap)
 
 	// Modul larik (Operasi Array Fungsional)
 	larikMap := &Map{Pairs: make(map[string]Object)}
@@ -6194,6 +6519,30 @@ func Eval(node ast.Node, env *Environment) Object {
 						boundFn.Env.Set(method.Receiver.Name, si)
 					}
 					return boundFn
+				}
+			}
+
+			// Cek Promoted Field / Method dari Embedded Structs (Komposisi Struct ala Go)
+			for _, fieldVal := range si.Fields {
+				if embeddedSI, isEmbed := fieldVal.(*StructInstance); isEmbed {
+					if pVal, hasP := embeddedSI.Fields[n.Property.Value]; hasP {
+						return pVal
+					}
+					if embeddedSI.Def != nil && embeddedSI.Def.Methods != nil {
+						if method, hasMethod := embeddedSI.Def.Methods[n.Property.Value]; hasMethod {
+							boundFn := &Function{
+								Receiver:   method.Receiver,
+								Parameters: method.Parameters,
+								IsVariadic: method.IsVariadic,
+								Body:       method.Body,
+								Env:        NewEnclosedEnvironment(method.Env),
+							}
+							if method.Receiver != nil {
+								boundFn.Env.Set(method.Receiver.Name, embeddedSI)
+							}
+							return boundFn
+						}
+					}
 				}
 			}
 		}

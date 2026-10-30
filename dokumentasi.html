@@ -584,7 +584,7 @@ cetak.tulis("Hasil kuadrat 5:", kuadrat(5))</code></pre>
 
       <!-- Struktur & Method -->
       <section id="struktur-method" class="docs-section">
-        <h2>Struktur (Struct) & Method Receivers</h2>
+        <h2>Struktur (Struct), Method Receivers & Komposisi Embedding</h2>
         <pre><code>tipe Persegi struktur {
     panjang,
     lebar
@@ -595,9 +595,22 @@ fungsi (p Persegi) luas() {
     kembalikan p.panjang * p.lebar
 }
 
+// Komposisi Struct Embedding ala Go (Field & Method Promosi Otomatis)
+tipe KotakWarna struktur {
+    bentuk Persegi // embedding
+    warna
+}
+
 fungsi utama() {
-    var kotak = Persegi{panjang: 10, lebar: 5}
-    cetak.tulis("Luas kotak:", kotak.luas())
+    var k = KotakWarna({
+        "warna": "Merah",
+        "bentuk": Persegi({"panjang": 10, "lebar": 5})
+    })
+
+    // Field dan method Persegi otomatis dipromosikan:
+    cetak.tulis("Warna:", k.warna)
+    cetak.tulis("Panjang (promosi):", k.panjang)
+    cetak.tulis("Luas (promosi method):", k.luas())
 }</code></pre>
       </section>
 
@@ -687,23 +700,47 @@ untuk i := 1; i <= 3; i++ {
 kt.tunggu() // Menunggu hingga ketiga tugas selesai
 cetak.tulis("Semua tugas tuntas!")</code></pre>
 
-        <h3>2. Sinkronisasi Kunci Mutex (`sistem.kunci`)</h3>
+        <h3>2. Sinkronisasi Kunci Mutex & RWMutex (`sistem.kunci`, `sistem.kunciBacaTulis`)</h3>
         <p>Mencegah tabrakan balapan data (<em>race conditions</em>) saat multi-routine memodifikasi memori bersama:</p>
-        <pre><code>var k = sistem.kunci()
-var hitungan = 0
-var kt = sistem.kelompokTunggu()
+        <pre><code>// 1. Mutex Eksklusif Standar
+var k = sistem.kunci()
+k.kunci()
+// operasi kritis...
+k.buka()
 
-untuk i := 0; i < 5; i++ {
-    kt.tambah(1)
-    ku fungsi() {
-        tunda kt.selesai()
-        k.kunci() // Mengunci akses eksklusif
-        hitungan = hitungan + 1
-        k.buka()  // Membuka kunci kembali
-    }()
+// 2. RWMutex (Kunci Baca Bersama & Kunci Tulis Eksklusif ala Go)
+var rw = sistem.kunciBacaTulis()
+rw.kunciBaca() // Banyak goroutine bisa membaca serentak
+// membaca data...
+rw.bukaBaca()
+
+rw.kunci() // Kunci eksklusif untuk menulis
+// memodifikasi data...
+rw.buka()</code></pre>
+
+        <h3>3. Modul `atomik` (Operasi Lock-Free Concurrency)</h3>
+        <p>Operasi paralel berkecepatan tinggi tanpa overhead penguncian mutex (berbasis <code>sync/atomic</code>):</p>
+        <pre><code>var counter = 0
+atomik.tambah(counter, 1)  // atomic.AddInt64
+var val = atomik.baca(counter) // atomic.LoadInt64
+atomik.tukar(counter, 1, 10)  // atomic.CompareAndSwapInt64</code></pre>
+
+        <h3>4. Modul `konteks` (Manajemen Batas Waktu & Pembatalan)</h3>
+        <p>Pengendalian siklus hidup operasi konkurensi (ala <code>context.Context</code>):</p>
+        <pre><code>var ctx, batal = konteks.denganBatasWaktu(1000) // batas waktu 1 detik
+jika ctx.apakahBatal() {
+    cetak.tulis("Operasi dibatalkan:", ctx.galat())
 }
-kt.tunggu()
-cetak.tulis("Hasil hitungan aman:", hitungan)</code></pre>
+batal() // Batalkan secara manual kapan saja</code></pre>
+
+        <h3>5. Saluran Multiplexing (`kanal.pilih`)</h3>
+        <p>Mendengarkan beberapa kanal sekaligus atau menggunakan fallback non-blocking (ala <code>select</code> di Go):</p>
+        <pre><code>kanal.pilih({
+    "kanal": ch1,
+    "aksi": fungsi(pesan) { cetak.tulis("Dari ch1:", pesan) }
+}, {
+    "bawaan": fungsi() { cetak.tulis("Kanal belum siap") }
+})</code></pre>
       </section>
 
       <!-- Modul Standar: Cetak -->
