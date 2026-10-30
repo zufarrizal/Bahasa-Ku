@@ -722,6 +722,8 @@ cetak.tulis("Hasil hitungan aman:", hitungan)</code></pre>
           <tbody>
             <tr><td><code>cetak.tulis(...data)</code></td><td>Mencetak argumen ke terminal dengan baris baru otomatis</td></tr>
             <tr><td><code>cetak.tulisBaris(format, ...data)</code></td><td>Format string mirip Printf</td></tr>
+            <tr><td><code>cetak.tipe(nilai)</code></td><td>Mendapatkan nama tipe data dalam bahasa Indonesia (<code>"angka"</code>, <code>"desimal"</code>, <code>"teks"</code>, <code>"larik"</code>, <code>"peta"</code>, dll)</td></tr>
+            <tr><td><code>cetak.dump(...nilai)</code></td><td>Mencetak struktur data lengkap beserta tipe dan panjangnya (berguna untuk debugging mendalam)</td></tr>
           </tbody>
         </table>
       </section>
@@ -747,6 +749,8 @@ cetak.tulis("Hasil hitungan aman:", hitungan)</code></pre>
             <tr><td><code>teks.pangkasKanan(str, [cutset])</code></td><td>Menghapus karakter di akhir string yang ditentukan</td></tr>
             <tr><td><code>teks.padKiri(str, panjang, pad)</code></td><td>Menambahkan karakter padding di sebelah kiri string (contoh: <code>00042</code>)</td></tr>
             <tr><td><code>teks.padKanan(str, panjang, pad)</code></td><td>Menambahkan karakter padding di sebelah kanan string</td></tr>
+            <tr><td><code>teks.kapitalkan(str)</code></td><td>Mengubah huruf pertama string menjadi huruf kapital</td></tr>
+            <tr><td><code>teks.slug(str)</code></td><td>Mengubah teks menjadi slug URL bersih yang aman (contoh: <code>"Halo Dunia!" -> "halo-dunia"</code>)</td></tr>
             <tr><td><code>teks.karakter(str, indeks)</code></td><td>Mengambil satu karakter pada indeks tertentu sebagai string</td></tr>
             <tr><td><code>teks.apakahKosong(s)</code></td><td>Memeriksa apakah string kosong atau hanya berisi spasi (boolean)</td></tr>
             <tr><td><code>teks.apakahHuruf(s)</code></td><td>Memeriksa apakah seluruh karakter berupa huruf alfabet (boolean)</td></tr>
@@ -1011,7 +1015,13 @@ var daftarBerkas = berkas.daftar(".")
 var apakahDir = berkas.apakahFolder("data/arsip") // true
 var apakahFile = berkas.apakahBerkas("arsip.txt")  // true
 var izinBerkas = berkas.izin("arsip.txt")         // -rw-r--r--
-berkas.salinFolder("data/arsip", "backup/arsip")  // rekursif salin direktori</code></pre>
+berkas.salinFolder("data/arsip", "backup/arsip")  // rekursif salin direktori
+
+// Pintasan Jalur Berkas:
+var pathLengkap = berkas.gabungJalur("folder", "sub", "file.ku")
+var nama = berkas.namaBerkas(pathLengkap) // "file.ku"
+var dir = berkas.direktori(pathLengkap)   // "folder/sub"
+var ext = berkas.ekstensi(pathLengkap)   // ".ku"</code></pre>
       </section>
 
 <section id="modul-jalur" class="docs-section">

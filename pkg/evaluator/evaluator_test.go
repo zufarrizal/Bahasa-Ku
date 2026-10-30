@@ -363,3 +363,76 @@ fungsi utama() {
 		t.Errorf("Diharapkan 500, didapat %d", intVal.Value)
 	}
 }
+
+func TestFiturFondasiDasar(t *testing.T) {
+	input := `
+paket utama
+fungsi utama() {
+    // 1. Uji larik (unik, balik, acak, ambilAcak, ratakan)
+    var angka = [3, 1, 2, 2, 3]
+    var unik = larik.unik(angka)
+    jika panjang(unik) != 3 {
+        kembalikan 1
+    }
+    var blk = larik.balik([1, 2, 3])
+    jika blk[0] != 3 || blk[2] != 1 {
+        kembalikan 2
+    }
+    var rata = larik.ratakan([[1, 2], [3, 4]])
+    jika panjang(rata) != 4 || rata[3] != 4 {
+        kembalikan 3
+    }
+    var acakArr = larik.acak([10, 20, 30])
+    jika panjang(acakArr) != 3 {
+        kembalikan 4
+    }
+    var sample = larik.ambilAcak([10, 20, 30], 1)
+    jika panjang(sample) != 1 {
+        kembalikan 5
+    }
+
+    // 2. Uji teks (padKiri, padKanan, kapitalkan, slug)
+    var padded = teks.padKiri("42", 5, "0")
+    jika padded != "00042" {
+        kembalikan 6
+    }
+    var cap = teks.kapitalkan("bahasa ku")
+    jika cap != "Bahasa ku" {
+        kembalikan 7
+    }
+    var s = teks.slug("Halo Dunia 2026!")
+    jika s != "halo-dunia-2026" {
+        kembalikan 8
+    }
+
+    // 3. Uji berkas utilitas jalur (namaBerkas, direktori, ekstensi, gabungJalur)
+    var p = berkas.gabungJalur("folder", "sub", "app.ku")
+    jika berkas.namaBerkas(p) != "app.ku" {
+        kembalikan 9
+    }
+    jika berkas.ekstensi(p) != ".ku" {
+        kembalikan 10
+    }
+
+    // 4. Uji cetak.tipe & cetak.dump
+    var tAngka = cetak.tipe(123)
+    var tTeks = cetak.tipe("halo")
+    var tLarik = cetak.tipe([1, 2])
+    jika tAngka != "angka" || tTeks != "teks" || tLarik != "larik" {
+        kembalikan 11
+    }
+
+    cetak.dump({"nama": "Bahasa Ku", "versi": 2})
+
+    kembalikan 100
+}
+`
+	val := runKuCode(input)
+	intVal, ok := val.(*evaluator.Integer)
+	if !ok {
+		t.Fatalf("Nilai bukan Integer: %v", val)
+	}
+	if intVal.Value != 100 {
+		t.Errorf("Diharapkan 100, didapat %d", intVal.Value)
+	}
+}

@@ -272,6 +272,91 @@ var (
 	NIL   = &Nil{}
 )
 
+func formatTipeIndo(obj Object) string {
+	if obj == nil {
+		return "kosong"
+	}
+	switch obj.(type) {
+	case *Integer:
+		return "angka"
+	case *Float:
+		return "desimal"
+	case *Boolean:
+		return "boolean"
+	case *String:
+		return "teks"
+	case *Array:
+		return "larik"
+	case *Map:
+		return "peta"
+	case *Nil:
+		return "kosong"
+	case *Function:
+		return "fungsi"
+	case *Builtin:
+		return "fungsi_bawaan"
+	case *StructDef:
+		return "definisi_struktur"
+	case *StructInstance:
+		return "struktur"
+	case *ChannelObject:
+		return "kanal"
+	default:
+		return string(obj.Type())
+	}
+}
+
+func formatDumpIndo(obj Object, indent int) string {
+	pad := strings.Repeat("  ", indent)
+	if obj == nil {
+		return pad + "kosong"
+	}
+	switch v := obj.(type) {
+	case *Integer:
+		return fmt.Sprintf("%sangka(%d)", pad, v.Value)
+	case *Float:
+		return fmt.Sprintf("%sdesimal(%f)", pad, v.Value)
+	case *Boolean:
+		return fmt.Sprintf("%sboolean(%s)", pad, v.Inspect())
+	case *String:
+		return fmt.Sprintf("%steks(%d) %q", pad, len(v.Value), v.Value)
+	case *Nil:
+		return pad + "kosong"
+	case *Array:
+		if len(v.Elements) == 0 {
+			return pad + "larik(0) []"
+		}
+		var lines []string
+		lines = append(lines, fmt.Sprintf("%slarik(%d) [", pad, len(v.Elements)))
+		for i, el := range v.Elements {
+			lines = append(lines, fmt.Sprintf("%s  [%d] =>\n%s", pad, i, formatDumpIndo(el, indent+2)))
+		}
+		lines = append(lines, pad+"]")
+		return strings.Join(lines, "\n")
+	case *Map:
+		if len(v.Pairs) == 0 {
+			return pad + "peta(0) {}"
+		}
+		var lines []string
+		lines = append(lines, fmt.Sprintf("%speta(%d) {", pad, len(v.Pairs)))
+		for k, val := range v.Pairs {
+			lines = append(lines, fmt.Sprintf("%s  %q =>\n%s", pad, k, formatDumpIndo(val, indent+2)))
+		}
+		lines = append(lines, pad+"}")
+		return strings.Join(lines, "\n")
+	case *StructInstance:
+		var lines []string
+		lines = append(lines, fmt.Sprintf("%sstruktur %s {", pad, v.Def.Name))
+		for k, val := range v.Fields {
+			lines = append(lines, fmt.Sprintf("%s  %s =>\n%s", pad, k, formatDumpIndo(val, indent+2)))
+		}
+		lines = append(lines, pad+"}")
+		return strings.Join(lines, "\n")
+	default:
+		return fmt.Sprintf("%s%s: %s", pad, formatTipeIndo(obj), obj.Inspect())
+	}
+}
+
 func InitGlobalEnvironment() *Environment {
 	env := NewEnvironment()
 
@@ -288,6 +373,24 @@ func InitGlobalEnvironment() *Environment {
 		},
 	}
 	cetakMap.Pairs["tulisBaris"] = cetakMap.Pairs["tulis"]
+	cetakMap.Pairs["tipe"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: "kosong"}
+			}
+			return &String{Value: formatTipeIndo(args[0])}
+		},
+	}
+	cetakMap.Pairs["dump"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			parts := []string{}
+			for _, a := range args {
+				parts = append(parts, formatDumpIndo(a, 0))
+			}
+			fmt.Println(strings.Join(parts, "\n"))
+			return NIL
+		},
+	}
 	env.Set("cetak", cetakMap)
 
 	// Modul web bawaan
@@ -779,6 +882,39 @@ func InitGlobalEnvironment() *Environment {
 				res = append(res, &String{Value: scanner.Text()})
 			}
 			return &Array{Elements: res}
+		},
+	}
+	berkasMap.Pairs["namaBerkas"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			return &String{Value: filepath.Base(args[0].Inspect())}
+		},
+	}
+	berkasMap.Pairs["direktori"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			return &String{Value: filepath.Dir(args[0].Inspect())}
+		},
+	}
+	berkasMap.Pairs["ekstensi"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			return &String{Value: filepath.Ext(args[0].Inspect())}
+		},
+	}
+	berkasMap.Pairs["gabungJalur"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			parts := []string{}
+			for _, a := range args {
+				parts = append(parts, a.Inspect())
+			}
+			return &String{Value: filepath.Join(parts...)}
 		},
 	}
 	env.Set("berkas", berkasMap)
@@ -2067,6 +2203,33 @@ func InitGlobalEnvironment() *Environment {
 				cutset = args[1].Inspect()
 			}
 			return &String{Value: strings.TrimRight(args[0].Inspect(), cutset)}
+		},
+	}
+	teksMap.Pairs["kapitalkan"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			s := args[0].Inspect()
+			if len(s) == 0 {
+				return &String{Value: ""}
+			}
+			r := []rune(s)
+			r[0] = unicode.ToUpper(r[0])
+			return &String{Value: string(r)}
+		},
+	}
+	teksMap.Pairs["slug"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			s := strings.ToLower(args[0].Inspect())
+			// Ganti non-alfanumerik dengan tanda hubung
+			reg := regexp.MustCompile(`[^a-z0-9]+`)
+			slug := reg.ReplaceAllString(s, "-")
+			slug = strings.Trim(slug, "-")
+			return &String{Value: slug}
 		},
 	}
 	env.Set("teks", teksMap)
@@ -3598,6 +3761,7 @@ func InitGlobalEnvironment() *Environment {
 			return &Array{Elements: res}
 		},
 	}
+	larikMap.Pairs["ratakan"] = larikMap.Pairs["rata"]
 	larikMap.Pairs["ambilAcak"] = &Builtin{
 		Fn: func(args ...Object) Object {
 			if len(args) < 1 {
