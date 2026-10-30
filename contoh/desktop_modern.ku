@@ -1,0 +1,18 @@
+paket utama
+
+pakai "cetak"
+pakai "desktop"
+
+fungsi utama() {
+    cetak.tulis("=== Integrasi Desktop Native Bahasa Ku ===")
+
+    // Salin teks ke clipboard sistem
+    desktop.salinTeks("Halo dari clipboard Bahasa Ku!")
+    var isiKlip = desktop.bacaKlip()
+    cetak.tulis("Teks di clipboard OS saat ini:", isiKlip)
+
+    // Tampilkan notifikasi dialog native OS
+    desktop.pesan("Bahasa Ku Desktop", "Fitur Desktop Native Bahasa Ku aktif dan siap digunakan!")
+
+    cetak.tulis("Selesai menjalankan contoh desktop!")
+}

@@ -374,6 +374,31 @@ func InitGlobalEnvironment() *Environment {
 		},
 	}
 	cetakMap.Pairs["tulisBaris"] = cetakMap.Pairs["tulis"]
+	cetakMap.Pairs["format"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) == 0 {
+				return NIL
+			}
+			formatStr := args[0].Inspect()
+			var fmtArgs []interface{}
+			for _, a := range args[1:] {
+				switch v := a.(type) {
+				case *Integer:
+					fmtArgs = append(fmtArgs, v.Value)
+				case *Float:
+					fmtArgs = append(fmtArgs, v.Value)
+				case *String:
+					fmtArgs = append(fmtArgs, v.Value)
+				case *Boolean:
+					fmtArgs = append(fmtArgs, v.Value)
+				default:
+					fmtArgs = append(fmtArgs, a.Inspect())
+				}
+			}
+			fmt.Printf(formatStr, fmtArgs...)
+			return NIL
+		},
+	}
 	cetakMap.Pairs["tipe"] = &Builtin{
 		Fn: func(args ...Object) Object {
 			if len(args) < 1 {
@@ -815,7 +840,32 @@ func InitGlobalEnvironment() *Environment {
 						return &Array{Elements: []Object{}}
 					}
 					queryStr := qArgs[0].Inspect()
-					rows, qErr := db.Query(queryStr)
+					var queryParams []interface{}
+					if len(qArgs) > 1 {
+						for _, p := range qArgs[1:] {
+							switch pv := p.(type) {
+							case *Integer:
+								queryParams = append(queryParams, pv.Value)
+							case *Float:
+								queryParams = append(queryParams, pv.Value)
+							case *Boolean:
+								queryParams = append(queryParams, pv.Value)
+							case *String:
+								queryParams = append(queryParams, pv.Value)
+							case *Nil:
+								queryParams = append(queryParams, nil)
+							default:
+								queryParams = append(queryParams, p.Inspect())
+							}
+						}
+					}
+					var rows *sql.Rows
+					var qErr error
+					if len(queryParams) > 0 {
+						rows, qErr = db.Query(queryStr, queryParams...)
+					} else {
+						rows, qErr = db.Query(queryStr)
+					}
 					if qErr != nil {
 						fmt.Printf("Galat kueri: %v\n", qErr)
 						return &Array{Elements: []Object{}}
@@ -858,7 +908,31 @@ func InitGlobalEnvironment() *Environment {
 						return FALSE
 					}
 					sqlStr := eArgs[0].Inspect()
-					_, exErr := db.Exec(sqlStr)
+					var queryParams []interface{}
+					if len(eArgs) > 1 {
+						for _, p := range eArgs[1:] {
+							switch pv := p.(type) {
+							case *Integer:
+								queryParams = append(queryParams, pv.Value)
+							case *Float:
+								queryParams = append(queryParams, pv.Value)
+							case *Boolean:
+								queryParams = append(queryParams, pv.Value)
+							case *String:
+								queryParams = append(queryParams, pv.Value)
+							case *Nil:
+								queryParams = append(queryParams, nil)
+							default:
+								queryParams = append(queryParams, p.Inspect())
+							}
+						}
+					}
+					var exErr error
+					if len(queryParams) > 0 {
+						_, exErr = db.Exec(sqlStr, queryParams...)
+					} else {
+						_, exErr = db.Exec(sqlStr)
+					}
 					if exErr != nil {
 						fmt.Printf("Galat eksekusi: %v\n", exErr)
 						return FALSE
@@ -2999,6 +3073,12 @@ func InitGlobalEnvironment() *Environment {
 				n = i.Value
 			} else if f, ok := args[0].(*Float); ok {
 				n = int64(f.Value)
+			} else if s, ok := args[0].(*String); ok {
+				if parsed, err := strconv.ParseInt(strings.TrimSpace(s.Value), 10, 64); err == nil {
+					n = parsed
+				} else if parsedF, err := strconv.ParseFloat(strings.TrimSpace(s.Value), 64); err == nil {
+					n = int64(parsedF)
+				}
 			}
 			simbol := "Rp "
 			if len(args) >= 2 {

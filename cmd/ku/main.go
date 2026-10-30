@@ -85,12 +85,25 @@ func main() {
 		}
 		compileDirectToBinary(args[1], outputExe)
 
-	case "inisiasi", "init":
-		if len(args) < 3 {
-			fmt.Println("Penggunaan: ku inisiasi <web|desktop|cli> <nama_folder>")
+	case "inisiasi", "init", "inisialisasi":
+		if len(args) < 2 {
+			fmt.Println("Penggunaan: ku inisialisasi <nama_folder> [web|desktop|cli]")
+			fmt.Println("Atau: ku inisiasi <web|desktop|cli> <nama_folder>")
 			os.Exit(1)
 		}
-		scaffoldProject(args[1], args[2])
+		projType := "cli"
+		folderName := args[1]
+		if len(args) >= 3 {
+			// Periksa apakah argumen pertama adalah tipe (gaya lama: ku inisiasi web toko)
+			if args[1] == "web" || args[1] == "desktop" || args[1] == "cli" {
+				projType = args[1]
+				folderName = args[2]
+			} else {
+				// Gaya baru: ku inisialisasi toko web
+				projType = args[2]
+			}
+		}
+		scaffoldProject(projType, folderName)
 
 	case "rapi", "format":
 		if len(args) < 2 {
@@ -129,7 +142,7 @@ func printHelp() {
   ku uji [berkas/_uji.ku]  Menjalankan pengujian unit test otomatis
   ku rapi [-w] <berkas.ku> Merapikan format kode secara otomatis (mirip gofmt)
   ku kompilasi <berkas.ku> [-o keluar.exe]  Kompilasi langsung ke biner mandiri (.exe)
-  ku inisiasi <web|desktop|cli> <nama_folder>  Membuat kerangka kerja proyek baru
+  ku inisialisasi <nama_folder> [web|desktop|cli]  Membuat proyek baru beserta berkas ku.mod
   ku buat <berkas.ku>      Mengonversi berkas .ku ke .go murni
   ku versi                 Menampilkan versi
 
@@ -284,6 +297,17 @@ func scaffoldProject(projectType, folderName string) {
 		os.Exit(1)
 	}
 
+	// 1. Buat berkas manifes ku.mod (identitas proyek Bahasa Ku)
+	modContent := fmt.Sprintf(`modul %s
+versi 0.2.0
+bahasa ku
+`, filepath.Base(folderName))
+
+	modFileName := filepath.Join(folderName, "ku.mod")
+	if err := os.WriteFile(modFileName, []byte(modContent), 0644); err != nil {
+		fmt.Printf("Galat membuat ku.mod: %v\n", err)
+	}
+
 	var fileContent string
 	mainFileName := filepath.Join(folderName, "utama.ku")
 
@@ -294,37 +318,76 @@ func scaffoldProject(projectType, folderName string) {
 pakai "cetak"
 pakai "web"
 
-fungsi sapa(permintaan) {
-    kembalikan "<h1>Halo dari Web Bahasa Ku!</h1><p>Proyek baru Anda siap dikembangkan.</p>"
-}
-
-fungsi ambilData(permintaan) {
+// Tangani REST API rute dinamis dengan parameter ID
+fungsi ambilProduk(konteks) {
+    var id = konteks.parameter.id
+    var mode = konteks.query.mode ?? "biasa"
     kembalikan {
-        "status": "sukses",
-        "pesan": "Selamat datang di API Bahasa Ku!"
+        "sukses": benar,
+        "id_produk": id,
+        "nama": "Paket Belajar Bahasa Ku",
+        "harga": 150000,
+        "mode_ambil": mode
     }
 }
 
+// Tangani POST data baru
+fungsi simpanProduk(konteks) {
+    var payload = konteks.badanJson ?? {}
+    kembalikan {
+        "sukses": benar,
+        "pesan": "Produk tersimpan",
+        "data": payload
+    }
+}
+
+fungsi beranda(konteks) {
+    kembalikan "<h1>🚀 Selamat Datang di Server Web Bahasa Ku!</h1><p>Proyek backend Anda siap digunakan.</p>"
+}
+
 fungsi utama() {
-    web.tangani("/", sapa)
-    web.tangani("/api", ambilData)
+    // Aktifkan CORS untuk kemudahan frontend modern (React, Vue, Flutter, dsb)
+    web.aktifkanCORS("*")
+
+    // Daftarkan rute REST API
+    web.dapatkan("/", beranda)
+    web.dapatkan("/api/produk/:id", ambilProduk)
+    web.pos("/api/produk", simpanProduk)
 
     cetak.tulis("Server web berjalan di http://localhost:8080")
-    web.dengarkan(":8080")
+    web.jalankan(":8080")
 }
 `
 	case "desktop":
 		fileContent = `paket utama
 
 pakai "cetak"
+pakai "desktop"
 pakai "jendela"
 
 fungsi utama() {
-    cetak.tulis("Membuka aplikasi desktop...")
+    cetak.tulis("Memulai aplikasi Desktop Bahasa Ku...")
 
+    // Tampilkan notifikasi dialog native OS
+    desktop.pesan("Info", "Selamat datang di Aplikasi Desktop Bahasa Ku!")
+
+    // Buka jendela WebView mandiri yang interaktif
     jendela.buka({
-        "judul": "Aplikasi Desktop Baru",
-        "konten": "<h1>Aplikasi Desktop Bahasa Ku</h1><p>Kerangka kerja aplikasi GUI desktop Anda siap digunakan.</p>"
+        "judul": "Aplikasi Desktop Modern - Bahasa Ku",
+        "lebar": 800,
+        "tinggi": 600,
+        "html": ` + "`" + `
+            <html style="font-family: sans-serif; background: #0f172a; color: #f8fafc; padding: 30px; text-align: center;">
+                <body>
+                    <h1 style="color: #38bdf8;">⚡ Aplikasi Desktop Bahasa Ku</h1>
+                    <p>Antarmuka grafis desktop modern berbasis HTML5/CSS dan WebView OS native.</p>
+                    <button style="padding: 10px 20px; font-size: 16px; border-radius: 8px; border: none; background: #0284c7; color: white; cursor: pointer;"
+                            onclick="alert('Halo dari event interaktif!')">
+                        Klik Saya
+                    </button>
+                </body>
+            </html>
+        ` + "`" + `
     })
 }
 `
@@ -333,10 +396,21 @@ fungsi utama() {
 
 pakai "cetak"
 pakai "sistem"
+pakai "basisdata"
+pakai "konversi"
 
 fungsi utama() {
-    cetak.tulis("=== Selamat Datang di Proyek CLI Bahasa Ku ===")
+    cetak.tulis("=== Selamat Datang di Proyek Bahasa Ku ===")
     cetak.tulis("Waktu saat ini:", sistem.waktu())
+
+    // Inisialisasi basis data SQLite lokal portabel
+    var db = basisdata.bukaBerkas("catatan.db")
+    db.eksekusi("CREATE TABLE IF NOT EXISTS riwayat (id INTEGER PRIMARY KEY, catatan TEXT)")
+    db.eksekusi("INSERT INTO riwayat (catatan) VALUES (?)", "Inisialisasi proyek baru")
+
+    var hasil = db.kueri("SELECT COUNT(*) AS total FROM riwayat")
+    cetak.tulis("Total riwayat tersimpan:", hasil[0]["total"])
+    cetak.tulis("Proyek Anda siap dikembangkan! 🎉")
 }
 `
 	default:
@@ -351,6 +425,7 @@ fungsi utama() {
 	}
 
 	fmt.Printf("Berhasil membuat proyek '%s' tipe [%s] di folder '%s/'! ✨\n", folderName, projectType, folderName)
+	fmt.Printf("Dibuat:\n  - %s/ku.mod (manifes proyek)\n  - %s/utama.ku (berkas utama)\n", folderName, folderName)
 	fmt.Printf("Jalankan sekarang dengan:\n  ku jalankan %s/utama.ku\n", folderName)
 }
 
