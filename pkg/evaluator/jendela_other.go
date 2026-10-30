@@ -27,7 +27,7 @@ func bacaPapanKlipNative() string {
 	return ""
 }
 
-func bukaJendelaNative(judul, konten, targetUrl string, lebar, tinggi int, startIPC func() int, invokeIPC func(fungsi string, argumen []interface{}) (interface{}, error)) {
+func bukaJendelaNative(judul, konten, targetUrl string, lebar, tinggi int, startIPC func() int, invokeIPC func(fungsi string, argumen []interface{}) (interface{}, error), onCleanup func()) {
 	// Fallback untuk non-windows (Linux / macOS)
 	// Buka URL via browser default atau server IPC
 	url := targetUrl

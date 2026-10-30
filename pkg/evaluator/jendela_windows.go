@@ -85,7 +85,7 @@ func bacaPapanKlipNative() string {
 	return strings.TrimRight(string(out), "\r\n")
 }
 
-func bukaJendelaNative(judul, konten, targetUrl string, lebar, tinggi int, startIPC func() int, invokeIPC func(fungsi string, argumen []interface{}) (interface{}, error)) {
+func bukaJendelaNative(judul, konten, targetUrl string, lebar, tinggi int, startIPC func() int, invokeIPC func(fungsi string, argumen []interface{}) (interface{}, error), onCleanup func()) {
 	// Direktori profil WebView2 terisolasi agar cache lama tidak mengunci session
 	userDataDir := filepath.Join(os.TempDir(), "ku_webview_data")
 	_ = os.MkdirAll(userDataDir, 0755)
@@ -200,7 +200,10 @@ window.addEventListener("beforeunload", function() {
 		// Jalankan loop event UI (memblokir hingga jendela ditutup pengguna)
 		w.Run()
 
-		// Setelah jendela ditutup, keluar secara bersih
+		// Setelah jendela ditutup, jalankan pembersihan basis data & resource
+		if onCleanup != nil {
+			onCleanup()
+		}
 		time.Sleep(50 * time.Millisecond)
 		os.Exit(0)
 		return

@@ -19,11 +19,22 @@ import (
 	"github.com/zufarrizal/bahasa-ku/pkg/transpiler"
 )
 
-const version = "0.3.4 (Go Native Edition)"
+const version = "0.3.5 (Go Native Edition)"
 
 func init() {
 	evaluator.RegisterSubFileEvaluator(func(path string, env *evaluator.Environment) {
-		content, err := os.ReadFile(path)
+		resolvedPath := path
+		if !filepath.IsAbs(resolvedPath) {
+			if _, err := os.Stat(resolvedPath); err != nil {
+				cwd, _ := os.Getwd()
+				candidate := filepath.Join(cwd, resolvedPath)
+				if _, err := os.Stat(candidate); err == nil {
+					resolvedPath = candidate
+				}
+			}
+		}
+
+		content, err := os.ReadFile(resolvedPath)
 		if err != nil {
 			return
 		}
@@ -484,6 +495,15 @@ replace github.com/zufarrizal/bahasa-ku => %q
 		tidyCmd.Dir = tempDir
 		_ = tidyCmd.Run()
 
+		// Sisipkan ku.syso jika ada di proyek untuk ikon & metadata Windows
+		sysoPath := filepath.Join(projRoot, "cmd", "ku", "ku.syso")
+		if _, err := os.Stat(sysoPath); err == nil {
+			sysoData, err := os.ReadFile(sysoPath)
+			if err == nil {
+				_ = os.WriteFile(filepath.Join(tempDir, "ku.syso"), sysoData, 0644)
+			}
+		}
+
 		buildCmd := exec.Command(goExe, "build", fmt.Sprintf("-ldflags=%s", ldFlags), "-o", absOutput, "main.go")
 		buildCmd.Dir = tempDir
 		buildOutput, err := buildCmd.CombinedOutput()
@@ -554,7 +574,7 @@ func scaffoldProject(projectType, folderName string) {
 
 	// 1. Buat berkas manifes ku.mod (identitas proyek Bahasa Ku)
 	modContent := fmt.Sprintf(`modul %s
-versi 0.3.4
+versi 0.3.5
 bahasa ku
 `, filepath.Base(folderName))
 

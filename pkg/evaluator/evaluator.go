@@ -219,7 +219,21 @@ func RegisterSubFileEvaluator(sfe SubFileEvaluator) {
 
 func init() {
 	RegisterSubFileEvaluator(func(path string, env *Environment) {
-		content, err := os.ReadFile(path)
+		// Dukung resolusi path relatif, absolut, dan modular
+		resolvedPath := path
+		if !filepath.IsAbs(resolvedPath) {
+			// Cek apakah berkas ada di direktori kerja
+			if _, err := os.Stat(resolvedPath); err != nil {
+				// Cek apakah ada direktori proyek aktif
+				cwd, _ := os.Getwd()
+				candidate := filepath.Join(cwd, resolvedPath)
+				if _, err := os.Stat(candidate); err == nil {
+					resolvedPath = candidate
+				}
+			}
+		}
+
+		content, err := os.ReadFile(resolvedPath)
 		if err != nil {
 			return
 		}
@@ -828,6 +842,27 @@ func InitGlobalEnvironment() *Environment {
 	webMap.Pairs["jalankan"] = webMap.Pairs["dengarkan"]
 	env.Set("web", webMap)
 
+	// Registry koneksi basis data aktif untuk graceful shutdown
+	var activeDBConnections []*sql.DB
+	var activeDBMutex sync.Mutex
+
+	registerDBConnection := func(d *sql.DB) {
+		activeDBMutex.Lock()
+		defer activeDBMutex.Unlock()
+		activeDBConnections = append(activeDBConnections, d)
+	}
+
+	closeAllDBConnections := func() {
+		activeDBMutex.Lock()
+		defer activeDBMutex.Unlock()
+		for _, d := range activeDBConnections {
+			if d != nil {
+				_ = d.Close()
+			}
+		}
+		activeDBConnections = nil
+	}
+
 	// Modul desktop: jendela & dialog
 	jendelaMap := &Map{Pairs: make(map[string]Object)}
 
@@ -867,6 +902,7 @@ func InitGlobalEnvironment() *Environment {
 				w.WriteHeader(http.StatusOK)
 				go func() {
 					time.Sleep(100 * time.Millisecond)
+					closeAllDBConnections()
 					os.Exit(0)
 				}()
 			})
@@ -1040,7 +1076,7 @@ func InitGlobalEnvironment() *Environment {
 				}
 			}
 
-			bukaJendelaNative(judul, konten, url, lebar, tinggi, startIPCServer, invokeIPC)
+			bukaJendelaNative(judul, konten, url, lebar, tinggi, startIPCServer, invokeIPC, closeAllDBConnections)
 			return NIL
 		},
 	}
@@ -1065,6 +1101,8 @@ func InitGlobalEnvironment() *Environment {
 				connMap.Pairs["pesan"] = &String{Value: TerjemahkanGalat(err)}
 				return connMap
 			}
+
+			registerDBConnection(db)
 
 			// Uji ping
 			pingErr := db.Ping()
