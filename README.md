@@ -2,32 +2,32 @@
 
 Bahasa pemrograman bernuansa Go (*Go-flavored*) dengan sintaks murni berbahasa Indonesia, dirancang agar ramah dan mudah dipelajari oleh penutur bahasa Indonesia.
 
-Engine compiler & runtime **Ku** dibangun langsung menggunakan **Go Murni** (menghasilkan binary mandiri `ku.exe`), serta tetap menyediakan dukungan dual engine (Go & Node.js).
+Compiler dan runtime **Bahasa Ku** dibangun secara native menggunakan **Go Murni** sehingga menghasilkan file executable mandiri (`ku.exe` di Windows, `ku` di Linux/macOS) tanpa dependensi eksternal.
 
 ---
 
 ## 🚀 Fitur Utama
 
-- **Native Binary (`ku.exe`):** Berdiri sendiri tanpa dependensi runtime eksternal.
-- **Sintaks Berbahasa Indonesia:** Mengganti kata kunci bahasa Inggris dengan kosakata alami bahasa Indonesia.
-- **Dukungan Web Server Native (`web`):** Siap membuat web server HTTP dan REST API JSON.
-- **Dukungan Desktop GUI Native (`jendela`):** Siap membuka antarmuka GUI desktop dan kotak pesan native di Windows.
-- **Filosofi Mirip Go:** Deklarasi fungsi `fungsi utama()`, deklarasi variabel `var` atau `:=`, modul `cetak.tulis(...)` (*fmt.Println*), data struktur `tipe ... struktur` (*struct*), serta kontrol `tunda` (*defer* LIFO).
-- **Transpiler ke Go Murni:** Dapat langsung mengonversi file `.ku` ke `.go` asli.
+- **Native Binary Mandiri:** Dijalankan langsung melalui file biner tanpa perlu runtime tambahan.
+- **Sintaks Berbahasa Indonesia:** Kata kunci natural seperti `paket`, `fungsi`, `var`, `jika`, `lainnya`, `untuk`, `pilih`, `kembalikan`, dan `tunda`.
+- **Dukungan Server Web HTTP & REST API (`web`):** Siap digunakan untuk membuat web server dan API JSON.
+- **Dukungan Aplikasi Desktop GUI (`jendela`):** Membuka dialog native dan jendela aplikasi desktop modern tanpa Electron.
+- **Dukungan Database MySQL (`basisdata`):** Terhubung ke database MySQL secara native dengan operasi `kueri` dan `eksekusi`.
+- **Transpiler ke Go Murni:** Menerjemahkan file `.ku` menjadi kode `.go` standar untuk dikompilasi ke file biner native.
 
 ---
 
-## 📦 Cara Memasang & Menggunakan (Bagi Pengguna)
+## 📦 Cara Memasang & Menggunakan
 
-Pengguna **TIDAK PERLU** memasang Go untuk menjalankan Bahasa Ku. File binary mandiri siap unduh sudah disediakan:
+Pengguna **TIDAK PERLU** memasang Go jika hanya ingin menjalankan Bahasa Ku. Anda cukup mengunduh file biner siap pakai:
 
 ### 1. Unduh Binary Siap Pakai (Windows, Linux, macOS)
-Kunjungi halaman **[Rilis GitHub](https://github.com/zufarrizal/Bahasa-Ku/releases)**, lalu unduh binary yang sesuai:
-- **Windows:** Unduh `ku-windows-amd64.exe` (bisa diganti nama jadi `ku.exe`).
-- **Linux:** Unduh `ku-linux-amd64` (`chmod +x ku-linux-amd64`).
-- **macOS (Apple Silicon):** Unduh `ku-darwin-arm64`.
+Kunjungi halaman **[Rilis Resmi GitHub](https://github.com/zufarrizal/Bahasa-Ku/releases/tag/v0.2.0)**, lalu unduh sesuai sistem operasi Anda:
+- **Windows (x64):** Unduh `ku-windows-amd64.exe` (dapat diganti nama menjadi `ku.exe`).
+- **Linux (x64):** Unduh `ku-linux-amd64` (jalankan `chmod +x ku-linux-amd64`).
+- **macOS (Apple Silicon M1/M2/M3):** Unduh `ku-darwin-arm64`.
 
-### 2. Pasang via Go (Jika Memiliki Go di Komputer)
+### 2. Atau Pasang Menggunakan Go (Jika Memiliki Go di Komputer)
 ```bash
 go install github.com/zufarrizal/bahasa-ku/cmd/ku@latest
 ```
@@ -64,8 +64,9 @@ ku versi
 | `x := 10` | `x := 10` | Deklarasi & inisialisasi ringkas |
 | `const PI = 3.14` | `tetap PI = 3.14` | Deklarasi konstanta |
 | `if` / `else` | `jika` / `lainnya` | Percabangan kondisi |
-| `switch` / `case` / `default` | `pilih` / `kasus` / `bawaan` | Percabangan banyak kondisi |
+| `switch` / `case` / `default` | `pilih` / `kasus` / `bawaan` | Percabangan seleksi |
 | `for i := 0; i < 5; i++` | `untuk i := 0; i < 5; i++` | Perulangan |
+| `defer` | `tunda` | Eksekusi LIFO di akhir fungsi |
 | `return` | `kembalikan` | Mengembalikan nilai fungsi |
 | `len(arr)` | `panjang(arr)` | Menghitung panjang array/string/map |
 | `append(arr, item)` | `tambah(arr, item)` | Menambah elemen ke array/slice |
@@ -74,35 +75,7 @@ ku versi
 
 ---
 
-## 🛠️ Cara Menjalankan
-
-### 1. Cek Versi
-```bash
-node bin/ku.js versi
-```
-
-### 2. Menjalankan Berkas Kode Ku (Interpreter)
-```bash
-node bin/ku.js jalankan contoh/halo.ku
-node bin/ku.js jalankan contoh/logika.ku
-node bin/ku.js jalankan contoh/fitur_lanjutan.ku
-node bin/ku.js jalankan contoh/tunda.ku
-```
-
-### 3. Mengompilasi Kode Ku ke Go Murni (.go)
-```bash
-# Menghasilkan berkas .go
-node bin/ku.js buat contoh/tunda.ku tunda.go
-```
-
-### 4. Menjalankan Pengujian Otomatis
-```bash
-node test/run_tests.js
-```
-
----
-
-## 📝 Contoh Program
+## 📝 Contoh-Contoh Program
 
 ### 1. Halo Dunia (`contoh/halo.ku`)
 ```ku
@@ -116,7 +89,7 @@ fungsi utama() {
 }
 ```
 
-### 2. Logika & Faktorial (`contoh/logika.ku`)
+### 2. Logika Percabangan & Rekursi Faktorial (`contoh/logika.ku`)
 ```ku
 paket utama
 
@@ -149,26 +122,114 @@ fungsi utama() {
 }
 ```
 
+### 3. Server Web HTTP & REST API JSON (`contoh/server_web.ku`)
+```ku
+paket utama
+
+pakai "cetak"
+pakai "web"
+
+fungsi sapaHalaman(permintaan) {
+    kembalikan "<h1>Selamat Datang di Web Bahasa Ku!</h1>"
+}
+
+fungsi ambilDataJson(permintaan) {
+    kembalikan {
+        "status": "sukses",
+        "pesan": "API REST Bahasa Ku Berfungsi!"
+    }
+}
+
+fungsi utama() {
+    web.tangani("/", sapaHalaman)
+    web.tangani("/api", ambilDataJson)
+
+    cetak.tulis("Server web aktif di http://localhost:8080")
+    web.dengarkan(":8080")
+}
+```
+
+### 4. Aplikasi Desktop GUI Windows (`contoh/aplikasi_desktop.ku`)
+```ku
+paket utama
+
+pakai "cetak"
+pakai "jendela"
+
+fungsi utama() {
+    cetak.tulis("Membuka aplikasi desktop Bahasa Ku...")
+
+    jendela.buka({
+        "judul": "Aplikasi Desktop Bahasa Ku",
+        "konten": "<h1>Halo dari Desktop Bahasa Ku! 🖥️</h1><p>Aplikasi GUI Windows tanpa Electron.</p>"
+    })
+}
+```
+
+### 5. Fitur Tunda / Defer Khas Go (`contoh/tunda.ku`)
+```ku
+paket utama
+
+pakai "cetak"
+
+fungsi ujiTunda() {
+    cetak.tulis("1. Fungsi ujiTunda dimulai")
+    tunda cetak.tulis("4. Pesan tunda ke-1 (dieksekusi terakhir)")
+    tunda cetak.tulis("3. Pesan tunda ke-2 (LIFO: dieksekusi sebelum tunda ke-1)")
+    cetak.tulis("2. Fungsi ujiTunda selesai dieksekusi")
+}
+
+fungsi utama() {
+    ujiTunda()
+}
+```
+
 ---
 
 ## 📂 Struktur Proyek
 
 ```
 Bahasa Ku/
-├── bin/
-│   └── ku.js            # Antarmuka CLI 'ku jalankan'
-├── src/
-│   ├── ast.js           # Struktur pohon sintaks (AST)
-│   ├── evaluator.js     # Interpreter & modul bawaan (cetak)
-│   ├── index.js         # Entry point pustaka compiler
-│   ├── lexer.js         # Pemindai teks & token
-│   ├── lingkungan.js    # Pengelola variabel (Environment / Scope)
-│   └── token.js         # Daftar tipe token & kata kunci
+├── cmd/
+│   └── ku/
+│       └── main.go           # CLI Native Ku
+├── pkg/
+│   ├── ast/
+│   │   └── ast.go            # Abstract Syntax Tree
+│   ├── evaluator/
+│   │   ├── evaluator.go      # Runtime & Pustaka Bawaan (cetak, web, jendela, basisdata)
+│   │   ├── evaluator_test.go # Unit Test Go
+│   │   ├── jendela_windows.go# Native GUI Windows
+│   │   └── jendela_other.go  # Native GUI Non-Windows
+│   ├── lexer/
+│   │   └── lexer.go          # Tokenizer Scanner
+│   ├── parser/
+│   │   └── parser.go         # Parser Bahasa Ku
+│   ├── token/
+│   │   └── token.go          # Definisi Kata Kunci & Token
+│   └── transpiler/
+│       └── transpiler.go     # Generator Kode Go Murni (.go)
 ├── contoh/
-│   ├── halo.ku          # Contoh Halo Dunia
-│   └── logika.ku        # Contoh logika percabangan, fungsi, perulangan
-├── test/
-│   └── run_tests.js     # Test suite otomatis
-├── README.md            # Dokumentasi lengkap
-└── package.json
+│   ├── aplikasi_desktop.ku   # Contoh GUI Desktop Native
+│   ├── server_web.ku         # Contoh Server HTTP & REST API
+│   ├── fitur_lanjutan.ku     # Contoh Array, Map, Struct, Switch
+│   ├── halo.ku               # Contoh Halo Dunia
+│   ├── logika.ku             # Contoh Rekursi Faktorial
+│   └── tunda.ku              # Contoh Defer Khas Go
+├── go.mod                    # Konfigurasi Modul Go Resmi
+└── README.md                 # Dokumentasi Lengkap
 ```
+
+---
+
+## 🧪 Pengujian Unit Test
+
+```bash
+go test ./...
+```
+
+---
+
+## 📄 Lisensi
+
+Didistribusikan di bawah lisensi [MIT](LICENSE).
