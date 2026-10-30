@@ -17,7 +17,7 @@ Kami secara aktif memantau dan memberikan pembaruan keamanan untuk versi-versi b
 Jika Anda menemukan potensi kerentanan keamanan pada pustaka standar, compiler, atau runtime **Bahasa Ku**, mohon **JANGAN** membuat issue publik di GitHub.
 
 Silakan laporkan kerentanan secara privat melalui:
-- **Email**: [masjuple96@gmail.com](mailto:masjuple96@gmail.com)
+- **Email**: [zufarrizal24@gmail.com](mailto:zufarrizal24@gmail.com)
 - **Subjek**: `[KEAMANAN] Laporan Kerentanan Bahasa Ku - <Ringkasan>`
 
 ### Informasi yang Diharapkan:

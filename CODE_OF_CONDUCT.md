@@ -34,4 +34,4 @@ Kode Etik ini berlaku di semua ruang proyek (repositori GitHub, diskusi, issue, 
 
 ## Penegakan
 
-Kasus perilaku yang melecehkan, menyinggung, atau tidak dapat diterima dapat dilaporkan kepada pengelola proyek di email: **masjuple96@gmail.com**. Semua pengaduan akan ditinjau dan diselidiki secara cepat dan adil.
+Kasus perilaku yang melecehkan, menyinggung, atau tidak dapat diterima dapat dilaporkan kepada pengelola proyek di email: **zufarrizal24@gmail.com**. Semua pengaduan akan ditinjau dan diselidiki secara cepat dan adil.
