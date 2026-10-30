@@ -6,4 +6,6 @@ ku.exe
 dist/
 projek_web_mysql/
 demo_mysql/
+demo_sqlite/
+*.db
 *.env
