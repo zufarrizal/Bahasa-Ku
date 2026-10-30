@@ -18,6 +18,7 @@
 - **Generator Proyek Otomatis (`ku inisiasi`):** Menyiapkan kerangka kerja proyek baru (`web`, `desktop`, `cli`) secara instan.
 - **Sintaks Berbahasa Indonesia:** Kata kunci natural seperti `paket`, `fungsi`, `var`, `jika`, `lainnya`, `untuk`, `pilih`, `kembalikan`, dan `tunda`.
 - **Dukungan Server Web HTTP & REST API (`web`):** Siap digunakan untuk membuat web server dan API JSON.
+- **Dukungan Klien Jaringan HTTP (`jaringan`):** Melakukan panggilan HTTP GET / POST JSON ke API eksternal secara native.
 - **Dukungan Aplikasi Desktop GUI (`jendela`):** Membuka dialog native dan jendela aplikasi desktop modern tanpa Electron.
 - **Dukungan I/O Berkas & Sistem (`berkas` & `sistem`):** Membaca/menulis file lokal dan mengakses environment OS.
 - **Dukungan Database MySQL (`basisdata`):** Terhubung ke database MySQL secara native dengan operasi `kueri` dan `eksekusi`.
@@ -72,6 +73,7 @@ ku
 # Menjalankan program berkas .ku
 ku jalankan contoh/halo.ku
 ku jalankan contoh/server_web.ku
+ku jalankan contoh/jaringan.ku
 ku jalankan contoh/aplikasi_desktop.ku
 ku jalankan contoh/berkas_sistem.ku
 

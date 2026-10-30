@@ -43,6 +43,8 @@ func (t *Transpiler) Transpile(node ast.Node) string {
 		path := n.Path
 		if path == "cetak" {
 			path = "fmt"
+		} else if path == "web" || path == "jaringan" {
+			path = "net/http"
 		}
 		return fmt.Sprintf("import %q\n", path)
 
@@ -158,6 +160,8 @@ func (t *Transpiler) Transpile(node ast.Node) string {
 		fn := t.Transpile(n.Function)
 		if fn == "cetak.tulis" || fn == "cetak.tulisBaris" {
 			fn = "fmt.Println"
+		} else if fn == "jaringan.ambil" {
+			fn = "http.Get"
 		} else if fn == "panjang" {
 			fn = "len"
 		} else if fn == "tambah" {

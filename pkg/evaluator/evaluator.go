@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"os/exec"
@@ -530,6 +531,95 @@ func InitGlobalEnvironment() *Environment {
 	}
 	env.Set("sistem", sistemMap)
 
+	// Modul jaringan (HTTP Client / Fetch API)
+	jaringanMap := &Map{Pairs: make(map[string]Object)}
+	jaringanMap.Pairs["ambil"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return NIL
+			}
+			urlStr := args[0].Inspect()
+			client := &http.Client{Timeout: 15 * time.Second}
+			resp, err := client.Get(urlStr)
+			if err != nil {
+				resMap := &Map{Pairs: make(map[string]Object)}
+				resMap.Pairs["sukses"] = FALSE
+				resMap.Pairs["status"] = &Integer{Value: 0}
+				resMap.Pairs["badan"] = &String{Value: err.Error()}
+				return resMap
+			}
+			defer resp.Body.Close()
+
+			bodyBytes, _ := io.ReadAll(resp.Body)
+			bodyStr := string(bodyBytes)
+
+			resMap := &Map{Pairs: make(map[string]Object)}
+			resMap.Pairs["sukses"] = &Boolean{Value: resp.StatusCode >= 200 && resp.StatusCode < 300}
+			resMap.Pairs["status"] = &Integer{Value: int64(resp.StatusCode)}
+			resMap.Pairs["badan"] = &String{Value: bodyStr}
+
+			// Coba parse JSON jika konten berupa JSON
+			var jsonObj interface{}
+			if err := json.Unmarshal(bodyBytes, &jsonObj); err == nil {
+				resMap.Pairs["json"] = convertGoToKuObject(jsonObj)
+			} else {
+				resMap.Pairs["json"] = NIL
+			}
+
+			return resMap
+		},
+	}
+
+	jaringanMap.Pairs["kirim"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return NIL
+			}
+			urlStr := args[0].Inspect()
+			var reqBody io.Reader
+
+			if m, ok := args[1].(*Map); ok {
+				data := make(map[string]interface{})
+				for k, v := range m.Pairs {
+					data[k] = v.Inspect()
+				}
+				jsonBytes, _ := json.Marshal(data)
+				reqBody = strings.NewReader(string(jsonBytes))
+			} else {
+				reqBody = strings.NewReader(args[1].Inspect())
+			}
+
+			client := &http.Client{Timeout: 15 * time.Second}
+			resp, err := client.Post(urlStr, "application/json", reqBody)
+			if err != nil {
+				resMap := &Map{Pairs: make(map[string]Object)}
+				resMap.Pairs["sukses"] = FALSE
+				resMap.Pairs["status"] = &Integer{Value: 0}
+				resMap.Pairs["badan"] = &String{Value: err.Error()}
+				return resMap
+			}
+			defer resp.Body.Close()
+
+			bodyBytes, _ := io.ReadAll(resp.Body)
+			bodyStr := string(bodyBytes)
+
+			resMap := &Map{Pairs: make(map[string]Object)}
+			resMap.Pairs["sukses"] = &Boolean{Value: resp.StatusCode >= 200 && resp.StatusCode < 300}
+			resMap.Pairs["status"] = &Integer{Value: int64(resp.StatusCode)}
+			resMap.Pairs["badan"] = &String{Value: bodyStr}
+
+			var jsonObj interface{}
+			if err := json.Unmarshal(bodyBytes, &jsonObj); err == nil {
+				resMap.Pairs["json"] = convertGoToKuObject(jsonObj)
+			} else {
+				resMap.Pairs["json"] = NIL
+			}
+
+			return resMap
+		},
+	}
+	env.Set("jaringan", jaringanMap)
+
 	// Bawaan: panjang & tambah
 	env.Set("panjang", &Builtin{
 		Fn: func(args ...Object) Object {
@@ -563,6 +653,40 @@ func InitGlobalEnvironment() *Environment {
 	})
 
 	return env
+}
+
+func convertGoToKuObject(val interface{}) Object {
+	if val == nil {
+		return NIL
+	}
+	switch v := val.(type) {
+	case bool:
+		if v {
+			return TRUE
+		}
+		return FALSE
+	case float64:
+		if v == float64(int64(v)) {
+			return &Integer{Value: int64(v)}
+		}
+		return &Float{Value: v}
+	case string:
+		return &String{Value: v}
+	case []interface{}:
+		arr := &Array{Elements: []Object{}}
+		for _, item := range v {
+			arr.Elements = append(arr.Elements, convertGoToKuObject(item))
+		}
+		return arr
+	case map[string]interface{}:
+		m := &Map{Pairs: make(map[string]Object)}
+		for k, item := range v {
+			m.Pairs[k] = convertGoToKuObject(item)
+		}
+		return m
+	default:
+		return &String{Value: fmt.Sprintf("%v", v)}
+	}
 }
 
 func Eval(node ast.Node, env *Environment) Object {
