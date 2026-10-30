@@ -197,6 +197,8 @@
           <li><a href="#modul-konversi">Modul `konversi`</a></li>
           <li><a href="#modul-json">Modul `json`</a></li>
           <li><a href="#modul-validasi">Modul `validasi`</a></li>
+          <li><a href="#modul-angka">Modul `angka` (Bitwise)</a></li>
+          <li><a href="#modul-terminal">Modul `terminal` (CLI Warna)</a></li>
           <li><a href="#modul-matematika">Modul `matematika`</a></li>
           <li><a href="#modul-kripto">Modul `kripto`</a></li>
           <li><a href="#modul-berkas-sistem">Modul `berkas` & `sistem`</a></li>
@@ -517,6 +519,24 @@ untuk i := 1; i <= 3; i++ {
 
 kt.tunggu() // Menunggu hingga ketiga tugas selesai
 cetak.tulis("Semua tugas tuntas!")</code></pre>
+
+        <h3>2. Sinkronisasi Kunci Mutex (`sistem.kunci`)</h3>
+        <p>Mencegah tabrakan balapan data (<em>race conditions</em>) saat multi-routine memodifikasi memori bersama:</p>
+        <pre><code>var k = sistem.kunci()
+var hitungan = 0
+var kt = sistem.kelompokTunggu()
+
+untuk i := 0; i < 5; i++ {
+    kt.tambah(1)
+    ku fungsi() {
+        tunda kt.selesai()
+        k.kunci() // Mengunci akses eksklusif
+        hitungan = hitungan + 1
+        k.buka()  // Membuka kunci kembali
+    }()
+}
+kt.tunggu()
+cetak.tulis("Hasil hitungan aman:", hitungan)</code></pre>
       </section>
 
       <!-- Modul Standar: Cetak -->
@@ -571,11 +591,19 @@ catatan.galat("Gagal memproses transaksi ID #102")</code></pre>
             <tr><td><code>waktu.selisihDetik(unix1, unix2)</code></td><td>Menghitung selisih durasi antara dua timestamp dalam detik</td></tr>
             <tr><td><code>waktu.mulai()</code></td><td>Memulai stopwatch / pencatat waktu titik awal (nanodetik)</td></tr>
             <tr><td><code>waktu.lewat(tMulai)</code></td><td>Menghitung selisih durasi yang telah berlalu dalam milidetik (float)</td></tr>
+            <tr><td><code>waktu.setelah(ms, fungsi)</code></td><td>Mengeksekusi fungsi asinkron sekali setelah jeda ms milidetik (setTimeout)</td></tr>
+            <tr><td><code>waktu.setiap(ms, fungsi)</code></td><td>Mengeksekusi fungsi secara berulang setiap ms milidetik (mengembalikan objek dengan method <code>hentikan()</code>)</td></tr>
           </tbody>
         </table>
         <pre><code>var t = waktu.mulai()
 // Proses komputasi...
-cetak.tulis("Waktu proses:", waktu.lewat(t), "ms")</code></pre>
+cetak.tulis("Waktu proses:", waktu.lewat(t), "ms")
+
+// Eksekusi berulang
+var pewaktu = waktu.setiap(1000, fungsi() {
+    cetak.tulis("Detik berdetak...")
+})
+// Hentikan setelah beberapa saat: pewaktu.hentikan()</code></pre>
       </section>
 
       <!-- Modul Standar: Pola (Regex) -->
@@ -852,6 +880,56 @@ jika json.valid(teksJSON) {
 jika validasi.apakahIP("192.168.1.1") {
     cetak.tulis("Alamat IP lokal valid.")
 }</code></pre>
+      </section>
+
+      <!-- Modul Standar: Angka (Bitwise & Basis) -->
+      <section id="modul-angka" class="docs-section">
+        <h2>Modul `angka` (Bitwise & Representasi Basis)</h2>
+        <table>
+          <thead>
+            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>angka.biner(n)</code></td><td>Mengonversi angka integer ke string biner (contoh: <code>10 -> "1010"</code>)</td></tr>
+            <tr><td><code>angka.heksa(n)</code></td><td>Mengonversi angka integer ke string heksadesimal (contoh: <code>255 -> "ff"</code>)</td></tr>
+            <tr><td><code>angka.oktal(n)</code></td><td>Mengonversi angka integer ke string oktal</td></tr>
+            <tr><td><code>angka.geserKiri(n, bit)</code></td><td>Operasi pergeseran bitwise ke kiri (<code>n &lt;&lt; bit</code>)</td></tr>
+            <tr><td><code>angka.geserKanan(n, bit)</code></td><td>Operasi pergeseran bitwise ke kanan (<code>n &gt;&gt; bit</code>)</td></tr>
+            <tr><td><code>angka.dan(a, b)</code></td><td>Operasi logika bitwise AND (<code>a &amp; b</code>)</td></tr>
+            <tr><td><code>angka.atau(a, b)</code></td><td>Operasi logika bitwise OR (<code>a | b</code>)</td></tr>
+            <tr><td><code>angka.xor(a, b)</code></td><td>Operasi logika bitwise XOR (<code>a ^ b</code>)</td></tr>
+            <tr><td><code>angka.tidak(n)</code></td><td>Operasi logika bitwise NOT (<code>^n</code>)</td></tr>
+          </tbody>
+        </table>
+        <pre><code>var bin = angka.biner(42) // "101010"
+var hex = angka.heksa(255) // "ff"
+var geser = angka.geserKiri(1, 8) // 256</code></pre>
+      </section>
+
+      <!-- Modul Standar: Terminal -->
+      <section id="modul-terminal" class="docs-section">
+        <h2>Modul `terminal` (Warna ANSI & Kontrol CLI)</h2>
+        <table>
+          <thead>
+            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>terminal.merah(...teks)</code></td><td>Mewarnai output teks menjadi warna merah ANSI</td></tr>
+            <tr><td><code>terminal.hijau(...teks)</code></td><td>Mewarnai output teks menjadi warna hijau ANSI</td></tr>
+            <tr><td><code>terminal.kuning(...teks)</code></td><td>Mewarnai output teks menjadi warna kuning ANSI</td></tr>
+            <tr><td><code>terminal.biru(...teks)</code></td><td>Mewarnai output teks menjadi warna biru ANSI</td></tr>
+            <tr><td><code>terminal.ungu(...teks)</code></td><td>Mewarnai output teks menjadi warna ungu/magenta ANSI</td></tr>
+            <tr><td><code>terminal.sian(...teks)</code></td><td>Mewarnai output teks menjadi warna sian ANSI</td></tr>
+            <tr><td><code>terminal.tebal(...teks)</code></td><td>Menjadikan gaya teks tercetak tebal (bold)</td></tr>
+            <tr><td><code>terminal.garisBawah(...teks)</code></td><td>Menjadikan teks bergaris bawah (underline)</td></tr>
+            <tr><td><code>terminal.bersihkan()</code></td><td>Membersihkan layar terminal konsol</td></tr>
+            <tr><td><code>terminal.sembunyikanKursor()</code></td><td>Menyembunyikan kursor terminal (berguna untuk progress bar)</td></tr>
+            <tr><td><code>terminal.tampilkanKursor()</code></td><td>Menampilkan kembali kursor terminal</td></tr>
+          </tbody>
+        </table>
+        <pre><code>cetak.tulis(terminal.hijau("✔ Operasi Berhasil!"))
+cetak.tulis(terminal.merah("✖ Terjadi Kesalahan Kritis!"))
+cetak.tulis(terminal.tebal(terminal.kuning("Peringatan: Kapasitas RAM menipis")))</code></pre>
       </section>
 
       <!-- Modul Standar: Matematika -->

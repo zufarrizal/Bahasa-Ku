@@ -942,6 +942,33 @@ func InitGlobalEnvironment() *Environment {
 			return &Integer{Value: int64(runtime.NumCPU())}
 		},
 	}
+	sistemMap.Pairs["kunci"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			var mu sync.Mutex
+			kunciMap := &Map{Pairs: make(map[string]Object)}
+			kunciMap.Pairs["kunci"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					mu.Lock()
+					return NIL
+				},
+			}
+			kunciMap.Pairs["buka"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					mu.Unlock()
+					return NIL
+				},
+			}
+			kunciMap.Pairs["cobaKunci"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					if mu.TryLock() {
+						return TRUE
+					}
+					return FALSE
+				},
+			}
+			return kunciMap
+		},
+	}
 	env.Set("sistem", sistemMap)
 
 	// Modul jaringan (HTTP Client / Fetch API)
@@ -2385,7 +2412,62 @@ func InitGlobalEnvironment() *Environment {
 			return &String{Value: ""}
 		},
 	}
+	masukanMap.Pairs["rahasia"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) >= 1 {
+				fmt.Print(args[0].Inspect())
+			}
+			scanner := bufio.NewScanner(os.Stdin)
+			if scanner.Scan() {
+				return &String{Value: scanner.Text()}
+			}
+			return &String{Value: ""}
+		},
+	}
 	env.Set("masukan", masukanMap)
+
+	// Modul terminal (Warna ANSI & Utilitas Terminal CLI)
+	terminalMap := &Map{Pairs: make(map[string]Object)}
+	wrapColor := func(prefix, suffix string) *Builtin {
+		return &Builtin{
+			Fn: func(args ...Object) Object {
+				parts := []string{}
+				for _, a := range args {
+					parts = append(parts, a.Inspect())
+				}
+				return &String{Value: prefix + strings.Join(parts, " ") + suffix}
+			},
+		}
+	}
+	terminalMap.Pairs["hitam"] = wrapColor("\033[30m", "\033[0m")
+	terminalMap.Pairs["merah"] = wrapColor("\033[31m", "\033[0m")
+	terminalMap.Pairs["hijau"] = wrapColor("\033[32m", "\033[0m")
+	terminalMap.Pairs["kuning"] = wrapColor("\033[33m", "\033[0m")
+	terminalMap.Pairs["biru"] = wrapColor("\033[34m", "\033[0m")
+	terminalMap.Pairs["ungu"] = wrapColor("\033[35m", "\033[0m")
+	terminalMap.Pairs["sian"] = wrapColor("\033[36m", "\033[0m")
+	terminalMap.Pairs["putih"] = wrapColor("\033[37m", "\033[0m")
+	terminalMap.Pairs["tebal"] = wrapColor("\033[1m", "\033[0m")
+	terminalMap.Pairs["garisBawah"] = wrapColor("\033[4m", "\033[0m")
+	terminalMap.Pairs["bersihkan"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			fmt.Print("\033[2J\033[H")
+			return NIL
+		},
+	}
+	terminalMap.Pairs["sembunyikanKursor"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			fmt.Print("\033[?25l")
+			return NIL
+		},
+	}
+	terminalMap.Pairs["tampilkanKursor"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			fmt.Print("\033[?25h")
+			return NIL
+		},
+	}
+	env.Set("terminal", terminalMap)
 
 	// Bawaan: panjang & tambah
 	env.Set("panjang", &Builtin{
@@ -3105,7 +3187,194 @@ func InitGlobalEnvironment() *Environment {
 			return &Float{Value: 0}
 		},
 	}
+	waktuMap.Pairs["setelah"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return NIL
+			}
+			var ms int64 = 1000
+			if i, ok := args[0].(*Integer); ok {
+				ms = i.Value
+			}
+			fnObj, isFn := args[1].(*Function)
+			if !isFn {
+				return NIL
+			}
+			go func() {
+				time.Sleep(time.Duration(ms) * time.Millisecond)
+				applyFunction(fnObj, []Object{}, env)
+			}()
+			return NIL
+		},
+	}
+	waktuMap.Pairs["setiap"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return NIL
+			}
+			var ms int64 = 1000
+			if i, ok := args[0].(*Integer); ok {
+				ms = i.Value
+			}
+			fnObj, isFn := args[1].(*Function)
+			if !isFn {
+				return NIL
+			}
+			stopCh := make(chan struct{})
+			go func() {
+				ticker := time.NewTicker(time.Duration(ms) * time.Millisecond)
+				defer ticker.Stop()
+				for {
+					select {
+					case <-ticker.C:
+						applyFunction(fnObj, []Object{}, env)
+					case <-stopCh:
+						return
+					}
+				}
+			}()
+			timerMap := &Map{Pairs: make(map[string]Object)}
+			timerMap.Pairs["hentikan"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					select {
+					case <-stopCh:
+					default:
+						close(stopCh)
+					}
+					return NIL
+				},
+			}
+			return timerMap
+		},
+	}
 	env.Set("waktu", waktuMap)
+
+	// Modul angka (Operasi Bitwise & Representasi Basis Angka)
+	angkaMap := &Map{Pairs: make(map[string]Object)}
+	angkaMap.Pairs["biner"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: "0"}
+			}
+			var val int64
+			if i, ok := args[0].(*Integer); ok {
+				val = i.Value
+			}
+			return &String{Value: strconv.FormatInt(val, 2)}
+		},
+	}
+	angkaMap.Pairs["heksa"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: "0"}
+			}
+			var val int64
+			if i, ok := args[0].(*Integer); ok {
+				val = i.Value
+			}
+			return &String{Value: strconv.FormatInt(val, 16)}
+		},
+	}
+	angkaMap.Pairs["oktal"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: "0"}
+			}
+			var val int64
+			if i, ok := args[0].(*Integer); ok {
+				val = i.Value
+			}
+			return &String{Value: strconv.FormatInt(val, 8)}
+		},
+	}
+	angkaMap.Pairs["geserKiri"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return &Integer{Value: 0}
+			}
+			var val, shift int64
+			if i, ok := args[0].(*Integer); ok {
+				val = i.Value
+			}
+			if s, ok := args[1].(*Integer); ok {
+				shift = s.Value
+			}
+			return &Integer{Value: val << shift}
+		},
+	}
+	angkaMap.Pairs["geserKanan"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return &Integer{Value: 0}
+			}
+			var val, shift int64
+			if i, ok := args[0].(*Integer); ok {
+				val = i.Value
+			}
+			if s, ok := args[1].(*Integer); ok {
+				shift = s.Value
+			}
+			return &Integer{Value: val >> shift}
+		},
+	}
+	angkaMap.Pairs["dan"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return &Integer{Value: 0}
+			}
+			var a, b int64
+			if i, ok := args[0].(*Integer); ok {
+				a = i.Value
+			}
+			if i, ok := args[1].(*Integer); ok {
+				b = i.Value
+			}
+			return &Integer{Value: a & b}
+		},
+	}
+	angkaMap.Pairs["atau"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return &Integer{Value: 0}
+			}
+			var a, b int64
+			if i, ok := args[0].(*Integer); ok {
+				a = i.Value
+			}
+			if i, ok := args[1].(*Integer); ok {
+				b = i.Value
+			}
+			return &Integer{Value: a | b}
+		},
+	}
+	angkaMap.Pairs["xor"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return &Integer{Value: 0}
+			}
+			var a, b int64
+			if i, ok := args[0].(*Integer); ok {
+				a = i.Value
+			}
+			if i, ok := args[1].(*Integer); ok {
+				b = i.Value
+			}
+			return &Integer{Value: a ^ b}
+		},
+	}
+	angkaMap.Pairs["tidak"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &Integer{Value: 0}
+			}
+			var a int64
+			if i, ok := args[0].(*Integer); ok {
+				a = i.Value
+			}
+			return &Integer{Value: ^a}
+		},
+	}
+	env.Set("angka", angkaMap)
 
 	// Modul pola (Ekspresi Reguler / Regex)
 	polaMap := &Map{Pairs: make(map[string]Object)}

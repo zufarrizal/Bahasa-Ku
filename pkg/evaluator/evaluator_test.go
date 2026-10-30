@@ -163,3 +163,50 @@ fungsi utama() {
 		t.Errorf("Diharapkan 100, didapat %d", intVal.Value)
 	}
 }
+
+func TestSistemKunciDanAngka(t *testing.T) {
+	input := `
+paket utama
+fungsi utama() {
+    var k = sistem.kunci()
+    k.kunci()
+    var bisa = k.cobaKunci()
+    jika bisa {
+        kembalikan 1
+    }
+    k.buka()
+
+    // Uji modul angka bitwise & konversi
+    var binerStr = angka.biner(10) // "1010"
+    jika binerStr != "1010" {
+        kembalikan 2
+    }
+    var heksaStr = angka.heksa(255) // "ff"
+    jika heksaStr != "ff" {
+        kembalikan 3
+    }
+    var geser = angka.geserKiri(1, 4) // 16
+    jika geser != 16 {
+        kembalikan 4
+    }
+    var dan = angka.dan(7, 3) // 3
+    jika dan != 3 {
+        kembalikan 5
+    }
+    var warna = terminal.merah("Bahasa Ku")
+    jika warna == "" {
+        kembalikan 6
+    }
+
+    kembalikan 200
+}
+`
+	val := runKuCode(input)
+	intVal, ok := val.(*evaluator.Integer)
+	if !ok {
+		t.Fatalf("Nilai bukan Integer: %v", val)
+	}
+	if intVal.Value != 200 {
+		t.Errorf("Diharapkan 200, didapat %d", intVal.Value)
+	}
+}
