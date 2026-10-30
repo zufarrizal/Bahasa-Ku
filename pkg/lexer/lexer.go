@@ -1,6 +1,8 @@
 package lexer
 
 import (
+	"strings"
+
 	"github.com/zufarrizal/bahasa-ku/pkg/token"
 )
 
@@ -292,38 +294,57 @@ func (l *Lexer) readNumber() (string, bool) {
 }
 
 func (l *Lexer) readString(quote byte) string {
-	l.readChar()
-	pos := l.position
-	res := ""
+	l.readChar() // lewati opening quote
+	startPos := l.position
 	for l.ch != quote && l.ch != 0 {
 		if l.ch == '\\' {
 			l.readChar()
-			switch l.ch {
-			case 'n':
-				res += "\n"
-			case 't':
-				res += "\t"
-			case 'r':
-				res += "\r"
-			case '"':
-				res += "\""
-			case '\\':
-				res += "\\"
-			default:
-				res += string(l.ch)
-			}
-		} else {
-			if l.ch == '\n' {
-				l.line++
-				l.column = 0
-			}
-			res += string(l.ch)
+		}
+		if l.ch == '\n' {
+			l.line++
+			l.column = 0
 		}
 		l.readChar()
 	}
-	l.readChar() // skip closing quote
-	_ = pos
-	return res
+	raw := l.input[startPos:l.position]
+	l.readChar() // lewati closing quote
+
+	// Jika tidak ada karakter escape '\', return langsung slice substring asli (UTF-8 terjaga sempurna)
+	hasEscape := false
+	for i := 0; i < len(raw); i++ {
+		if raw[i] == '\\' {
+			hasEscape = true
+			break
+		}
+	}
+	if !hasEscape {
+		return raw
+	}
+
+	// Tangani escape sequences jika ada
+	var sb strings.Builder
+	for i := 0; i < len(raw); i++ {
+		if raw[i] == '\\' && i+1 < len(raw) {
+			i++
+			switch raw[i] {
+			case 'n':
+				sb.WriteByte('\n')
+			case 't':
+				sb.WriteByte('\t')
+			case 'r':
+				sb.WriteByte('\r')
+			case '"':
+				sb.WriteByte('"')
+			case '\\':
+				sb.WriteByte('\\')
+			default:
+				sb.WriteByte(raw[i])
+			}
+		} else {
+			sb.WriteByte(raw[i])
+		}
+	}
+	return sb.String()
 }
 
 func isLetter(ch byte) bool {

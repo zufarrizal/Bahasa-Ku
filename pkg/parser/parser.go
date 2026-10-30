@@ -123,6 +123,20 @@ func (p *Parser) parseStatement() ast.Statement {
 		return nil
 	}
 
+	// Cek apakah label statement: Identifier diikuti ':' lalu bukan ':='
+	if p.curTokenIs(token.IDENT) && p.peekTokenIs(token.COLON) {
+		labelTok := p.curToken
+		labelName := p.curToken.Literal
+		p.nextToken() // ke ':'
+		p.nextToken() // ke statement berikutnya setelah label
+		stmt := p.parseStatement()
+		return &ast.LabeledStatement{
+			Token:     labelTok,
+			Label:     labelName,
+			Statement: stmt,
+		}
+	}
+
 	switch p.curToken.Type {
 	case token.PAKET:
 		return p.parsePaketStatement()
@@ -150,12 +164,20 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseTryCatchStatement()
 	case token.HENTI:
 		stmt := &ast.BreakStatement{Token: p.curToken}
+		if p.peekTokenIs(token.IDENT) {
+			p.nextToken()
+			stmt.Label = p.curToken.Literal
+		}
 		if p.peekTokenIs(token.SEMICOLON) {
 			p.nextToken()
 		}
 		return stmt
 	case token.LANJUT:
 		stmt := &ast.ContinueStatement{Token: p.curToken}
+		if p.peekTokenIs(token.IDENT) {
+			p.nextToken()
+			stmt.Label = p.curToken.Literal
+		}
 		if p.peekTokenIs(token.SEMICOLON) {
 			p.nextToken()
 		}

@@ -77,6 +77,7 @@ func (rs *ReturnStatement) TokenLiteral() string { return rs.Token.Literal }
 
 type BreakStatement struct {
 	Token token.Token // token.HENTI
+	Label string      // label opsional: henti Luar
 }
 
 func (bs *BreakStatement) statementNode()       {}
@@ -84,6 +85,7 @@ func (bs *BreakStatement) TokenLiteral() string { return bs.Token.Literal }
 
 type ContinueStatement struct {
 	Token token.Token // token.LANJUT
+	Label string      // label opsional: lanjut Luar
 }
 
 func (cs *ContinueStatement) statementNode()       {}
@@ -211,6 +213,15 @@ type ForStatement struct {
 
 func (fs *ForStatement) statementNode()       {}
 func (fs *ForStatement) TokenLiteral() string { return fs.Token.Literal }
+
+type LabeledStatement struct {
+	Token token.Token // Identifier label token
+	Label string
+	Statement Statement
+}
+
+func (ls *LabeledStatement) statementNode()       {}
+func (ls *LabeledStatement) TokenLiteral() string { return ls.Token.Literal }
 
 type SwitchCase struct {
 	Value  Expression   // Nilai tunggal utama (backward-compatible)

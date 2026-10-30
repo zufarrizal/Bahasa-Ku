@@ -217,10 +217,19 @@ func (t *Transpiler) Transpile(node ast.Node) string {
 		return "return"
 
 	case *ast.BreakStatement:
+		if n.Label != "" {
+			return fmt.Sprintf("break %s", n.Label)
+		}
 		return "break"
 
 	case *ast.ContinueStatement:
+		if n.Label != "" {
+			return fmt.Sprintf("continue %s", n.Label)
+		}
 		return "continue"
+
+	case *ast.LabeledStatement:
+		return fmt.Sprintf("%s:\n%s", n.Label, t.Transpile(n.Statement))
 
 	case *ast.TryCatchStatement:
 		var sb strings.Builder

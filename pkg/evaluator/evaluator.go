@@ -110,15 +110,29 @@ type Nil struct{}
 func (n *Nil) Type() ObjectType { return NIL_OBJ }
 func (n *Nil) Inspect() string  { return "kosong" }
 
-type Break struct{}
+type Break struct {
+	Label string
+}
 
 func (b *Break) Type() ObjectType { return BREAK_OBJ }
-func (b *Break) Inspect() string  { return "henti" }
+func (b *Break) Inspect() string  {
+	if b.Label != "" {
+		return "henti " + b.Label
+	}
+	return "henti"
+}
 
-type Continue struct{}
+type Continue struct {
+	Label string
+}
 
 func (c *Continue) Type() ObjectType { return CONTINUE_OBJ }
-func (c *Continue) Inspect() string  { return "lanjut" }
+func (c *Continue) Inspect() string  {
+	if c.Label != "" {
+		return "lanjut " + c.Label
+	}
+	return "lanjut"
+}
 
 type Fallthrough struct{}
 
@@ -3266,6 +3280,52 @@ func InitGlobalEnvironment() *Environment {
 			return &Integer{Value: int64(len([]byte(args[0].Inspect())))}
 		},
 	}
+	bitaMap.Pairs["karakter"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			// Konversi teks ke array rune Unicode (Code points) ala []rune(str) di Go
+			if len(args) < 1 {
+				return &Array{Elements: []Object{}}
+			}
+			s := args[0].Inspect()
+			runes := []rune(s)
+			elems := make([]Object, len(runes))
+			for i, r := range runes {
+				elems[i] = &Integer{Value: int64(r)}
+			}
+			return &Array{Elements: elems}
+		},
+	}
+	bitaMap.Pairs["dariKarakter"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			// Konversi array rune Unicode kembali ke teks string: string([]rune)
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			arr, ok := args[0].(*Array)
+			if !ok {
+				if i, isInt := args[0].(*Integer); isInt {
+					return &String{Value: string(rune(i.Value))}
+				}
+				return &String{Value: ""}
+			}
+			runes := make([]rune, len(arr.Elements))
+			for i, e := range arr.Elements {
+				if intObj, isInt := e.(*Integer); isInt {
+					runes[i] = rune(intObj.Value)
+				}
+			}
+			return &String{Value: string(runes)}
+		},
+	}
+	bitaMap.Pairs["jumlahKarakter"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			// Menghitung jumlah karakter Unicode asli (bukan ukuran byte mentah)
+			if len(args) < 1 {
+				return &Integer{Value: 0}
+			}
+			return &Integer{Value: int64(len([]rune(args[0].Inspect())))}
+		},
+	}
 	env.Set("bita", bitaMap)
 
 	// Modul acak (Pengacakan Lanjutan & Pemilihan Data)
@@ -6382,10 +6442,10 @@ func Eval(node ast.Node, env *Environment) Object {
 		}
 
 	case *ast.BreakStatement:
-		return &Break{}
+		return &Break{Label: n.Label}
 
 	case *ast.ContinueStatement:
-		return &Continue{}
+		return &Continue{Label: n.Label}
 
 	case *ast.FallthroughStatement:
 		return &Fallthrough{}
@@ -6464,6 +6524,42 @@ func Eval(node ast.Node, env *Environment) Object {
 		}
 		return result
 
+	case *ast.LabeledStatement:
+		// Jika statement adalah perulangan, jalankan dengan penanganan continue bertarget label ini
+		if forStmt, ok := n.Statement.(*ast.ForStatement); ok {
+			for {
+				res := Eval(forStmt, env)
+				if res != nil {
+					if b, isBreak := res.(*Break); isBreak {
+						if b.Label == n.Label {
+							return NIL
+						}
+						return b // bubble up ke outer label
+					}
+					if c, isCont := res.(*Continue); isCont {
+						if c.Label == n.Label {
+							// Continue pada loop terluar berlabel ini
+							continue
+						}
+						return c // bubble up ke outer label
+					}
+					return res
+				}
+				return NIL
+			}
+		}
+
+		res := Eval(n.Statement, env)
+		if res != nil {
+			if b, ok := res.(*Break); ok && b.Label == n.Label {
+				return NIL
+			}
+			if c, ok := res.(*Continue); ok && c.Label == n.Label {
+				return NIL
+			}
+		}
+		return res
+
 	case *ast.IfStatement:
 		ifEnv := env
 		if n.Init != nil {
@@ -6496,9 +6592,15 @@ func Eval(node ast.Node, env *Environment) Object {
 							return res
 						}
 						if res.Type() == BREAK_OBJ {
+							if b, ok := res.(*Break); ok && b.Label != "" {
+								return res
+							}
 							break
 						}
 						if res.Type() == CONTINUE_OBJ {
+							if c, ok := res.(*Continue); ok && c.Label != "" {
+								return res
+							}
 							continue
 						}
 					}
@@ -6518,12 +6620,52 @@ func Eval(node ast.Node, env *Environment) Object {
 							return res
 						}
 						if res.Type() == BREAK_OBJ {
+							if b, ok := res.(*Break); ok && b.Label != "" {
+								return res
+							}
 							break
 						}
 						if res.Type() == CONTINUE_OBJ {
+							if c, ok := res.(*Continue); ok && c.Label != "" {
+								return res
+							}
 							continue
 						}
 					}
+				}
+				return NIL
+			} else if str, ok := iterObj.(*String); ok {
+				// Iterasi rentang string: indeks integer & rune karakter Unicode
+				runes := []rune(str.Value)
+				byteOffset := int64(0)
+				for i, r := range runes {
+					if n.Key != nil {
+						loopEnv.Set(n.Key.Value, &Integer{Value: byteOffset})
+					}
+					if n.Value != nil {
+						loopEnv.Set(n.Value.Value, &Integer{Value: int64(r)})
+					}
+					res := Eval(n.Body, loopEnv)
+					if res != nil {
+						if res.Type() == RETURN_VALUE_OBJ {
+							return res
+						}
+						if res.Type() == BREAK_OBJ {
+							if b, ok := res.(*Break); ok && b.Label != "" {
+								return res
+							}
+							break
+						}
+						if res.Type() == CONTINUE_OBJ {
+							if c, ok := res.(*Continue); ok && c.Label != "" {
+								return res
+							}
+							byteOffset += int64(len(string(r)))
+							continue
+						}
+					}
+					byteOffset += int64(len(string(r)))
+					_ = i
 				}
 				return NIL
 			}
@@ -6547,9 +6689,15 @@ func Eval(node ast.Node, env *Environment) Object {
 					return result
 				}
 				if result.Type() == BREAK_OBJ {
+					if b, ok := result.(*Break); ok && b.Label != "" {
+						return result
+					}
 					break
 				}
 				if result.Type() == CONTINUE_OBJ {
+					if c, ok := result.(*Continue); ok && c.Label != "" {
+						return result
+					}
 					if n.Post != nil {
 						Eval(n.Post, loopEnv)
 					}
@@ -6730,7 +6878,12 @@ func Eval(node ast.Node, env *Environment) Object {
 		}
 
 		idx := Eval(n.Index, env)
-		if arr, ok := left.(*Array); ok {
+		if str, ok := left.(*String); ok {
+			// Pengindeksan string str[i] mengembalikan byte mentah (uint8/int64) ala Go
+			if i, ok := idx.(*Integer); ok && i.Value >= 0 && i.Value < int64(len(str.Value)) {
+				return &Integer{Value: int64(str.Value[i.Value])}
+			}
+		} else if arr, ok := left.(*Array); ok {
 			if i, ok := idx.(*Integer); ok && i.Value >= 0 && i.Value < int64(len(arr.Elements)) {
 				return arr.Elements[i.Value]
 			}

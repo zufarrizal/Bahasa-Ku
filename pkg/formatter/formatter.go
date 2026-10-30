@@ -197,10 +197,19 @@ func (f *Formatter) Format(node ast.Node) string {
 		return "kembalikan"
 
 	case *ast.BreakStatement:
+		if n.Label != "" {
+			return fmt.Sprintf("henti %s", n.Label)
+		}
 		return "henti"
 
 	case *ast.ContinueStatement:
+		if n.Label != "" {
+			return fmt.Sprintf("lanjut %s", n.Label)
+		}
 		return "lanjut"
+
+	case *ast.LabeledStatement:
+		return fmt.Sprintf("%s:\n%s", n.Label, f.Format(n.Statement))
 
 	case *ast.TryCatchStatement:
 		res := "coba " + f.Format(n.TryBlock)

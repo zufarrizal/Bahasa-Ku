@@ -571,6 +571,17 @@ untuk angka <= 10 {
     }
     cetak.tulis("Nilai:", i)
 }</code></pre>
+
+        <h3>5. Labelled Loops (Break & Continue dengan Label)</h3>
+        <p>Keluar dari loop bersarang secara langsung menggunakan nama label (ala <code>break Label</code> / <code>continue Label</code> di Go):</p>
+        <pre><code>Luar:
+untuk var baris = 1; baris <= 5; baris = baris + 1 {
+    untuk var kolom = 1; kolom <= 5; kolom = kolom + 1 {
+        jika baris == 2 && kolom == 3 {
+            henti Luar // Langsung menghentikan perulangan terluar 'Luar'
+        }
+    }
+}</code></pre>
       </section>
 
       <!-- Fungsi & Closure -->
@@ -1354,10 +1365,26 @@ jika dataPengguna != kosong {
             <tr><td><code>bita.dariTeks(str)</code></td><td>Mengubah string menjadi larik angka byte (0..255)</td></tr>
             <tr><td><code>bita.keTeks(arr)</code></td><td>Mengubah larik angka byte kembali ke string teks</td></tr>
             <tr><td><code>bita.panjang(str)</code></td><td>Menghitung total panjang byte data</td></tr>
+            <tr><td><code>bita.karakter(str)</code></td><td>Mengubah string menjadi larik rune Unicode code point (ala []rune di Go)</td></tr>
+            <tr><td><code>bita.dariKarakter(arr|int)</code></td><td>Mengubah larik kode poin atau integer rune kembali ke string Unicode</td></tr>
+            <tr><td><code>bita.jumlahKarakter(str)</code></td><td>Menghitung jumlah karakter Unicode asli (bukan ukuran byte mentah)</td></tr>
           </tbody>
         </table>
         <pre><code>var bs = bita.dariTeks("Ku") // [75, 117]
-var teks = bita.keTeks(bs)   // "Ku"</code></pre>
+var teks = bita.keTeks(bs)   // "Ku"
+
+// Penanganan Unicode Rune:
+var runes = bita.karakter("Go世界") // [71, 111, 19990, 30028]
+var strAsli = bita.dariKarakter(runes) // "Go世界"
+var nKarakter = bita.jumlahKarakter("Go世界") // 4
+
+// Pengindeksan byte langsung ala s[i] di Go:
+var bytePertama = strAsli[0] // 71 (ASCII 'G')
+
+// Iterasi karakter string ala for i, r := range str di Go:
+untuk byteOffset, kodeRune dalam "Go世界" {
+    cetak.tulis("Offset:", byteOffset, "Karakter:", bita.dariKarakter(kodeRune))
+}</code></pre>
       </section>
 
 <section id="modul-enkoding" class="docs-section">
