@@ -393,56 +393,248 @@ func InitGlobalEnvironment() *Environment {
 	}
 	env.Set("cetak", cetakMap)
 
-	// Modul web bawaan
-	webMap := &Map{Pairs: make(map[string]Object)}
-	webMap.Pairs["tangani"] = &Builtin{
-		Fn: func(args ...Object) Object {
-			if len(args) < 2 {
-				return NIL
+	// Modul web bawaan (REST API Router & Static Server)
+	type webRoute struct {
+		method  string
+		pattern string
+		parts   []string
+		handler Object
+	}
+	var webRoutes []webRoute
+	var webStaticPrefix, webStaticDir string
+	var corsEnabled bool
+	var webMutex sync.Mutex
+
+	registerRoute := func(method, pattern string, fn Object) {
+		webMutex.Lock()
+		defer webMutex.Unlock()
+		cleaned := strings.Trim(pattern, "/")
+		var parts []string
+		if cleaned != "" {
+			parts = strings.Split(cleaned, "/")
+		}
+		webRoutes = append(webRoutes, webRoute{
+			method:  method,
+			pattern: pattern,
+			parts:   parts,
+			handler: fn,
+		})
+	}
+
+	matchRoute := func(reqMethod, reqPath string) (*webRoute, map[string]string) {
+		webMutex.Lock()
+		defer webMutex.Unlock()
+		cleaned := strings.Trim(reqPath, "/")
+		var reqParts []string
+		if cleaned != "" {
+			reqParts = strings.Split(cleaned, "/")
+		}
+
+		for _, r := range webRoutes {
+			if r.method != "ALL" && r.method != reqMethod {
+				continue
 			}
-			pathStr := args[0].Inspect()
-			fnObj := args[1]
-
-			http.HandleFunc(pathStr, func(w http.ResponseWriter, r *http.Request) {
-				reqMap := &Map{Pairs: make(map[string]Object)}
-				reqMap.Pairs["metode"] = &String{Value: r.Method}
-				reqMap.Pairs["jalur"] = &String{Value: r.URL.Path}
-
-				respObj := applyFunction(fnObj, []Object{reqMap}, env)
-				if respObj == nil || respObj == NIL {
-					return
+			if len(r.parts) != len(reqParts) {
+				continue
+			}
+			matched := true
+			params := make(map[string]string)
+			for i, p := range r.parts {
+				if strings.HasPrefix(p, ":") {
+					paramName := strings.TrimPrefix(p, ":")
+					params[paramName] = reqParts[i]
+				} else if p != reqParts[i] {
+					matched = false
+					break
 				}
+			}
+			if matched {
+				return &r, params
+			}
+		}
+		return nil, nil
+	}
 
-				if m, ok := respObj.(*Map); ok {
-					// Balas sebagai JSON
-					data := make(map[string]interface{})
-					for k, v := range m.Pairs {
-						data[k] = v.Inspect()
-					}
-					w.Header().Set("Content-Type", "application/json")
-					json.NewEncoder(w).Encode(data)
-					return
-				}
+	webMap := &Map{Pairs: make(map[string]Object)}
 
-				w.Header().Set("Content-Type", "text/html; charset=utf-8")
-				w.Write([]byte(respObj.Inspect()))
-			})
-			return NIL
+	webMap.Pairs["aktifkanCORS"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			corsEnabled = true
+			return TRUE
 		},
 	}
+
+	webMap.Pairs["berkasStatis"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return FALSE
+			}
+			webStaticPrefix = args[0].Inspect()
+			webStaticDir = args[1].Inspect()
+			return TRUE
+		},
+	}
+
+	addRouteMethod := func(httpMethod string) *Builtin {
+		return &Builtin{
+			Fn: func(args ...Object) Object {
+				if len(args) < 2 {
+					return NIL
+				}
+				registerRoute(httpMethod, args[0].Inspect(), args[1])
+				return NIL
+			},
+		}
+	}
+
+	webMap.Pairs["tangani"] = addRouteMethod("ALL")
+	webMap.Pairs["rute"] = addRouteMethod("ALL")
+	webMap.Pairs["dapatkan"] = addRouteMethod("GET")
+	webMap.Pairs["pos"] = addRouteMethod("POST")
+	webMap.Pairs["taruh"] = addRouteMethod("PUT")
+	webMap.Pairs["hapus"] = addRouteMethod("DELETE")
+
+	webHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if corsEnabled {
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+			if r.Method == "OPTIONS" {
+				w.WriteHeader(http.StatusOK)
+				return
+			}
+		}
+
+		// Sajikan berkas statis jika prefix cocok
+		if webStaticPrefix != "" && strings.HasPrefix(r.URL.Path, webStaticPrefix) {
+			relPath := strings.TrimPrefix(r.URL.Path, webStaticPrefix)
+			filePath := filepath.Join(webStaticDir, relPath)
+			if fi, err := os.Stat(filePath); err == nil && !fi.IsDir() {
+				http.ServeFile(w, r, filePath)
+				return
+			}
+		}
+
+		route, params := matchRoute(r.Method, r.URL.Path)
+		if route == nil {
+			http.NotFound(w, r)
+			return
+		}
+
+		// Susun objek permintaan
+		reqMap := &Map{Pairs: make(map[string]Object)}
+		reqMap.Pairs["metode"] = &String{Value: r.Method}
+		reqMap.Pairs["jalur"] = &String{Value: r.URL.Path}
+
+		paramsMap := &Map{Pairs: make(map[string]Object)}
+		for k, v := range params {
+			paramsMap.Pairs[k] = &String{Value: v}
+		}
+		reqMap.Pairs["params"] = paramsMap
+
+		kueriMap := &Map{Pairs: make(map[string]Object)}
+		for k, v := range r.URL.Query() {
+			if len(v) > 0 {
+				kueriMap.Pairs[k] = &String{Value: v[0]}
+			}
+		}
+		reqMap.Pairs["kueri"] = kueriMap
+
+		headerMap := &Map{Pairs: make(map[string]Object)}
+		for k, v := range r.Header {
+			if len(v) > 0 {
+				headerMap.Pairs[k] = &String{Value: v[0]}
+			}
+		}
+		reqMap.Pairs["header"] = headerMap
+
+		bodyBytes, _ := io.ReadAll(r.Body)
+		reqMap.Pairs["badan"] = &String{Value: string(bodyBytes)}
+
+		// Susun objek respons
+		respMap := &Map{Pairs: make(map[string]Object)}
+		respMap.Pairs["status"] = &Builtin{
+			Fn: func(mArgs ...Object) Object {
+				if len(mArgs) > 0 {
+					if i, ok := mArgs[0].(*Integer); ok {
+						w.WriteHeader(int(i.Value))
+					}
+				}
+				return respMap
+			},
+		}
+		respMap.Pairs["header"] = &Builtin{
+			Fn: func(mArgs ...Object) Object {
+				if len(mArgs) >= 2 {
+					w.Header().Set(mArgs[0].Inspect(), mArgs[1].Inspect())
+				}
+				return respMap
+			},
+		}
+		respMap.Pairs["teks"] = &Builtin{
+			Fn: func(mArgs ...Object) Object {
+				if len(mArgs) > 0 {
+					w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+					w.Write([]byte(mArgs[0].Inspect()))
+				}
+				return NIL
+			},
+		}
+		respMap.Pairs["html"] = &Builtin{
+			Fn: func(mArgs ...Object) Object {
+				if len(mArgs) > 0 {
+					w.Header().Set("Content-Type", "text/html; charset=utf-8")
+					w.Write([]byte(mArgs[0].Inspect()))
+				}
+				return NIL
+			},
+		}
+		respMap.Pairs["json"] = &Builtin{
+			Fn: func(mArgs ...Object) Object {
+				if len(mArgs) > 0 {
+					goObj := convertKuToGoObject(mArgs[0])
+					b, _ := json.Marshal(goObj)
+					w.Header().Set("Content-Type", "application/json")
+					w.Write(b)
+				}
+				return NIL
+			},
+		}
+
+		// Panggil fungsi handler: bisa fungsi(permintaan, respons) atau fungsi(permintaan) kembalikan nilai
+		respObj := applyFunction(route.handler, []Object{reqMap, respMap}, env)
+		if respObj != nil && respObj != NIL {
+			if m, ok := respObj.(*Map); ok {
+				goObj := convertKuToGoObject(m)
+				b, _ := json.Marshal(goObj)
+				w.Header().Set("Content-Type", "application/json")
+				w.Write(b)
+			} else if s, ok := respObj.(*String); ok {
+				w.Header().Set("Content-Type", "text/html; charset=utf-8")
+				w.Write([]byte(s.Value))
+			}
+		}
+	})
+
 	webMap.Pairs["dengarkan"] = &Builtin{
 		Fn: func(args ...Object) Object {
 			if len(args) < 1 {
 				return NIL
 			}
 			addr := args[0].Inspect()
-			err := http.ListenAndServe(addr, nil)
+			if i, ok := args[0].(*Integer); ok {
+				addr = fmt.Sprintf(":%d", i.Value)
+			} else if !strings.Contains(addr, ":") {
+				addr = ":" + addr
+			}
+			err := http.ListenAndServe(addr, webHandler)
 			if err != nil {
 				fmt.Printf("Galat server web: %v\n", err)
 			}
 			return NIL
 		},
 	}
+	webMap.Pairs["jalankan"] = webMap.Pairs["dengarkan"]
 	env.Set("web", webMap)
 
 	// Modul desktop: jendela

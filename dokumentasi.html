@@ -1334,11 +1334,48 @@ cetak.tulis("Jalur:", u["jalur"])   // /v1/users</code></pre>
 
       <!-- Modul Standar: Web -->
       <section id="modul-web" class="docs-section">
-        <h2>Modul `web` (HTTP Web Server REST API)</h2>
-        <p>Membangun server web mikro dan perutean endpoint JSON dengan cepat:</p>
-        <pre><code>web.rute("/", fungsi(permintaan, respons) {
-    respons.json({"pesan": "Selamat datang di API Bahasa Ku!"})
+        <h2>Modul `web` (REST API Server & Berkas Statis)</h2>
+        <p>Membangun server backend REST API mikro, perutean metode HTTP terstruktur, parameter rute dinamis (<code>:id</code>), CORS, dan penyajian berkas statis:</p>
+        <table>
+          <thead>
+            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>web.dapatkan(jalur, fn)</code></td><td>Mendaftarkan rute khusus metode HTTP <code>GET</code></td></tr>
+            <tr><td><code>web.pos(jalur, fn)</code></td><td>Mendaftarkan rute khusus metode HTTP <code>POST</code></td></tr>
+            <tr><td><code>web.taruh(jalur, fn)</code></td><td>Mendaftarkan rute khusus metode HTTP <code>PUT</code></td></tr>
+            <tr><td><code>web.hapus(jalur, fn)</code></td><td>Mendaftarkan rute khusus metode HTTP <code>DELETE</code></td></tr>
+            <tr><td><code>web.rute(jalur, fn)</code> / <code>tangani</code></td><td>Mendaftarkan rute untuk seluruh metode HTTP</td></tr>
+            <tr><td><code>web.aktifkanCORS()</code></td><td>Mengaktifkan header Cross-Origin Resource Sharing (CORS) global</td></tr>
+            <tr><td><code>web.berkasStatis(prefix, folder)</code></td><td>Menyajikan berkas frontend statis dari folder lokal (HTML, CSS, JS, Gambar)</td></tr>
+            <tr><td><code>web.jalankan(port)</code> / <code>dengarkan</code></td><td>Menjalankan server web HTTP pada port yang ditentukan (contoh: <code>8080</code> atau <code>":8080"</code>)</td></tr>
+          </tbody>
+        </table>
+        <pre><code>// 1. Konfigurasi Server & CORS
+web.aktifkanCORS()
+web.berkasStatis("/aset", "./public")
+
+// 2. Rute REST API dengan URL Parameter (:id)
+web.dapatkan("/api/pengguna/:id", fungsi(permintaan, respons) {
+    var id = permintaan["params"]["id"]
+    var filter = permintaan["kueri"]["status"]
+    
+    respons.status(200)
+    respons.json({
+        "id": id,
+        "status": filter,
+        "nama": "Pengguna #" + id
+    })
 })
+
+web.pos("/api/pengguna", fungsi(permintaan, respons) {
+    var badan = permintaan["badan"]
+    // Simpan ke database atau proses...
+    respons.status(201)
+    respons.json({"pesan": "Berhasil dibuat", "data": badan})
+})
+
+// 3. Jalankan Server
 web.jalankan(8080)</code></pre>
       </section>
 
