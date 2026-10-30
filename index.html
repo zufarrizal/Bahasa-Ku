@@ -123,15 +123,7 @@
         <div class="editor-pane">
           <div class="pane-header">
             <span>Editor Kode (.ku)</span>
-            <div style="display: flex; gap: 8px; align-items: center;">
-              <select id="contohKode" onchange="gantiContohKode()" style="background: #111827; color: #9ca3af; border: 1px solid var(--border); padding: 5px 10px; border-radius: 6px; font-size: 0.8rem; font-family: inherit; outline: none; cursor: pointer;">
-                <option value="faktorial">Contoh 1: Faktorial & Rekursi</option>
-                <option value="antarmuka">Contoh 2: Antarmuka (Interface) & Polimorfisme</option>
-                <option value="konkurensi">Contoh 3: Operator Kanal & Konkurensi</option>
-                <option value="komposisi">Contoh 4: Struct Embedding & Komposisi</option>
-              </select>
-              <button class="btn-run" onclick="jalankanPlayground()">▶ Jalankan</button>
-            </div>
+            <button class="btn-run" onclick="jalankanPlayground()">▶ Jalankan</button>
           </div>
           <textarea id="editor" class="editor-textarea" spellcheck="false">paket utama
 
@@ -237,132 +229,6 @@ fungsi utama() {
   <script>
     let wasmReady = false;
     const go = new Go();
-
-    // Koleksi contoh kode interaktif untuk playground
-    const templateKode = {
-      faktorial: `paket utama
-
-pakai "cetak"
-
-fungsi hitungFaktorial(n) {
-    jika n <= 1 {
-        kembalikan 1
-    }
-    kembalikan n * hitungFaktorial(n - 1)
-}
-
-fungsi utama() {
-    cetak.tulis("=== Selamat Datang di Bahasa Ku! ===")
-    
-    var nama = "Dunia"
-    cetak.tulis("Halo,", nama)
-
-    untuk i := 1; i <= 5; i++ {
-        cetak.tulis("Faktorial dari", i, "=", hitungFaktorial(i))
-    }
-}`,
-      antarmuka: `paket utama
-
-pakai "cetak"
-
-// Definisi Antarmuka ala Go
-tipe PenghitungLuas antarmuka {
-    Luas()
-}
-
-tipe Kotak struktur {
-    sisi
-}
-
-fungsi (k Kotak) Luas() {
-    kembalikan k.sisi * k.sisi
-}
-
-tipe Lingkaran struktur {
-    radius
-}
-
-fungsi (l Lingkaran) Luas() {
-    kembalikan 3.14 * l.radius * l.radius
-}
-
-fungsi cetakInfo(bentuk) {
-    pilih b := bentuk.(tipe) {
-    kasus PenghitungLuas:
-        cetak.tulis("Objek memenuhi antarmuka PenghitungLuas! Luas =", b.Luas())
-    bawaan:
-        cetak.tulis("Bukan implementasi PenghitungLuas")
-    }
-}
-
-fungsi utama() {
-    var k = Kotak({"sisi": 7})
-    var l = Lingkaran({"radius": 10})
-
-    cetakInfo(k)
-    cetakInfo(l)
-}`,
-      konkurensi: `paket utama
-
-pakai "cetak"
-pakai "kanal"
-
-fungsi pekerja(ch, pesan) {
-    // Kirim nilai melalui operator kanal <-
-    ch <- pesan
-}
-
-fungsi utama() {
-    cetak.tulis("=== Konkurensi & Operator Kanal <- ===")
-
-    var ch = kanal.buat(2)
-
-    // Luncurkan Ku-routine
-    ku pekerja(ch, "Halo dari Ku-routine 1!")
-    ku pekerja(ch, "Data dari Ku-routine 2!")
-
-    // Terima data via operator <-
-    var pesan1 = <-ch
-    var pesan2 = <-ch
-
-    cetak.tulis("Diterima 1:", pesan1)
-    cetak.tulis("Diterima 2:", pesan2)
-}`,
-      komposisi: `paket utama
-
-pakai "cetak"
-
-tipe Entitas struktur {
-    id
-    aktif
-}
-
-// Struct Embedding (Komposisi Tanpa Pewarisan Tradisional)
-tipe Pengguna struktur {
-    Entitas
-    nama
-}
-
-fungsi utama() {
-    var p = Pengguna({
-        "id": 101,
-        "aktif": benar,
-        "nama": "Zufar"
-    })
-
-    // Akses field terangkat (promoted fields)
-    cetak.tulis("ID Pengguna:", p.id)
-    cetak.tulis("Nama:", p.nama)
-    cetak.tulis("Status Aktif:", p.aktif)
-}`
-    };
-
-    function gantiContohKode() {
-      const pilihan = document.getElementById("contohKode").value;
-      if (templateKode[pilihan]) {
-        document.getElementById("editor").value = templateKode[pilihan];
-      }
-    }
 
     // Memuat WebAssembly Compiler Asli Bahasa Ku
     WebAssembly.instantiateStreaming(fetch("ku.wasm"), go.importObject)
