@@ -12,7 +12,7 @@
 <p align="center">
   <a href="https://zufarrizal.github.io/Bahasa-Ku/" target="_blank">🌐 <b>Situs Resmi & Playground</b></a> &nbsp;|&nbsp;
   <a href="https://zufarrizal.github.io/Bahasa-Ku/dokumentasi.html" target="_blank">📖 <b>Dokumentasi Lengkap</b></a> &nbsp;|&nbsp;
-  <a href="https://github.com/zufarrizal/Bahasa-Ku/releases/tag/v0.2.0">📦 <b>Unduh Biner v0.2.0</b></a>
+  <a href="https://github.com/zufarrizal/Bahasa-Ku/releases/tag/v0.3.0">📦 <b>Unduh Biner v0.3.0</b></a>
 </p>
 
 ---
@@ -50,7 +50,7 @@ curl -fsSL https://raw.githubusercontent.com/zufarrizal/Bahasa-Ku/main/pasang.sh
 ```
 
 ### Alternatif Unduh Manual:
-- Biner siap pakai tersedia di halaman **[Rilis Resmi GitHub](https://github.com/zufarrizal/Bahasa-Ku/releases/tag/v0.2.0)** (`ku-windows-amd64.exe`, `ku-linux-amd64`, `ku-darwin-arm64`).
+- Biner siap pakai tersedia di halaman **[Rilis Resmi GitHub](https://github.com/zufarrizal/Bahasa-Ku/releases/tag/v0.3.0)** (`ku-windows-amd64.exe`, `ku-linux-amd64`, `ku-darwin-arm64`).
 - Atau pasang via Go: `go install github.com/zufarrizal/bahasa-ku/cmd/ku@latest`.
 
 ---

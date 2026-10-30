@@ -18,7 +18,7 @@ import (
 	"github.com/zufarrizal/bahasa-ku/pkg/transpiler"
 )
 
-const version = "0.2.0 (Go Native Edition)"
+const version = "0.3.0 (Go Native Edition)"
 
 func init() {
 	evaluator.RegisterSubFileEvaluator(func(path string, env *evaluator.Environment) {
