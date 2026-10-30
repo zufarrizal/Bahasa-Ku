@@ -106,6 +106,10 @@ func (l *Lexer) NextToken() token.Token {
 			ch := l.ch
 			l.readChar()
 			tok = token.Token{Type: token.INC, Literal: string(ch) + string(l.ch), Line: curLine, Column: curCol}
+		} else if l.peekChar() == '=' {
+			ch := l.ch
+			l.readChar()
+			tok = token.Token{Type: token.PLUS_ASSIGN, Literal: string(ch) + string(l.ch), Line: curLine, Column: curCol}
 		} else {
 			tok = token.Token{Type: token.PLUS, Literal: string(l.ch), Line: curLine, Column: curCol}
 		}
@@ -114,6 +118,10 @@ func (l *Lexer) NextToken() token.Token {
 			ch := l.ch
 			l.readChar()
 			tok = token.Token{Type: token.DEC, Literal: string(ch) + string(l.ch), Line: curLine, Column: curCol}
+		} else if l.peekChar() == '=' {
+			ch := l.ch
+			l.readChar()
+			tok = token.Token{Type: token.MINUS_ASSIGN, Literal: string(ch) + string(l.ch), Line: curLine, Column: curCol}
 		} else {
 			tok = token.Token{Type: token.MINUS, Literal: string(l.ch), Line: curLine, Column: curCol}
 		}
@@ -126,16 +134,38 @@ func (l *Lexer) NextToken() token.Token {
 			tok = token.Token{Type: token.BANG, Literal: string(l.ch), Line: curLine, Column: curCol}
 		}
 	case '*':
-		tok = token.Token{Type: token.ASTERISK, Literal: string(l.ch), Line: curLine, Column: curCol}
+		if l.peekChar() == '=' {
+			ch := l.ch
+			l.readChar()
+			tok = token.Token{Type: token.MUL_ASSIGN, Literal: string(ch) + string(l.ch), Line: curLine, Column: curCol}
+		} else {
+			tok = token.Token{Type: token.ASTERISK, Literal: string(l.ch), Line: curLine, Column: curCol}
+		}
 	case '/':
-		tok = token.Token{Type: token.SLASH, Literal: string(l.ch), Line: curLine, Column: curCol}
+		if l.peekChar() == '=' {
+			ch := l.ch
+			l.readChar()
+			tok = token.Token{Type: token.DIV_ASSIGN, Literal: string(ch) + string(l.ch), Line: curLine, Column: curCol}
+		} else {
+			tok = token.Token{Type: token.SLASH, Literal: string(l.ch), Line: curLine, Column: curCol}
+		}
 	case '%':
-		tok = token.Token{Type: token.MOD, Literal: string(l.ch), Line: curLine, Column: curCol}
+		if l.peekChar() == '=' {
+			ch := l.ch
+			l.readChar()
+			tok = token.Token{Type: token.MOD_ASSIGN, Literal: string(ch) + string(l.ch), Line: curLine, Column: curCol}
+		} else {
+			tok = token.Token{Type: token.MOD, Literal: string(l.ch), Line: curLine, Column: curCol}
+		}
 	case '<':
 		if l.peekChar() == '=' {
 			ch := l.ch
 			l.readChar()
 			tok = token.Token{Type: token.LTE, Literal: string(ch) + string(l.ch), Line: curLine, Column: curCol}
+		} else if l.peekChar() == '<' {
+			ch := l.ch
+			l.readChar()
+			tok = token.Token{Type: token.SHL, Literal: string(ch) + string(l.ch), Line: curLine, Column: curCol}
 		} else {
 			tok = token.Token{Type: token.LT, Literal: string(l.ch), Line: curLine, Column: curCol}
 		}
@@ -144,6 +174,10 @@ func (l *Lexer) NextToken() token.Token {
 			ch := l.ch
 			l.readChar()
 			tok = token.Token{Type: token.GTE, Literal: string(ch) + string(l.ch), Line: curLine, Column: curCol}
+		} else if l.peekChar() == '>' {
+			ch := l.ch
+			l.readChar()
+			tok = token.Token{Type: token.SHR, Literal: string(ch) + string(l.ch), Line: curLine, Column: curCol}
 		} else {
 			tok = token.Token{Type: token.GT, Literal: string(l.ch), Line: curLine, Column: curCol}
 		}
@@ -153,7 +187,7 @@ func (l *Lexer) NextToken() token.Token {
 			l.readChar()
 			tok = token.Token{Type: token.AND, Literal: string(ch) + string(l.ch), Line: curLine, Column: curCol}
 		} else {
-			tok = token.Token{Type: token.ILLEGAL, Literal: string(l.ch), Line: curLine, Column: curCol}
+			tok = token.Token{Type: token.BIT_AND, Literal: string(l.ch), Line: curLine, Column: curCol}
 		}
 	case '|':
 		if l.peekChar() == '|' {
@@ -161,8 +195,10 @@ func (l *Lexer) NextToken() token.Token {
 			l.readChar()
 			tok = token.Token{Type: token.OR, Literal: string(ch) + string(l.ch), Line: curLine, Column: curCol}
 		} else {
-			tok = token.Token{Type: token.ILLEGAL, Literal: string(l.ch), Line: curLine, Column: curCol}
+			tok = token.Token{Type: token.BIT_OR, Literal: string(l.ch), Line: curLine, Column: curCol}
 		}
+	case '^':
+		tok = token.Token{Type: token.BIT_XOR, Literal: string(l.ch), Line: curLine, Column: curCol}
 	case ';':
 		tok = token.Token{Type: token.SEMICOLON, Literal: string(l.ch), Line: curLine, Column: curCol}
 	case ',':

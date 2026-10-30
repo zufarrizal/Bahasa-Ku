@@ -49,7 +49,9 @@ func (ps *PakaiStatement) TokenLiteral() string { return ps.Token.Literal }
 type VarStatement struct {
 	Token    token.Token // token.VAR or token.TETAP
 	Name     *Identifier
+	Names    []*Identifier // Mendukung multi-ident: var a, b = fn()
 	Value    Expression
+	Values   []Expression // Mendukung multi-value
 	Constant bool
 }
 
@@ -106,7 +108,9 @@ func (es *ExpressionStatement) TokenLiteral() string { return es.Token.Literal }
 type AssignStatement struct {
 	Token    token.Token // = or :=
 	Target   Expression
+	Targets  []Expression // Mendukung multi-assign: a, b = fn() atau a, b := 1, 2
 	Value    Expression
+	Values   []Expression // Mendukung multi-value
 	IsDefine bool
 }
 
@@ -268,6 +272,10 @@ type IndexExpression struct {
 	Token token.Token // LBRACKET
 	Left  Expression
 	Index Expression
+
+	// Slicing support [mulai:selesai]
+	IsSlice bool
+	High    Expression
 }
 
 func (ie *IndexExpression) expressionNode()      {}

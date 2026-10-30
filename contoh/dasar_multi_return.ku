@@ -1,0 +1,69 @@
+paket utama
+
+pakai "cetak"
+
+// Fungsi pembagian dengan pengembalian multi-nilai khas Go: (hasil, galat)
+fungsi bagi(a, b) {
+    jika b == 0 {
+        kembalikan 0, "tidak dapat membagi dengan nol!"
+    }
+    kembalikan a / b, nihil
+}
+
+// Fungsi statistik yang mengembalikan tiga nilai
+fungsi minMaksRata(arr) {
+    var min = arr[0]
+    var maks = arr[0]
+    var total = 0
+
+    untuk _, v dalam arr {
+        jika v < min {
+            min = v
+        }
+        jika v > maks {
+            maks = v
+        }
+        total += v
+    }
+
+    kembalikan min, maks, total / 5
+}
+
+fungsi utama() {
+    cetak.tulis("=== Uji Pengembalian Multi-Nilai, Blank Identifier, Bitwise, & Tetap ===")
+
+    // 1. Uji Tetap (Konstanta)
+    tetap PI = 3.14159
+    tetap JUDUL = "Bahasa Ku Modern"
+    cetak.tulis("Konstanta:", JUDUL, "| PI =", PI)
+
+    // 2. Uji Pengembalian Multi-Nilai
+    var res1, err1 = bagi(20, 4)
+    jika err1 != nihil {
+        cetak.tulis("Galat:", err1)
+    } lainnya {
+        cetak.tulis("20 / 4 =", res1)
+    }
+
+    // 3. Uji Galat dengan multi-assignment :=
+    res2, err2 := bagi(10, 0)
+    jika err2 != nihil {
+        cetak.tulis("Penanganan Terdeteksi:", err2)
+    } lainnya {
+        cetak.tulis("10 / 0 =", res2)
+    }
+
+    // 4. Uji Blank Identifier (_) untuk mengabaikan nilai
+    daftar := [12, 5, 29, 8, 17]
+    min, maks, _ := minMaksRata(daftar)
+    cetak.tulis("Nilai terkecil:", min, "| Nilai terbesar:", maks)
+
+    // 5. Uji Operator Bitwise (&, |, ^, <<, >>)
+    var x = 12 // biner 1100
+    var y = 10 // biner 1010
+    cetak.tulis("x & y (DAN bit):", x & y)   // 1000 = 8
+    cetak.tulis("x | y (ATAU bit):", x | y)  // 1110 = 14
+    cetak.tulis("x ^ y (XOR bit):", x ^ y)   // 0110 = 6
+    cetak.tulis("x << 2 (Geser Kiri):", x << 2) // 48
+    cetak.tulis("x >> 1 (Geser Kanan):", x >> 1) // 6
+}

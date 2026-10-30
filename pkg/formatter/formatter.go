@@ -75,6 +75,20 @@ func (f *Formatter) Format(node ast.Node) string {
 		if n.Constant {
 			kata = "tetap"
 		}
+		if len(n.Names) > 1 {
+			names := []string{}
+			for _, ident := range n.Names {
+				names = append(names, ident.Value)
+			}
+			if len(n.Values) > 0 {
+				vals := []string{}
+				for _, valExpr := range n.Values {
+					vals = append(vals, f.Format(valExpr))
+				}
+				return fmt.Sprintf("%s %s = %s", kata, strings.Join(names, ", "), strings.Join(vals, ", "))
+			}
+			return fmt.Sprintf("%s %s", kata, strings.Join(names, ", "))
+		}
 		if n.Value != nil {
 			return fmt.Sprintf("%s %s = %s", kata, n.Name.Value, f.Format(n.Value))
 		}
@@ -84,6 +98,17 @@ func (f *Formatter) Format(node ast.Node) string {
 		op := "="
 		if n.IsDefine {
 			op = ":="
+		}
+		if len(n.Targets) > 1 {
+			tgts := []string{}
+			for _, t := range n.Targets {
+				tgts = append(tgts, f.Format(t))
+			}
+			vals := []string{}
+			for _, v := range n.Values {
+				vals = append(vals, f.Format(v))
+			}
+			return fmt.Sprintf("%s %s %s", strings.Join(tgts, ", "), op, strings.Join(vals, ", "))
 		}
 		return fmt.Sprintf("%s %s %s", f.Format(n.Target), op, f.Format(n.Value))
 
@@ -138,6 +163,13 @@ func (f *Formatter) Format(node ast.Node) string {
 		return out
 
 	case *ast.ReturnStatement:
+		if len(n.ReturnValues) > 1 {
+			vals := []string{}
+			for _, v := range n.ReturnValues {
+				vals = append(vals, f.Format(v))
+			}
+			return fmt.Sprintf("kembalikan %s", strings.Join(vals, ", "))
+		}
 		if n.ReturnValue != nil {
 			return fmt.Sprintf("kembalikan %s", f.Format(n.ReturnValue))
 		}
@@ -173,6 +205,17 @@ func (f *Formatter) Format(node ast.Node) string {
 		return fmt.Sprintf("%s.%s", f.Format(n.Left), n.Property.Value)
 
 	case *ast.IndexExpression:
+		if n.IsSlice {
+			low := ""
+			if n.Index != nil {
+				low = f.Format(n.Index)
+			}
+			high := ""
+			if n.High != nil {
+				high = f.Format(n.High)
+			}
+			return fmt.Sprintf("%s[%s:%s]", f.Format(n.Left), low, high)
+		}
 		return fmt.Sprintf("%s[%s]", f.Format(n.Left), f.Format(n.Index))
 
 	case *ast.Identifier:

@@ -89,15 +89,44 @@ func (t *Transpiler) Transpile(node ast.Node) string {
 		return out
 
 	case *ast.VarStatement:
-		if n.Value != nil {
-			return fmt.Sprintf("var %s = %s", n.Name.Value, t.Transpile(n.Value))
+		kata := "var"
+		if n.Constant {
+			kata = "const"
 		}
-		return fmt.Sprintf("var %s interface{}", n.Name.Value)
+		if len(n.Names) > 1 {
+			names := []string{}
+			for _, ident := range n.Names {
+				names = append(names, ident.Value)
+			}
+			if len(n.Values) > 0 {
+				vals := []string{}
+				for _, valExpr := range n.Values {
+					vals = append(vals, t.Transpile(valExpr))
+				}
+				return fmt.Sprintf("%s %s = %s", kata, strings.Join(names, ", "), strings.Join(vals, ", "))
+			}
+			return fmt.Sprintf("%s %s interface{}", kata, strings.Join(names, ", "))
+		}
+		if n.Value != nil {
+			return fmt.Sprintf("%s %s = %s", kata, n.Name.Value, t.Transpile(n.Value))
+		}
+		return fmt.Sprintf("%s %s interface{}", kata, n.Name.Value)
 
 	case *ast.AssignStatement:
 		op := "="
 		if n.IsDefine {
 			op = ":="
+		}
+		if len(n.Targets) > 1 {
+			tgts := []string{}
+			for _, tg := range n.Targets {
+				tgts = append(tgts, t.Transpile(tg))
+			}
+			vals := []string{}
+			for _, v := range n.Values {
+				vals = append(vals, t.Transpile(v))
+			}
+			return fmt.Sprintf("%s %s %s", strings.Join(tgts, ", "), op, strings.Join(vals, ", "))
 		}
 		return fmt.Sprintf("%s %s %s", t.Transpile(n.Target), op, t.Transpile(n.Value))
 
@@ -156,6 +185,13 @@ func (t *Transpiler) Transpile(node ast.Node) string {
 		return out
 
 	case *ast.ReturnStatement:
+		if len(n.ReturnValues) > 1 {
+			vals := []string{}
+			for _, v := range n.ReturnValues {
+				vals = append(vals, t.Transpile(v))
+			}
+			return fmt.Sprintf("return %s", strings.Join(vals, ", "))
+		}
 		if n.ReturnValue != nil {
 			return fmt.Sprintf("return %s", t.Transpile(n.ReturnValue))
 		}
@@ -202,6 +238,17 @@ func (t *Transpiler) Transpile(node ast.Node) string {
 		return fmt.Sprintf("%s.%s", t.Transpile(n.Left), n.Property.Value)
 
 	case *ast.IndexExpression:
+		if n.IsSlice {
+			low := ""
+			if n.Index != nil {
+				low = t.Transpile(n.Index)
+			}
+			high := ""
+			if n.High != nil {
+				high = t.Transpile(n.High)
+			}
+			return fmt.Sprintf("%s[%s:%s]", t.Transpile(n.Left), low, high)
+		}
 		return fmt.Sprintf("%s[%s]", t.Transpile(n.Left), t.Transpile(n.Index))
 
 	case *ast.Identifier:

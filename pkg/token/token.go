@@ -31,6 +31,13 @@ const (
 	INC      = "++"
 	DEC      = "--"
 
+	// Compound Assignment Operators
+	PLUS_ASSIGN  = "+="
+	MINUS_ASSIGN = "-="
+	MUL_ASSIGN   = "*="
+	DIV_ASSIGN   = "/="
+	MOD_ASSIGN   = "%="
+
 	EQ     = "=="
 	NOT_EQ = "!="
 	LT     = "<"
@@ -39,6 +46,13 @@ const (
 	GTE    = ">="
 	AND    = "&&"
 	OR     = "||"
+
+	// Bitwise Operators
+	BIT_AND = "&"
+	BIT_OR  = "|"
+	BIT_XOR = "^"
+	SHL     = "<<"
+	SHR     = ">>"
 
 	// Delimiters
 	COMMA     = ","

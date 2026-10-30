@@ -257,6 +257,46 @@ fungsi utama() {
 }
 ```
 
+### 6. Pengembalian Multi-Nilai, Blank Identifier, Bitwise, & Operator Gabungan (`contoh/dasar_multi_return.ku`)
+```ku
+paket utama
+
+pakai "cetak"
+
+// Mengembalikan dua nilai: hasil dan galat (idiom error Go)
+fungsi bagi(a, b) {
+    jika b == 0 {
+        kembalikan 0, "tidak dapat membagi dengan nol!"
+    }
+    kembalikan a / b, nihil
+}
+
+fungsi utama() {
+    // 1. Konstanta
+    tetap PI = 3.14159
+
+    // 2. Destrukturisasi pengembalian multi-nilai
+    var hasil, galat = bagi(20, 4)
+    jika galat == nihil {
+        cetak.tulis("Hasil bagi:", hasil)
+    }
+
+    // 3. Mengabaikan nilai dengan blank identifier (_)
+    _, err := bagi(10, 0)
+    jika err != nihil {
+        cetak.tulis("Galat tertangkap:", err)
+    }
+
+    // 4. Operator Gabungan & Slicing
+    daftar := [10, 20, 30, 40, 50]
+    potongan := daftar[1:4] // [20, 30, 40]
+
+    // 5. Operator Bitwise (&, |, ^, <<, >>)
+    cetak.tulis("Bitwise 12 & 10 =", 12 & 10) // 8
+    cetak.tulis("Geser Kiri 12 << 2 =", 12 << 2) // 48
+}
+```
+
 ---
 
 ## 📂 Struktur Proyek

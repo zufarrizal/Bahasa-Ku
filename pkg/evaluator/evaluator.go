@@ -90,10 +90,22 @@ type Continue struct{}
 func (c *Continue) Type() ObjectType { return CONTINUE_OBJ }
 func (c *Continue) Inspect() string  { return "lanjut" }
 
-type ReturnValue struct{ Value Object }
+type ReturnValue struct {
+	Value  Object
+	Values []Object
+}
 
 func (r *ReturnValue) Type() ObjectType { return RETURN_VALUE_OBJ }
-func (r *ReturnValue) Inspect() string  { return r.Value.Inspect() }
+func (r *ReturnValue) Inspect() string {
+	if len(r.Values) > 1 {
+		elems := []string{}
+		for _, v := range r.Values {
+			elems = append(elems, v.Inspect())
+		}
+		return strings.Join(elems, ", ")
+	}
+	return r.Value.Inspect()
+}
 
 type Environment struct {
 	store map[string]Object
@@ -1084,16 +1096,89 @@ func Eval(node ast.Node, env *Environment) Object {
 		return def
 
 	case *ast.VarStatement:
+		// Jika deklarasi banyak variabel: var a, b = fn() atau var a, b = 1, 2
+		if len(n.Names) > 1 {
+			evaluatedVals := []Object{}
+			for _, vExpr := range n.Values {
+				res := Eval(vExpr, env)
+				if ret, ok := res.(*ReturnValue); ok && len(ret.Values) > 0 {
+					evaluatedVals = append(evaluatedVals, ret.Values...)
+				} else {
+					evaluatedVals = append(evaluatedVals, res)
+				}
+			}
+
+			for i, ident := range n.Names {
+				if ident.Value == "_" {
+					continue
+				}
+				var val Object = NIL
+				if i < len(evaluatedVals) {
+					val = evaluatedVals[i]
+				}
+				env.Set(ident.Value, val)
+			}
+			return NIL
+		}
+
 		var val Object = NIL
 		if n.Value != nil {
-			val = Eval(n.Value, env)
+			res := Eval(n.Value, env)
+			if ret, ok := res.(*ReturnValue); ok {
+				val = ret.Value
+			} else {
+				val = res
+			}
 		}
-		env.Set(n.Name.Value, val)
+		if n.Name.Value != "_" {
+			env.Set(n.Name.Value, val)
+		}
 		return val
 
 	case *ast.AssignStatement:
+		// Jika multi-target assignment: a, b := fn() atau a, b = 1, 2
+		if len(n.Targets) > 1 {
+			evaluatedVals := []Object{}
+			for _, vExpr := range n.Values {
+				res := Eval(vExpr, env)
+				if ret, ok := res.(*ReturnValue); ok && len(ret.Values) > 0 {
+					evaluatedVals = append(evaluatedVals, ret.Values...)
+				} else {
+					evaluatedVals = append(evaluatedVals, res)
+				}
+			}
+
+			for i, target := range n.Targets {
+				var val Object = NIL
+				if i < len(evaluatedVals) {
+					val = evaluatedVals[i]
+				}
+
+				if ident, ok := target.(*ast.Identifier); ok {
+					if ident.Value == "_" {
+						continue
+					}
+					if n.IsDefine {
+						env.Set(ident.Value, val)
+					} else {
+						if !env.Update(ident.Value, val) {
+							env.Set(ident.Value, val)
+						}
+					}
+				}
+			}
+			return NIL
+		}
+
 		val := Eval(n.Value, env)
+		if ret, ok := val.(*ReturnValue); ok {
+			val = ret.Value
+		}
+
 		if ident, ok := n.Target.(*ast.Identifier); ok {
+			if ident.Value == "_" {
+				return NIL
+			}
 			if n.IsDefine {
 				env.Set(ident.Value, val)
 			} else {
@@ -1258,11 +1343,18 @@ func Eval(node ast.Node, env *Environment) Object {
 		return NIL
 
 	case *ast.ReturnStatement:
+		if len(n.ReturnValues) > 1 {
+			vals := []Object{}
+			for _, vExpr := range n.ReturnValues {
+				vals = append(vals, Eval(vExpr, env))
+			}
+			return &ReturnValue{Value: vals[0], Values: vals}
+		}
 		var val Object = NIL
 		if n.ReturnValue != nil {
 			val = Eval(n.ReturnValue, env)
 		}
-		return &ReturnValue{Value: val}
+		return &ReturnValue{Value: val, Values: []Object{val}}
 
 	case *ast.DeferStatement:
 		deferredCall := func() {
@@ -1316,6 +1408,54 @@ func Eval(node ast.Node, env *Environment) Object {
 
 	case *ast.IndexExpression:
 		left := Eval(n.Left, env)
+		if n.IsSlice {
+			lowVal := int64(0)
+			if n.Index != nil {
+				if lObj, ok := Eval(n.Index, env).(*Integer); ok {
+					lowVal = lObj.Value
+				}
+			}
+
+			if arr, ok := left.(*Array); ok {
+				highVal := int64(len(arr.Elements))
+				if n.High != nil {
+					if hObj, ok := Eval(n.High, env).(*Integer); ok {
+						highVal = hObj.Value
+					}
+				}
+				if lowVal < 0 {
+					lowVal = 0
+				}
+				if highVal > int64(len(arr.Elements)) {
+					highVal = int64(len(arr.Elements))
+				}
+				if lowVal > highVal {
+					return &Array{Elements: []Object{}}
+				}
+				sub := arr.Elements[lowVal:highVal]
+				newSub := append([]Object{}, sub...)
+				return &Array{Elements: newSub}
+			} else if str, ok := left.(*String); ok {
+				highVal := int64(len(str.Value))
+				if n.High != nil {
+					if hObj, ok := Eval(n.High, env).(*Integer); ok {
+						highVal = hObj.Value
+					}
+				}
+				if lowVal < 0 {
+					lowVal = 0
+				}
+				if highVal > int64(len(str.Value)) {
+					highVal = int64(len(str.Value))
+				}
+				if lowVal > highVal {
+					return &String{Value: ""}
+				}
+				return &String{Value: str.Value[lowVal:highVal]}
+			}
+			return NIL
+		}
+
 		idx := Eval(n.Index, env)
 		if arr, ok := left.(*Array); ok {
 			if i, ok := idx.(*Integer); ok && i.Value >= 0 && i.Value < int64(len(arr.Elements)) {
@@ -1407,6 +1547,9 @@ func applyFunction(fn Object, args []Object, outerEnv *Environment) Object {
 		}
 
 		if ret, ok := res.(*ReturnValue); ok {
+			if len(ret.Values) > 1 {
+				return ret
+			}
 			return ret.Value
 		}
 		return NIL
@@ -1467,6 +1610,16 @@ func evalInfixExpression(op string, left, right Object) Object {
 			return &Integer{Value: lVal / rVal}
 		case "%":
 			return &Integer{Value: lVal % rVal}
+		case "&":
+			return &Integer{Value: lVal & rVal}
+		case "|":
+			return &Integer{Value: lVal | rVal}
+		case "^":
+			return &Integer{Value: lVal ^ rVal}
+		case "<<":
+			return &Integer{Value: lVal << uint64(rVal)}
+		case ">>":
+			return &Integer{Value: lVal >> uint64(rVal)}
 		case "==":
 			if lVal == rVal {
 				return TRUE

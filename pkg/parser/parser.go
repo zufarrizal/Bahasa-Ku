@@ -13,8 +13,12 @@ const (
 	_ int = iota
 	LOWEST
 	LOGIC       // ||, &&
+	BIT_OR      // |
+	BIT_XOR     // ^
+	BIT_AND     // &
 	EQUALS      // ==, !=
 	LESSGREATER // >, <, >=, <=
+	SHIFT       // <<, >>
 	SUM         // +, -
 	PRODUCT     // *, /, %
 	PREFIX      // -X, !X
@@ -25,12 +29,17 @@ const (
 var precedences = map[token.TokenType]int{
 	token.OR:        LOGIC,
 	token.AND:       LOGIC,
+	token.BIT_OR:    BIT_OR,
+	token.BIT_XOR:   BIT_XOR,
+	token.BIT_AND:   BIT_AND,
 	token.EQ:        EQUALS,
 	token.NOT_EQ:    EQUALS,
 	token.LT:        LESSGREATER,
 	token.GT:        LESSGREATER,
 	token.LTE:       LESSGREATER,
 	token.GTE:       LESSGREATER,
+	token.SHL:       SHIFT,
+	token.SHR:       SHIFT,
 	token.PLUS:      SUM,
 	token.MINUS:     SUM,
 	token.SLASH:     PRODUCT,
@@ -204,15 +213,27 @@ func (p *Parser) parseTypeStructStatement() ast.Statement {
 func (p *Parser) parseVarStatement() ast.Statement {
 	stmt := &ast.VarStatement{
 		Token:    p.curToken,
+		Names:    []*ast.Identifier{},
+		Values:   []ast.Expression{},
 		Constant: p.curToken.Type == token.TETAP,
 	}
 
 	if !p.expectPeek(token.IDENT) {
 		return nil
 	}
-	stmt.Name = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+	firstIdent := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+	stmt.Name = firstIdent
+	stmt.Names = append(stmt.Names, firstIdent)
 
-	// opsional tipe eksplisit
+	for p.peekTokenIs(token.COMMA) {
+		p.nextToken() // ke ','
+		if !p.expectPeek(token.IDENT) {
+			return nil
+		}
+		stmt.Names = append(stmt.Names, &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal})
+	}
+
+	// opsional tipe eksplisit jika ada
 	if p.peekTokenIs(token.IDENT) {
 		p.nextToken()
 	}
@@ -220,7 +241,15 @@ func (p *Parser) parseVarStatement() ast.Statement {
 	if p.peekTokenIs(token.ASSIGN) {
 		p.nextToken() // ke '='
 		p.nextToken() // ke ekspresi awal
-		stmt.Value = p.parseExpression(LOWEST)
+		firstVal := p.parseExpression(LOWEST)
+		stmt.Value = firstVal
+		stmt.Values = append(stmt.Values, firstVal)
+
+		for p.peekTokenIs(token.COMMA) {
+			p.nextToken() // ke ','
+			p.nextToken() // ke ekspresi berikutnya
+			stmt.Values = append(stmt.Values, p.parseExpression(LOWEST))
+		}
 	}
 
 	if p.peekTokenIs(token.SEMICOLON) {
@@ -452,10 +481,19 @@ func (p *Parser) parseSwitchStatement() ast.Statement {
 }
 
 func (p *Parser) parseReturnStatement() ast.Statement {
-	stmt := &ast.ReturnStatement{Token: p.curToken}
+	stmt := &ast.ReturnStatement{Token: p.curToken, ReturnValues: []ast.Expression{}}
 	p.nextToken()
 	if !p.curTokenIs(token.SEMICOLON) && !p.curTokenIs(token.RBRACE) {
-		stmt.ReturnValue = p.parseExpression(LOWEST)
+		val := p.parseExpression(LOWEST)
+		stmt.ReturnValue = val
+		stmt.ReturnValues = append(stmt.ReturnValues, val)
+
+		for p.peekTokenIs(token.COMMA) {
+			p.nextToken() // ke ','
+			p.nextToken() // ke ekspresi berikutnya
+			nextVal := p.parseExpression(LOWEST)
+			stmt.ReturnValues = append(stmt.ReturnValues, nextVal)
+		}
 	}
 	if p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()
@@ -476,12 +514,82 @@ func (p *Parser) parseDeferStatement() ast.Statement {
 func (p *Parser) parseExpressionOrAssignStatement() ast.Statement {
 	expr := p.parseExpression(LOWEST)
 
+	// Cek apakah ada koma untuk multi-assignment (misal: a, b := ... atau a, b = ...)
+	if p.peekTokenIs(token.COMMA) {
+		targets := []ast.Expression{expr}
+		for p.peekTokenIs(token.COMMA) {
+			p.nextToken() // ke ','
+			p.nextToken() // ke identifier berikutnya
+			targets = append(targets, p.parseExpression(LOWEST))
+		}
+
+		if p.peekTokenIs(token.DEFINE) || p.peekTokenIs(token.ASSIGN) {
+			op := p.peekToken
+			p.nextToken() // ke ':=' atau '='
+			p.nextToken() // ke ekspresi nilai pertama
+			firstVal := p.parseExpression(LOWEST)
+			values := []ast.Expression{firstVal}
+
+			for p.peekTokenIs(token.COMMA) {
+				p.nextToken() // ke ','
+				p.nextToken() // ke ekspresi nilai berikutnya
+				values = append(values, p.parseExpression(LOWEST))
+			}
+
+			if p.peekTokenIs(token.SEMICOLON) {
+				p.nextToken()
+			}
+
+			return &ast.AssignStatement{
+				Token:    op,
+				Target:   targets[0],
+				Targets:  targets,
+				Value:    values[0],
+				Values:   values,
+				IsDefine: op.Type == token.DEFINE,
+			}
+		}
+	}
+
 	if p.peekTokenIs(token.DEFINE) || p.peekTokenIs(token.ASSIGN) {
 		op := p.peekToken
 		p.nextToken()
 		p.nextToken()
 		val := p.parseExpression(LOWEST)
-		return &ast.AssignStatement{Token: op, Target: expr, Value: val, IsDefine: op.Type == token.DEFINE}
+		return &ast.AssignStatement{
+			Token:    op,
+			Target:   expr,
+			Targets:  []ast.Expression{expr},
+			Value:    val,
+			Values:   []ast.Expression{val},
+			IsDefine: op.Type == token.DEFINE,
+		}
+	}
+
+	// Compound assignment operators: +=, -=, *=, /=, %=
+	if p.peekTokenIs(token.PLUS_ASSIGN) || p.peekTokenIs(token.MINUS_ASSIGN) ||
+		p.peekTokenIs(token.MUL_ASSIGN) || p.peekTokenIs(token.DIV_ASSIGN) || p.peekTokenIs(token.MOD_ASSIGN) {
+		opTok := p.peekToken
+		p.nextToken()
+		p.nextToken()
+		val := p.parseExpression(LOWEST)
+
+		baseOp := "+"
+		switch opTok.Type {
+		case token.PLUS_ASSIGN:
+			baseOp = "+"
+		case token.MINUS_ASSIGN:
+			baseOp = "-"
+		case token.MUL_ASSIGN:
+			baseOp = "*"
+		case token.DIV_ASSIGN:
+			baseOp = "/"
+		case token.MOD_ASSIGN:
+			baseOp = "%"
+		}
+
+		binaryExpr := &ast.InfixExpression{Token: opTok, Left: expr, Operator: baseOp, Right: val}
+		return &ast.AssignStatement{Token: opTok, Target: expr, Value: binaryExpr, IsDefine: false}
 	}
 
 	if p.peekTokenIs(token.INC) {
@@ -511,7 +619,7 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 		switch p.peekToken.Type {
 		case token.PLUS, token.MINUS, token.SLASH, token.ASTERISK, token.MOD,
 			token.EQ, token.NOT_EQ, token.LT, token.GT, token.LTE, token.GTE,
-			token.AND, token.OR:
+			token.AND, token.OR, token.BIT_AND, token.BIT_OR, token.BIT_XOR, token.SHL, token.SHR:
 			p.nextToken()
 			left = p.parseInfix(left)
 		case token.LPAREN:
@@ -614,11 +722,40 @@ func (p *Parser) parseDotExpression(left ast.Expression) ast.Expression {
 func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
 	tok := p.curToken
 	p.nextToken()
-	idx := p.parseExpression(LOWEST)
+
+	// Kasus slice [:akhir]
+	if p.curTokenIs(token.COLON) {
+		var high ast.Expression = nil
+		if !p.peekTokenIs(token.RBRACKET) {
+			p.nextToken()
+			high = p.parseExpression(LOWEST)
+		}
+		if !p.expectPeek(token.RBRACKET) {
+			return nil
+		}
+		return &ast.IndexExpression{Token: tok, Left: left, Index: nil, IsSlice: true, High: high}
+	}
+
+	low := p.parseExpression(LOWEST)
+
+	// Kasus slice [awal:akhir] atau [awal:]
+	if p.peekTokenIs(token.COLON) {
+		p.nextToken() // ke ':'
+		var high ast.Expression = nil
+		if !p.peekTokenIs(token.RBRACKET) {
+			p.nextToken()
+			high = p.parseExpression(LOWEST)
+		}
+		if !p.expectPeek(token.RBRACKET) {
+			return nil
+		}
+		return &ast.IndexExpression{Token: tok, Left: left, Index: low, IsSlice: true, High: high}
+	}
+
 	if !p.expectPeek(token.RBRACKET) {
 		return nil
 	}
-	return &ast.IndexExpression{Token: tok, Left: left, Index: idx}
+	return &ast.IndexExpression{Token: tok, Left: left, Index: low, IsSlice: false}
 }
 
 func (p *Parser) parseArrayLiteral() ast.Expression {
