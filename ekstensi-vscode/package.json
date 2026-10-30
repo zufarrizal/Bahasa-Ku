@@ -4,6 +4,7 @@
   "description": "Syntax Highlighting & Snippet untuk Bahasa Pemrograman Ku",
   "version": "0.1.0",
   "publisher": "zufarrizal",
+  "icon": "icon.png",
   "engines": {
     "vscode": "^1.75.0"
   },
