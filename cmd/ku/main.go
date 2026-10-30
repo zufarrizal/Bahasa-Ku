@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/zufarrizal/bahasa-ku/pkg/evaluator"
+	"github.com/zufarrizal/bahasa-ku/pkg/formatter"
 	"github.com/zufarrizal/bahasa-ku/pkg/lexer"
 	"github.com/zufarrizal/bahasa-ku/pkg/parser"
 	"github.com/zufarrizal/bahasa-ku/pkg/repl"
@@ -71,6 +72,23 @@ func main() {
 		}
 		scaffoldProject(args[1], args[2])
 
+	case "rapi", "format":
+		if len(args) < 2 {
+			fmt.Println("Penggunaan: ku rapi [-w] <nama_berkas.ku>")
+			os.Exit(1)
+		}
+		writeBack := false
+		targetFile := args[1]
+		if args[1] == "-w" || args[1] == "--write" {
+			if len(args) < 3 {
+				fmt.Println("Galat: Harap tentukan berkas .ku yang ingin dirapikan.")
+				os.Exit(1)
+			}
+			writeBack = true
+			targetFile = args[2]
+		}
+		formatKuFile(targetFile, writeBack)
+
 	default:
 		fmt.Printf("Perintah '%s' tidak dikenal. Ketik 'ku' untuk bantuan.\n", command)
 		os.Exit(1)
@@ -81,6 +99,7 @@ func printHelp() {
 	fmt.Printf(`Penggunaan CLI Bahasa Ku (Go Native):
   ku                       Membuka REPL (terminal interaktif)
   ku jalankan <berkas.ku>  Menjalankan berkas kode .ku
+  ku rapi [-w] <berkas.ku> Merapikan format kode secara otomatis (mirip gofmt)
   ku kompilasi <berkas.ku> [-o keluar.exe]  Kompilasi langsung ke biner mandiri (.exe)
   ku inisiasi <web|desktop|cli> <nama_folder>  Membuat kerangka kerja proyek baru
   ku buat <berkas.ku>      Mengonversi berkas .ku ke .go murni
@@ -89,6 +108,7 @@ func printHelp() {
 Contoh:
   ku
   ku jalankan contoh/halo.ku
+  ku rapi -w contoh/halo.ku
   ku kompilasi contoh/halo.ku -o HaloApp.exe
   ku inisiasi web portal-berita
 `)
@@ -304,4 +324,39 @@ fungsi utama() {
 	fmt.Printf("Berhasil membuat proyek '%s' tipe [%s] di folder '%s/'! ✨\n", folderName, projectType, folderName)
 	fmt.Printf("Jalankan sekarang dengan:\n  ku jalankan %s/utama.ku\n", folderName)
 }
+
+func formatKuFile(filename string, writeBack bool) {
+	content, err := os.ReadFile(filename)
+	if err != nil {
+		fmt.Printf("Galat membaca berkas: %v\n", err)
+		os.Exit(1)
+	}
+
+	l := lexer.New(string(content))
+	p := parser.New(l)
+	prog := p.ParseProgram()
+
+	if len(p.Errors()) > 0 {
+		fmt.Println("Galat Sintaks:")
+		for _, e := range p.Errors() {
+			fmt.Println(" -", e)
+		}
+		os.Exit(1)
+	}
+
+	f := formatter.New()
+	formatted := f.Format(prog)
+
+	if writeBack {
+		err := os.WriteFile(filename, []byte(formatted), 0644)
+		if err != nil {
+			fmt.Printf("Galat menyimpan berkas: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Printf("Format berkas '%s' berhasil dirapikan! ✨\n", filename)
+	} else {
+		fmt.Print(formatted)
+	}
+}
+
 

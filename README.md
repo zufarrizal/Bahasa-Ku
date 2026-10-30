@@ -20,11 +20,14 @@
 
 - **Native Binary Mandiri:** Dijalankan langsung melalui file biner tanpa perlu runtime tambahan.
 - **Kompilasi Langsung ke Biner (`ku kompilasi`):** Mengubah file `.ku` langsung menjadi biner `.exe` mandiri.
+- **Formatter Kode Otomatis (`ku rapi`):** Merapikan format spasi, tab, dan kurung kurawal secara otomatis (mirip `gofmt`).
 - **Generator Proyek Otomatis (`ku inisiasi`):** Menyiapkan kerangka kerja proyek baru (`web`, `desktop`, `cli`) secara instan.
 - **Sintaks Berbahasa Indonesia:** Kata kunci natural seperti `paket`, `fungsi`, `var`, `jika`, `lainnya`, `untuk`, `pilih`, `kembalikan`, dan `tunda`.
 - **Dukungan Server Web HTTP & REST API (`web`):** Siap digunakan untuk membuat web server dan API JSON.
 - **Dukungan Klien Jaringan HTTP (`jaringan`):** Melakukan panggilan HTTP GET / POST JSON ke API eksternal secara native.
 - **Dukungan Aplikasi Desktop GUI (`jendela`):** Membuka dialog native dan jendela aplikasi desktop modern tanpa Electron.
+- **Dukungan Keamanan & Enkripsi (`kripto`):** SHA-256, MD5, Base64 encode/decode, dan pembuatan token acak aman.
+- **Dukungan Kalkulasi Numerik (`matematika`):** Akar kuadrat, pemangkatan, pembulatan, angka acak, dan nilai PI.
 - **Dukungan I/O Berkas & Sistem (`berkas` & `sistem`):** Membaca/menulis file lokal dan mengakses environment OS.
 - **Dukungan Database MySQL (`basisdata`):** Terhubung ke database MySQL secara native dengan operasi `kueri` dan `eksekusi`.
 - **Transpiler ke Go Murni:** Menerjemahkan file `.ku` menjadi kode `.go` standar untuk dikompilasi ke file biner native.
@@ -79,8 +82,12 @@ ku
 ku jalankan contoh/halo.ku
 ku jalankan contoh/server_web.ku
 ku jalankan contoh/jaringan.ku
+ku jalankan contoh/kripto_matematika.ku
 ku jalankan contoh/aplikasi_desktop.ku
 ku jalankan contoh/berkas_sistem.ku
+
+# Merapikan format berkas kode secara otomatis
+ku rapi -w contoh/halo.ku
 
 # Mengompilasi langsung berkas .ku menjadi biner mandiri (.exe)
 ku kompilasi contoh/halo.ku -o ProgramHalo.exe

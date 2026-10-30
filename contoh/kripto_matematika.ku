@@ -1,0 +1,30 @@
+paket utama
+
+pakai "cetak"
+pakai "kripto"
+pakai "matematika"
+
+fungsi utama() {
+    cetak.tulis("=== Uji Coba Modul Kripto & Matematika ===")
+
+    // 1. Uji Modul Kripto
+    var kataSandi = "rahasia123"
+    cetak.tulis("Teks Asli:", kataSandi)
+    cetak.tulis("Hash SHA-256:", kripto.sha256(kataSandi))
+    cetak.tulis("Hash MD5:", kripto.md5(kataSandi))
+
+    var encoded = kripto.base64Encode("Bahasa Ku 2026")
+    cetak.tulis("Base64 Encode:", encoded)
+    cetak.tulis("Base64 Decode:", kripto.base64Decode(encoded))
+
+    cetak.tulis("Token Acak (16 char):", kripto.tokenAcak(16))
+
+    // 2. Uji Modul Matematika
+    cetak.tulis("\n--- Modul Matematika ---")
+    cetak.tulis("Nilai PI:", matematika.PI)
+    cetak.tulis("Akar dari 64:", matematika.akar(64))
+    cetak.tulis("2 Pangkat 8:", matematika.pangkat(2, 8))
+    cetak.tulis("Pembulatan 7.6:", matematika.bulat(7.6))
+    cetak.tulis("Angka Acak (1 s.d. 50):", matematika.acak(1, 50))
+    cetak.tulis("Nilai Terbesar (10, 45):", matematika.maks(10, 45))
+}

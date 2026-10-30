@@ -26,9 +26,9 @@ func jalankanKodeKu(this js.Value, args []js.Value) interface{} {
 	var outputLogs []string
 
 	// Buat environment mandiri untuk browser
-	env := evaluator.NewEnvironment()
+	env := evaluator.InitGlobalEnvironment()
 
-	// Modul cetak yang menangkap output ke buffer browser
+	// Override modul cetak untuk menangkap output ke buffer browser
 	cetakMap := &evaluator.Map{Pairs: make(map[string]evaluator.Object)}
 	cetakMap.Pairs["tulis"] = &evaluator.Builtin{
 		Fn: func(fnArgs ...evaluator.Object) evaluator.Object {
@@ -42,38 +42,6 @@ func jalankanKodeKu(this js.Value, args []js.Value) interface{} {
 	}
 	cetakMap.Pairs["tulisBaris"] = cetakMap.Pairs["tulis"]
 	env.Set("cetak", cetakMap)
-
-	// Bawaan: panjang & tambah
-	env.Set("panjang", &evaluator.Builtin{
-		Fn: func(fnArgs ...evaluator.Object) evaluator.Object {
-			if len(fnArgs) != 1 {
-				return &evaluator.Integer{Value: 0}
-			}
-			switch arg := fnArgs[0].(type) {
-			case *evaluator.Array:
-				return &evaluator.Integer{Value: int64(len(arg.Elements))}
-			case *evaluator.String:
-				return &evaluator.Integer{Value: int64(len(arg.Value))}
-			case *evaluator.Map:
-				return &evaluator.Integer{Value: int64(len(arg.Pairs))}
-			}
-			return &evaluator.Integer{Value: 0}
-		},
-	})
-
-	env.Set("tambah", &evaluator.Builtin{
-		Fn: func(fnArgs ...evaluator.Object) evaluator.Object {
-			if len(fnArgs) < 2 {
-				return evaluator.NIL
-			}
-			if arr, ok := fnArgs[0].(*evaluator.Array); ok {
-				newElems := append([]evaluator.Object{}, arr.Elements...)
-				newElems = append(newElems, fnArgs[1:]...)
-				return &evaluator.Array{Elements: newElems}
-			}
-			return evaluator.NIL
-		},
-	})
 
 	evaluator.Eval(prog, env)
 

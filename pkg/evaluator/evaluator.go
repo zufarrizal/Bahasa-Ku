@@ -1,10 +1,17 @@
 package evaluator
 
 import (
+	"crypto/md5"
+	"crypto/rand"
+	"crypto/sha256"
 	"database/sql"
+	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
+	mrand "math/rand"
 	"net/http"
 	"os"
 	"os/exec"
@@ -619,6 +626,164 @@ func InitGlobalEnvironment() *Environment {
 		},
 	}
 	env.Set("jaringan", jaringanMap)
+
+	// Modul kripto (Kriptografi, Hash, Base64, Token)
+	kriptoMap := &Map{Pairs: make(map[string]Object)}
+	kriptoMap.Pairs["sha256"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			h := sha256.Sum256([]byte(args[0].Inspect()))
+			return &String{Value: hex.EncodeToString(h[:])}
+		},
+	}
+	kriptoMap.Pairs["md5"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			h := md5.Sum([]byte(args[0].Inspect()))
+			return &String{Value: hex.EncodeToString(h[:])}
+		},
+	}
+	kriptoMap.Pairs["base64Encode"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			return &String{Value: base64.StdEncoding.EncodeToString([]byte(args[0].Inspect()))}
+		},
+	}
+	kriptoMap.Pairs["base64Decode"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			data, err := base64.StdEncoding.DecodeString(args[0].Inspect())
+			if err != nil {
+				return &String{Value: ""}
+			}
+			return &String{Value: string(data)}
+		},
+	}
+	kriptoMap.Pairs["tokenAcak"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			n := 16
+			if len(args) >= 1 {
+				if i, ok := args[0].(*Integer); ok && i.Value > 0 {
+					n = int(i.Value)
+				}
+			}
+			bytes := make([]byte, n)
+			_, _ = rand.Read(bytes)
+			return &String{Value: hex.EncodeToString(bytes)[:n]}
+		},
+	}
+	env.Set("kripto", kriptoMap)
+
+	// Modul matematika (Kalkulasi Numerik)
+	matematikaMap := &Map{Pairs: make(map[string]Object)}
+	matematikaMap.Pairs["PI"] = &Float{Value: math.Pi}
+	matematikaMap.Pairs["akar"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &Float{Value: 0}
+			}
+			var val float64
+			if i, ok := args[0].(*Integer); ok {
+				val = float64(i.Value)
+			} else if f, ok := args[0].(*Float); ok {
+				val = f.Value
+			}
+			return &Float{Value: math.Sqrt(val)}
+		},
+	}
+	matematikaMap.Pairs["pangkat"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return &Float{Value: 0}
+			}
+			var x, y float64
+			if i, ok := args[0].(*Integer); ok {
+				x = float64(i.Value)
+			} else if f, ok := args[0].(*Float); ok {
+				x = f.Value
+			}
+			if i, ok := args[1].(*Integer); ok {
+				y = float64(i.Value)
+			} else if f, ok := args[1].(*Float); ok {
+				y = f.Value
+			}
+			return &Float{Value: math.Pow(x, y)}
+		},
+	}
+	matematikaMap.Pairs["bulat"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &Integer{Value: 0}
+			}
+			var val float64
+			if i, ok := args[0].(*Integer); ok {
+				return i
+			} else if f, ok := args[0].(*Float); ok {
+				val = f.Value
+			}
+			return &Integer{Value: int64(math.Round(val))}
+		},
+	}
+	matematikaMap.Pairs["acak"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			minVal := int64(0)
+			maxVal := int64(100)
+			if len(args) >= 2 {
+				if i, ok := args[0].(*Integer); ok {
+					minVal = i.Value
+				}
+				if i, ok := args[1].(*Integer); ok {
+					maxVal = i.Value
+				}
+			}
+			if maxVal <= minVal {
+				return &Integer{Value: minVal}
+			}
+			res := minVal + mrand.Int63n(maxVal-minVal+1)
+			return &Integer{Value: res}
+		},
+	}
+	matematikaMap.Pairs["maks"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return &Integer{Value: 0}
+			}
+			if i1, ok := args[0].(*Integer); ok {
+				if i2, ok := args[1].(*Integer); ok {
+					if i1.Value > i2.Value {
+						return i1
+					}
+					return i2
+				}
+			}
+			return args[0]
+		},
+	}
+	matematikaMap.Pairs["min"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return &Integer{Value: 0}
+			}
+			if i1, ok := args[0].(*Integer); ok {
+				if i2, ok := args[1].(*Integer); ok {
+					if i1.Value < i2.Value {
+						return i1
+					}
+					return i2
+				}
+			}
+			return args[0]
+		},
+	}
+	env.Set("matematika", matematikaMap)
 
 	// Bawaan: panjang & tambah
 	env.Set("panjang", &Builtin{
