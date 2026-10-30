@@ -2788,6 +2788,41 @@ func InitGlobalEnvironment() *Environment {
 			return &String{Value: string(res)}
 		},
 	}
+	acakMap.Pairs["angka"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			minVal := int64(0)
+			maxVal := int64(100)
+			if len(args) == 1 {
+				if i, ok := args[0].(*Integer); ok {
+					maxVal = i.Value
+				}
+			} else if len(args) >= 2 {
+				if i, ok := args[0].(*Integer); ok {
+					minVal = i.Value
+				}
+				if i, ok := args[1].(*Integer); ok {
+					maxVal = i.Value
+				}
+			}
+			if maxVal < minVal {
+				minVal, maxVal = maxVal, minVal
+			}
+			diff := maxVal - minVal + 1
+			if diff <= 0 {
+				diff = 1
+			}
+			return &Integer{Value: minVal + mrand.Int63n(diff)}
+		},
+	}
+	acakMap.Pairs["uuid"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			u := make([]byte, 16)
+			rand.Read(u)
+			u[6] = (u[6] & 0x0f) | 0x40
+			u[8] = (u[8] & 0x3f) | 0x80
+			return &String{Value: fmt.Sprintf("%x-%x-%x-%x-%x", u[0:4], u[4:6], u[6:8], u[8:10], u[10:])}
+		},
+	}
 	env.Set("acak", acakMap)
 
 	// Modul enkoding (CSV & URL Query)
@@ -2894,6 +2929,50 @@ func InitGlobalEnvironment() *Environment {
 		},
 	}
 	env.Set("enkoding", enkodingMap)
+
+	// Modul url (Parsing & Manipulasi URL / URI)
+	urlMap := &Map{Pairs: make(map[string]Object)}
+	urlMap.Pairs["urai"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			resMap := &Map{Pairs: make(map[string]Object)}
+			if len(args) < 1 {
+				return resMap
+			}
+			u, err := url.Parse(args[0].Inspect())
+			if err != nil {
+				return resMap
+			}
+			resMap.Pairs["skema"] = &String{Value: u.Scheme}
+			resMap.Pairs["host"] = &String{Value: u.Host}
+			resMap.Pairs["namaHost"] = &String{Value: u.Hostname()}
+			resMap.Pairs["port"] = &String{Value: u.Port()}
+			resMap.Pairs["jalur"] = &String{Value: u.Path}
+			resMap.Pairs["kueri"] = &String{Value: u.RawQuery}
+			resMap.Pairs["fragmen"] = &String{Value: u.Fragment}
+			return resMap
+		},
+	}
+	urlMap.Pairs["kodekan"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			return &String{Value: url.QueryEscape(args[0].Inspect())}
+		},
+	}
+	urlMap.Pairs["dekodekan"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			res, err := url.QueryUnescape(args[0].Inspect())
+			if err != nil {
+				return args[0]
+			}
+			return &String{Value: res}
+		},
+	}
+	env.Set("url", urlMap)
 
 	// Modul json (Serialisasi & Deserialisasi JSON Standar)
 	jsonMap := &Map{Pairs: make(map[string]Object)}
@@ -3151,6 +3230,74 @@ func InitGlobalEnvironment() *Environment {
 				return FALSE
 			}
 			return &Boolean{Value: json.Valid([]byte(s))}
+		},
+	}
+	validasiMap.Pairs["apakahDiRentang"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 3 {
+				return FALSE
+			}
+			var val, minVal, maxVal float64
+			toNum := func(o Object) float64 {
+				if i, ok := o.(*Integer); ok {
+					return float64(i.Value)
+				} else if f, ok := o.(*Float); ok {
+					return f.Value
+				}
+				return 0
+			}
+			val = toNum(args[0])
+			minVal = toNum(args[1])
+			maxVal = toNum(args[2])
+			return &Boolean{Value: val >= minVal && val <= maxVal}
+		},
+	}
+	validasiMap.Pairs["apakahPositif"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return FALSE
+			}
+			if i, ok := args[0].(*Integer); ok {
+				return &Boolean{Value: i.Value > 0}
+			} else if f, ok := args[0].(*Float); ok {
+				return &Boolean{Value: f.Value > 0}
+			}
+			return FALSE
+		},
+	}
+	validasiMap.Pairs["apakahNegatif"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return FALSE
+			}
+			if i, ok := args[0].(*Integer); ok {
+				return &Boolean{Value: i.Value < 0}
+			} else if f, ok := args[0].(*Float); ok {
+				return &Boolean{Value: f.Value < 0}
+			}
+			return FALSE
+		},
+	}
+	validasiMap.Pairs["apakahGenap"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return FALSE
+			}
+			if i, ok := args[0].(*Integer); ok {
+				return &Boolean{Value: i.Value%2 == 0}
+			}
+			return FALSE
+		},
+	}
+	validasiMap.Pairs["apakahGanjil"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return FALSE
+			}
+			if i, ok := args[0].(*Integer); ok {
+				return &Boolean{Value: i.Value%2 != 0}
+			}
+			return FALSE
 		},
 	}
 	env.Set("validasi", validasiMap)

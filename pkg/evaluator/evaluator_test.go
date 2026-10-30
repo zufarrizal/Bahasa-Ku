@@ -629,3 +629,61 @@ fungsi utama() {
 		t.Errorf("Diharapkan 400, didapat %d", intVal.Value)
 	}
 }
+
+func TestUrlAcakDanValidasiLanjutan(t *testing.T) {
+	input := `
+paket utama
+fungsi utama() {
+    // 1. Uji url (urai, kodekan, dekodekan)
+    var u = url.urai("https://api.domain.id:8080/v1/users?page=2#top")
+    jika u["skema"] != "https" || u["namaHost"] != "api.domain.id" || u["port"] != "8080" {
+        kembalikan 1
+    }
+    jika u["jalur"] != "/v1/users" || u["kueri"] != "page=2" || u["fragmen"] != "top" {
+        kembalikan 2
+    }
+
+    var enc = url.kodekan("halo dunia & halo")
+    jika url.dekodekan(enc) != "halo dunia & halo" {
+        kembalikan 3
+    }
+
+    // 2. Uji acak (angka & uuid)
+    var rnd = acak.angka(10, 20)
+    jika rnd < 10 || rnd > 20 {
+        kembalikan 4
+    }
+    var id = acak.uuid()
+    jika panjang(id) != 36 {
+        kembalikan 5
+    }
+
+    // 3. Uji validasi (apakahDiRentang, apakahPositif, apakahNegatif, apakahGenap, apakahGanjil)
+    jika !validasi.apakahDiRentang(15, 10, 20) || validasi.apakahDiRentang(5, 10, 20) == benar {
+        kembalikan 6
+    }
+    jika !validasi.apakahPositif(10) || validasi.apakahPositif(-5) == benar {
+        kembalikan 7
+    }
+    jika !validasi.apakahNegatif(-10) || validasi.apakahNegatif(5) == benar {
+        kembalikan 8
+    }
+    jika !validasi.apakahGenap(4) || validasi.apakahGenap(5) == benar {
+        kembalikan 9
+    }
+    jika !validasi.apakahGanjil(7) || validasi.apakahGanjil(8) == benar {
+        kembalikan 10
+    }
+
+    kembalikan 500
+}
+`
+	val := runKuCode(input)
+	intVal, ok := val.(*evaluator.Integer)
+	if !ok {
+		t.Fatalf("Nilai bukan Integer: %v", val)
+	}
+	if intVal.Value != 500 {
+		t.Errorf("Diharapkan 500, didapat %d", intVal.Value)
+	}
+}

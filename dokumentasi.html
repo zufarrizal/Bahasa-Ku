@@ -347,6 +347,7 @@
               <li><a href="#modul-kripto">`kripto` (Hash & JWT)</a></li>
               <li><a href="#modul-bita">`bita` (Byte Buffer)</a></li>
               <li><a href="#modul-enkoding">`enkoding` (CSV, URL, Hex)</a></li>
+              <li><a href="#modul-url">`url` (Parsing URL/URI)</a></li>
               <li><a href="#modul-web">`web` (HTTP Server)</a></li>
               <li><a href="#modul-soket">`soket` (TCP Network)</a></li>
               <li><a href="#modul-basisdata">`basisdata` (MySQL)</a></li>
@@ -867,6 +868,9 @@ var hasilCsv = csv.buat([["ID", "Nilai"], ["1", "90"]])</code></pre>
             <tr><td><code>validasi.apakahAlfanumerik(teks)</code></td><td>Memeriksa apakah string hanya terdiri dari kombinasi huruf dan angka (boolean)</td></tr>
             <tr><td><code>validasi.apakahPanjang(teks, min, max)</code></td><td>Memeriksa apakah panjang karakter teks berada dalam batas minimum dan maksimum (boolean)</td></tr>
             <tr><td><code>validasi.apakahJSON(teks)</code></td><td>Memeriksa apakah string merupakan JSON valid tanpa melempar galat (boolean)</td></tr>
+            <tr><td><code>validasi.apakahDiRentang(x, min, max)</code></td><td>Memeriksa apakah angka berada dalam rentang minimum dan maksimum inklusif (boolean)</td></tr>
+            <tr><td><code>validasi.apakahPositif(x)</code> / <code>apakahNegatif(x)</code></td><td>Memeriksa apakah tanda bilangan positif / negatif (boolean)</td></tr>
+            <tr><td><code>validasi.apakahGenap(n)</code> / <code>apakahGanjil(n)</code></td><td>Memeriksa apakah bilangan bulat bernilai genap / ganjil (boolean)</td></tr>
           </tbody>
         </table>
         <pre><code>jika validasi.apakahEmail("pengguna@domain.id") {
@@ -1017,6 +1021,8 @@ var geser = angka.geserKiri(1, 8) // 256</code></pre>
           </thead>
           <tbody>
             <tr><td><code>acak.pilih(arr)</code></td><td>Mengambil satu elemen acak dari larik</td></tr>
+            <tr><td><code>acak.angka(min, max)</code></td><td>Menghasilkan integer acak dalam rentang min hingga max inklusif</td></tr>
+            <tr><td><code>acak.uuid()</code></td><td>Menghasilkan string ID unik global UUID v4</td></tr>
             <tr><td><code>acak.teks(n)</code></td><td>Menghasilkan string alfanumerik acak dengan panjang n digit</td></tr>
             <tr><td><code>acak.pecahan()</code></td><td>Menghasilkan bilangan acak float antara 0.0 hingga 1.0</td></tr>
           </tbody>
@@ -1305,6 +1311,25 @@ var teks = bita.keTeks(bs)   // "Ku"</code></pre>
         <pre><code>var csvData = "nama,skor\nBudi,95"
 var tabel = enkoding.uraiCSV(csvData)
 var hex = enkoding.kodekanHeksa("Ku") // 4b75</code></pre>
+      </section>
+
+<section id="modul-url" class="docs-section">
+        <h2>Modul `url` (Parsing & Manipulasi URL / URI)</h2>
+        <p>Penguraian komponen URL web lengkap beserta encode/decode query parameter:</p>
+        <table>
+          <thead>
+            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>url.urai(urlStr)</code></td><td>Mengurai URL menjadi objek Map berisi: <code>skema</code>, <code>host</code>, <code>namaHost</code>, <code>port</code>, <code>jalur</code>, <code>kueri</code>, <code>fragmen</code></td></tr>
+            <tr><td><code>url.kodekan(teks)</code></td><td>Mengubah string menjadi format URL query escape yang aman</td></tr>
+            <tr><td><code>url.dekodekan(str)</code></td><td>Mengembalikan string URL query escape kembali ke teks asli</td></tr>
+          </tbody>
+        </table>
+        <pre><code>var u = url.urai("https://api.domain.id:8080/v1/users?page=2#top")
+cetak.tulis("Host:", u["namaHost"]) // api.domain.id
+cetak.tulis("Port:", u["port"])     // 8080
+cetak.tulis("Jalur:", u["jalur"])   // /v1/users</code></pre>
       </section>
 
       <!-- Modul Standar: Web -->
