@@ -53,10 +53,31 @@ func (f *Formatter) Format(node ast.Node) string {
 
 	case *ast.FunctionStatement:
 		params := []string{}
-		for _, p := range n.Parameters {
-			params = append(params, p.Value)
+		for i, p := range n.Parameters {
+			if n.IsVariadic && i == len(n.Parameters)-1 {
+				params = append(params, "..."+p.Value)
+			} else {
+				params = append(params, p.Value)
+			}
 		}
-		out := fmt.Sprintf("\nfungsi %s(%s) ", n.Name.Value, strings.Join(params, ", "))
+		recStr := ""
+		if n.Receiver != nil {
+			recStr = fmt.Sprintf("(%s %s) ", n.Receiver.Name, n.Receiver.Type)
+		}
+		out := fmt.Sprintf("\nfungsi %s%s(%s) ", recStr, n.Name.Value, strings.Join(params, ", "))
+		out += f.Format(n.Body)
+		return out
+
+	case *ast.FunctionLiteral:
+		params := []string{}
+		for i, p := range n.Parameters {
+			if n.IsVariadic && i == len(n.Parameters)-1 {
+				params = append(params, "..."+p.Value)
+			} else {
+				params = append(params, p.Value)
+			}
+		}
+		out := fmt.Sprintf("fungsi(%s) ", strings.Join(params, ", "))
 		out += f.Format(n.Body)
 		return out
 

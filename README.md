@@ -297,6 +297,47 @@ fungsi utama() {
 }
 ```
 
+### 7. Method Receiver Struct, Fungsi Anonim, & Argumen Variadik (`contoh/dasar_method_variadic.ku`)
+```ku
+paket utama
+
+pakai "cetak"
+
+tipe Persegi struktur {
+    panjang angka
+    lebar   angka
+}
+
+// Method Receiver khas Go terikat pada tipe struct
+fungsi (p Persegi) hitungLuas() {
+    kembalikan p.panjang * p.lebar
+}
+
+// Argumen variadik (...args) menerima jumlah argumen dinamis
+fungsi jumlahkanSemua(...daftarAngka) {
+    var total = 0
+    untuk _, x dalam daftarAngka {
+        total += x
+    }
+    kembalikan total
+}
+
+fungsi utama() {
+    // 1. Inisialisasi struct & pemanggilan method
+    var kotak = Persegi({ panjang: 10, lebar: 5 })
+    cetak.tulis("Luas Persegi:", kotak.hitungLuas()) // 50
+
+    // 2. Argumen variadik tak terhingga
+    cetak.tulis("Total:", jumlahkanSemua(1, 2, 3, 4, 5)) // 15
+
+    // 3. Fungsi Anonim (Closure / First-Class Citizen)
+    var pengali = fungsi(x) {
+        kembalikan x * 3
+    }
+    cetak.tulis("Hasil Pengali:", pengali(7)) // 21
+}
+```
+
 ---
 
 ## 📂 Struktur Proyek

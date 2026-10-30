@@ -204,7 +204,17 @@ func (l *Lexer) NextToken() token.Token {
 	case ',':
 		tok = token.Token{Type: token.COMMA, Literal: string(l.ch), Line: curLine, Column: curCol}
 	case '.':
-		tok = token.Token{Type: token.DOT, Literal: string(l.ch), Line: curLine, Column: curCol}
+		if l.peekChar() == '.' {
+			l.readChar()
+			if l.peekChar() == '.' {
+				l.readChar()
+				tok = token.Token{Type: token.ELLIPSIS, Literal: "...", Line: curLine, Column: curCol}
+			} else {
+				tok = token.Token{Type: token.DOT, Literal: ".", Line: curLine, Column: curCol}
+			}
+		} else {
+			tok = token.Token{Type: token.DOT, Literal: string(l.ch), Line: curLine, Column: curCol}
+		}
 	case '(':
 		tok = token.Token{Type: token.LPAREN, Literal: string(l.ch), Line: curLine, Column: curCol}
 	case ')':

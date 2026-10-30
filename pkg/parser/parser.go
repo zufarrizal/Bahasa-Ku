@@ -260,6 +260,25 @@ func (p *Parser) parseVarStatement() ast.Statement {
 
 func (p *Parser) parseFunctionStatement() ast.Statement {
 	stmt := &ast.FunctionStatement{Token: p.curToken}
+
+	// Dukungan method receiver khas Go: fungsi (p Pengguna) sapa() { ... }
+	if p.peekTokenIs(token.LPAREN) {
+		p.nextToken() // ke '('
+		if !p.expectPeek(token.IDENT) {
+			return nil
+		}
+		recName := p.curToken.Literal
+		recType := ""
+		if p.peekTokenIs(token.IDENT) {
+			p.nextToken()
+			recType = p.curToken.Literal
+		}
+		if !p.expectPeek(token.RPAREN) {
+			return nil
+		}
+		stmt.Receiver = &ast.FunctionReceiver{Name: recName, Type: recType}
+	}
+
 	if !p.expectPeek(token.IDENT) {
 		return nil
 	}
@@ -268,7 +287,9 @@ func (p *Parser) parseFunctionStatement() ast.Statement {
 	if !p.expectPeek(token.LPAREN) {
 		return nil
 	}
-	stmt.Parameters = p.parseFunctionParameters()
+	params, isVariadic := p.parseFunctionParameters()
+	stmt.Parameters = params
+	stmt.IsVariadic = isVariadic
 
 	// opsional return type (misal fungsi tes() angka { ... })
 	if p.peekTokenIs(token.IDENT) {
@@ -282,14 +303,21 @@ func (p *Parser) parseFunctionStatement() ast.Statement {
 	return stmt
 }
 
-func (p *Parser) parseFunctionParameters() []*ast.Identifier {
+func (p *Parser) parseFunctionParameters() ([]*ast.Identifier, bool) {
 	params := []*ast.Identifier{}
+	isVariadic := false
+
 	if p.peekTokenIs(token.RPAREN) {
 		p.nextToken()
-		return params
+		return params, isVariadic
 	}
 
 	p.nextToken()
+	// Cek apakah parameter pertama variadik (...args)
+	if p.curTokenIs(token.ELLIPSIS) {
+		isVariadic = true
+		p.nextToken()
+	}
 	params = append(params, &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal})
 
 	if p.peekTokenIs(token.IDENT) {
@@ -297,8 +325,12 @@ func (p *Parser) parseFunctionParameters() []*ast.Identifier {
 	}
 
 	for p.peekTokenIs(token.COMMA) {
-		p.nextToken()
-		p.nextToken()
+		p.nextToken() // ke ','
+		p.nextToken() // ke identifier atau '...'
+		if p.curTokenIs(token.ELLIPSIS) {
+			isVariadic = true
+			p.nextToken()
+		}
 		params = append(params, &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal})
 		if p.peekTokenIs(token.IDENT) {
 			p.nextToken()
@@ -306,9 +338,9 @@ func (p *Parser) parseFunctionParameters() []*ast.Identifier {
 	}
 
 	if !p.expectPeek(token.RPAREN) {
-		return nil
+		return nil, false
 	}
-	return params
+	return params, isVariadic
 }
 
 func (p *Parser) parseBlockStatement() *ast.BlockStatement {
@@ -656,6 +688,8 @@ func (p *Parser) parsePrefix() ast.Expression {
 		return &ast.BooleanLiteral{Token: p.curToken, Value: false}
 	case token.KOSONG:
 		return &ast.NilLiteral{Token: p.curToken}
+	case token.FUNGSI:
+		return p.parseFunctionLiteral()
 	case token.BANG, token.MINUS:
 		tok := p.curToken
 		p.nextToken()
@@ -817,4 +851,26 @@ func (p *Parser) parseMapLiteral() ast.Expression {
 		return nil
 	}
 	return m
+}
+
+func (p *Parser) parseFunctionLiteral() ast.Expression {
+	lit := &ast.FunctionLiteral{Token: p.curToken}
+
+	if !p.expectPeek(token.LPAREN) {
+		return nil
+	}
+	params, isVariadic := p.parseFunctionParameters()
+	lit.Parameters = params
+	lit.IsVariadic = isVariadic
+
+	// opsional return type
+	if p.peekTokenIs(token.IDENT) {
+		p.nextToken()
+	}
+
+	if !p.expectPeek(token.LBRACE) {
+		return nil
+	}
+	lit.Body = p.parseBlockStatement()
+	return lit
 }

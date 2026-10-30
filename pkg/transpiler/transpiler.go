@@ -72,11 +72,30 @@ func (t *Transpiler) Transpile(node ast.Node) string {
 			return out
 		}
 		params := []string{}
-		for _, p := range n.Parameters {
-			params = append(params, p.Value+" interface{}")
+		for i, p := range n.Parameters {
+			if n.IsVariadic && i == len(n.Parameters)-1 {
+				params = append(params, p.Value+" ...interface{}")
+			} else {
+				params = append(params, p.Value+" interface{}")
+			}
 		}
-		out := fmt.Sprintf("func %s(%s) interface{} %s\n", name, strings.Join(params, ", "), t.Transpile(n.Body))
+		recStr := ""
+		if n.Receiver != nil {
+			recStr = fmt.Sprintf("(%s %s) ", n.Receiver.Name, n.Receiver.Type)
+		}
+		out := fmt.Sprintf("func %s%s(%s) interface{} %s\n", recStr, name, strings.Join(params, ", "), t.Transpile(n.Body))
 		return out
+
+	case *ast.FunctionLiteral:
+		params := []string{}
+		for i, p := range n.Parameters {
+			if n.IsVariadic && i == len(n.Parameters)-1 {
+				params = append(params, p.Value+" ...interface{}")
+			} else {
+				params = append(params, p.Value+" interface{}")
+			}
+		}
+		return fmt.Sprintf("func(%s) interface{} %s", strings.Join(params, ", "), t.Transpile(n.Body))
 
 	case *ast.BlockStatement:
 		out := "{\n"

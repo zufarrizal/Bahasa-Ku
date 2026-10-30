@@ -66,6 +66,7 @@ const (
 	RBRACE   = "}"
 	LBRACKET = "["
 	RBRACKET = "]"
+	ELLIPSIS = "..."
 
 	// Keywords Bahasa Ku
 	PAKET      = "PAKET"

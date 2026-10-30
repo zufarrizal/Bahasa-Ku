@@ -155,7 +155,9 @@ func (b *Builtin) Type() ObjectType { return BUILTIN_OBJ }
 func (b *Builtin) Inspect() string  { return "fungsi bawaan" }
 
 type Function struct {
+	Receiver   *ast.FunctionReceiver
 	Parameters []*ast.Identifier
+	IsVariadic bool
 	Body       *ast.BlockStatement
 	Env        *Environment
 }
@@ -186,8 +188,9 @@ func (m *Map) Inspect() string {
 }
 
 type StructDef struct {
-	Name   string
-	Fields []ast.StructField
+	Name    string
+	Fields  []ast.StructField
+	Methods map[string]*Function
 }
 
 func (s *StructDef) Type() ObjectType { return STRUCT_DEF_OBJ }
@@ -1091,7 +1094,7 @@ func Eval(node ast.Node, env *Environment) Object {
 		return NIL
 
 	case *ast.TypeStructStatement:
-		def := &StructDef{Name: n.Name.Value, Fields: n.Fields}
+		def := &StructDef{Name: n.Name.Value, Fields: n.Fields, Methods: make(map[string]*Function)}
 		env.Set(n.Name.Value, def)
 		return def
 
@@ -1210,9 +1213,32 @@ func Eval(node ast.Node, env *Environment) Object {
 		return NIL
 
 	case *ast.FunctionStatement:
-		fn := &Function{Parameters: n.Parameters, Body: n.Body, Env: env}
+		fn := &Function{
+			Receiver:   n.Receiver,
+			Parameters: n.Parameters,
+			IsVariadic: n.IsVariadic,
+			Body:       n.Body,
+			Env:        env,
+		}
+		// Jika merupakan method receiver: fungsi (p Pengguna) sapa() { ... }
+		if n.Receiver != nil {
+			if typeObj, ok := env.Get(n.Receiver.Type); ok {
+				if def, isStruct := typeObj.(*StructDef); isStruct {
+					def.Methods[n.Name.Value] = fn
+					return fn
+				}
+			}
+		}
 		env.Set(n.Name.Value, fn)
 		return fn
+
+	case *ast.FunctionLiteral:
+		return &Function{
+			Parameters: n.Parameters,
+			IsVariadic: n.IsVariadic,
+			Body:       n.Body,
+			Env:        env,
+		}
 
 	case *ast.BreakStatement:
 		return &Break{}
@@ -1478,6 +1504,23 @@ func Eval(node ast.Node, env *Environment) Object {
 			if val, ok := si.Fields[n.Property.Value]; ok {
 				return val
 			}
+			// Cek apakah ada method terikat pada struct instance
+			if si.Def != nil && si.Def.Methods != nil {
+				if method, hasMethod := si.Def.Methods[n.Property.Value]; hasMethod {
+					// Bungkus method dengan receiver instance ini
+					boundFn := &Function{
+						Receiver:   method.Receiver,
+						Parameters: method.Parameters,
+						IsVariadic: method.IsVariadic,
+						Body:       method.Body,
+						Env:        NewEnclosedEnvironment(method.Env),
+					}
+					if method.Receiver != nil {
+						boundFn.Env.Set(method.Receiver.Name, si)
+					}
+					return boundFn
+				}
+			}
 		}
 		return NIL
 
@@ -1533,9 +1576,31 @@ func applyFunction(fn Object, args []Object, outerEnv *Environment) Object {
 
 	if f, ok := fn.(*Function); ok {
 		fnEnv := NewEnclosedEnvironment(f.Env)
-		for i, param := range f.Parameters {
-			if i < len(args) {
-				fnEnv.Set(param.Value, args[i])
+		if f.Receiver != nil {
+			if recObj, exists := f.Env.Get(f.Receiver.Name); exists {
+				fnEnv.Set(f.Receiver.Name, recObj)
+			}
+		}
+
+		if f.IsVariadic && len(f.Parameters) > 0 {
+			regularParamCount := len(f.Parameters) - 1
+			for i := 0; i < regularParamCount; i++ {
+				if i < len(args) {
+					fnEnv.Set(f.Parameters[i].Value, args[i])
+				}
+			}
+			var rest []Object
+			if len(args) > regularParamCount {
+				rest = args[regularParamCount:]
+			} else {
+				rest = []Object{}
+			}
+			fnEnv.Set(f.Parameters[regularParamCount].Value, &Array{Elements: rest})
+		} else {
+			for i, param := range f.Parameters {
+				if i < len(args) {
+					fnEnv.Set(param.Value, args[i])
+				}
 			}
 		}
 

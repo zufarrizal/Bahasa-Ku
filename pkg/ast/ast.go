@@ -131,15 +131,32 @@ type TypeStructStatement struct {
 func (ts *TypeStructStatement) statementNode()       {}
 func (ts *TypeStructStatement) TokenLiteral() string { return ts.Token.Literal }
 
+type FunctionReceiver struct {
+	Name string // nama variabel receiver, misal 'l'
+	Type string // nama tipe struct, misal 'Lingkaran'
+}
+
 type FunctionStatement struct {
 	Token      token.Token // token.FUNGSI
+	Receiver   *FunctionReceiver // Opsional method receiver: (l Lingkaran)
 	Name       *Identifier
 	Parameters []*Identifier
+	IsVariadic bool // Parameter terakhir variadic (...args)
 	Body       *BlockStatement
 }
 
 func (fs *FunctionStatement) statementNode()       {}
 func (fs *FunctionStatement) TokenLiteral() string { return fs.Token.Literal }
+
+type FunctionLiteral struct {
+	Token      token.Token // token.FUNGSI
+	Parameters []*Identifier
+	IsVariadic bool
+	Body       *BlockStatement
+}
+
+func (fl *FunctionLiteral) expressionNode()      {}
+func (fl *FunctionLiteral) TokenLiteral() string { return fl.Token.Literal }
 
 type IfStatement struct {
 	Token       token.Token // token.JIKA

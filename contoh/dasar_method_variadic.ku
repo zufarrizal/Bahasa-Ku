@@ -1,0 +1,60 @@
+paket utama
+
+pakai "cetak"
+
+// 1. Definisi Struct
+tipe Persegi struktur {
+    panjang angka
+    lebar   angka
+}
+
+// 2. Method Receiver terikat pada struct Persegi
+fungsi (p Persegi) hitungLuas() {
+    kembalikan p.panjang * p.lebar
+}
+
+fungsi (p Persegi) hitungKeliling() {
+    kembalikan 2 * (p.panjang + p.lebar)
+}
+
+// 3. Fungsi dengan Argumen Variadik (...angka)
+fungsi jumlahkanSemua(...daftarAngka) {
+    var total = 0
+    untuk _, x dalam daftarAngka {
+        total += x
+    }
+    kembalikan total
+}
+
+// 4. Fungsi Higher-Order menerima fungsi sebagai parameter
+fungsi terapkan(angkaAwal, fn) {
+    kembalikan fn(angkaAwal)
+}
+
+fungsi utama() {
+    cetak.tulis("=== Uji Coba Method Receiver, Fungsi Anonim, & Argumen Variadik ===")
+
+    // Uji Method Receiver
+    var kotak = Persegi({
+        panjang: 10,
+        lebar: 5
+    })
+    cetak.tulis("Luas Persegi (10 x 5):", kotak.hitungLuas())
+    cetak.tulis("Keliling Persegi:", kotak.hitungKeliling())
+
+    // Uji Argumen Variadik
+    var hasilJumlah = jumlahkanSemua(10, 20, 30, 40, 5)
+    cetak.tulis("Jumlahkan Variadik (10, 20, 30, 40, 5) =", hasilJumlah)
+
+    // Uji Fungsi Anonim (Closure/Lambda)
+    var pengali = fungsi(x) {
+        kembalikan x * 3
+    }
+    cetak.tulis("Hasil Fungsi Anonim pengali(7):", pengali(7))
+
+    // Uji Fungsi Anonim sebagai argumen (Higher-order function)
+    var hasilProses = terapkan(50, fungsi(n) {
+        kembalikan n + 25
+    })
+    cetak.tulis("Hasil fungsi terapkan(50, n + 25):", hasilProses)
+}
