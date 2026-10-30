@@ -94,6 +94,8 @@ func main() {
 	command := args[0]
 
 	switch command {
+	case "bantuan", "help", "-h", "--help":
+		printHelp()
 	case "repl":
 		repl.Start(os.Stdin, os.Stdout, version)
 	case "versi", "-v", "--version":
@@ -202,7 +204,8 @@ func main() {
 		runBenchmarks(targetPath)
 
 	default:
-		fmt.Printf("Perintah '%s' tidak dikenal. Ketik 'ku' untuk bantuan.\n", command)
+		fmt.Printf("Perintah '%s' tidak dikenal. Ketik 'ku bantuan' atau 'ku -h' untuk bantuan.\n", command)
+		printHelp()
 		os.Exit(1)
 	}
 }
