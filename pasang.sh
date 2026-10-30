@@ -13,9 +13,9 @@ OS="$(uname -s)"
 ARCH="$(uname -m)"
 
 if [ "$OS" = "Linux" ]; then
-    URL="https://github.com/zufarrizal/Bahasa-Ku/releases/download/v0.2.0/ku-linux-amd64"
+    URL="https://github.com/zufarrizal/Bahasa-Ku/releases/download/v0.3.0/ku-linux-amd64"
 elif [ "$OS" = "Darwin" ]; then
-    URL="https://github.com/zufarrizal/Bahasa-Ku/releases/download/v0.2.0/ku-darwin-arm64"
+    URL="https://github.com/zufarrizal/Bahasa-Ku/releases/download/v0.3.0/ku-darwin-arm64"
 else
     echo "OS tidak didukung oleh skrip ini: $OS"
     exit 1
@@ -39,7 +39,7 @@ fi
 echo "[3/3] Memeriksa instalasi VS Code..."
 if command -v code &> /dev/null; then
     echo "      -> Memasang ekstensi VS Code otomatis..."
-    VSIX_URL="https://github.com/zufarrizal/Bahasa-Ku/releases/download/v0.2.0/bahasa-ku-vscode-0.1.0.vsix"
+    VSIX_URL="https://github.com/zufarrizal/Bahasa-Ku/releases/download/v0.3.0/bahasa-ku-vscode-0.2.0.vsix"
     curl -sL "$VSIX_URL" -o "$INSTALL_DIR/bahasa-ku.vsix"
     code --install-extension "$INSTALL_DIR/bahasa-ku.vsix" --force > /dev/null 2>&1 || true
     rm -f "$INSTALL_DIR/bahasa-ku.vsix"
