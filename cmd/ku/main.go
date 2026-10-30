@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"unicode"
 
 	"github.com/zufarrizal/bahasa-ku/pkg/ast"
 	"github.com/zufarrizal/bahasa-ku/pkg/evaluator"
@@ -29,9 +30,25 @@ func init() {
 		p := parser.New(l)
 		prog := p.ParseProgram()
 		if len(p.Errors()) == 0 {
+			subEnv := evaluator.NewEnclosedEnvironment(env)
 			for _, stmt := range prog.Statements {
 				if _, isPaket := stmt.(*ast.PaketStatement); !isPaket {
-					evaluator.Eval(stmt, env)
+					evaluator.Eval(stmt, subEnv)
+				}
+			}
+
+			// Jalankan inisiasi() pada sub-file jika ada
+			if initObj, ok := subEnv.Get("inisiasi"); ok {
+				if fn, isFn := initObj.(*evaluator.Function); isFn {
+					evaluator.Eval(fn.Body, subEnv)
+				}
+			}
+
+			// Ekspor simbol: Simbol huruf kapital terekspor ke paket pemanggil (aturan ekspor Go)
+			// Simbol bawaan atau huruf kecil tetap terlindungi di subEnv
+			for name, val := range subEnv.GetStore() {
+				if len(name) > 0 && unicode.IsUpper(rune(name[0])) {
+					env.Set(name, val)
 				}
 			}
 		}
@@ -129,6 +146,13 @@ func main() {
 		}
 		runTests(targetPath)
 
+	case "tolakUkur", "tolak-ukur", "bench", "benchmark":
+		targetPath := "."
+		if len(args) >= 2 {
+			targetPath = args[1]
+		}
+		runBenchmarks(targetPath)
+
 	default:
 		fmt.Printf("Perintah '%s' tidak dikenal. Ketik 'ku' untuk bantuan.\n", command)
 		os.Exit(1)
@@ -140,6 +164,7 @@ func printHelp() {
   ku                       Membuka REPL (terminal interaktif)
   ku jalankan <berkas.ku>  Menjalankan berkas kode .ku
   ku uji [berkas/_uji.ku]  Menjalankan pengujian unit test otomatis
+  ku tolakUkur [berkas]    Menjalankan pengujian tolok ukur performa (benchmark)
   ku rapi [-w] <berkas.ku> Merapikan format kode secara otomatis (mirip gofmt)
   ku kompilasi <berkas.ku> [-o keluar.exe]  Kompilasi langsung ke biner mandiri (.exe)
   ku inisialisasi <nama_folder> [web|desktop|cli]  Membuat proyek baru beserta berkas ku.mod
@@ -522,5 +547,64 @@ func runTests(targetPath string) {
 
 	fmt.Printf("✨ Pengujian Selesai: %d/%d berkas pengujian berhasil dijalankan.\n", totalLulus, len(testFiles))
 }
+
+func runBenchmarks(targetPath string) {
+	benchFiles := []string{}
+
+	info, err := os.Stat(targetPath)
+	if err != nil {
+		fmt.Printf("Galat mengakses '%s': %v\n", targetPath, err)
+		os.Exit(1)
+	}
+
+	if !info.IsDir() {
+		benchFiles = append(benchFiles, targetPath)
+	} else {
+		filepath.Walk(targetPath, func(path string, f os.FileInfo, err error) error {
+			if err != nil {
+				return nil
+			}
+			if !f.IsDir() && (strings.HasSuffix(f.Name(), "_tolakukur.ku") || strings.HasSuffix(f.Name(), "_bench.ku")) {
+				benchFiles = append(benchFiles, path)
+			}
+			return nil
+		})
+	}
+
+	if len(benchFiles) == 0 {
+		fmt.Println("ℹ️  Tidak ditemukan berkas tolok ukur (*_tolakukur.ku atau *_bench.ku).")
+		return
+	}
+
+	fmt.Printf("⚡ Menjalankan Pengujian Tolok Ukur / Benchmark (%d berkas)...\n\n", len(benchFiles))
+
+	for _, file := range benchFiles {
+		fmt.Printf("=== TOLAK UKUR %s ===\n", file)
+		content, err := os.ReadFile(file)
+		if err != nil {
+			fmt.Printf("❌ Gagal membaca %s: %v\n", file, err)
+			continue
+		}
+
+		l := lexer.New(string(content))
+		p := parser.New(l)
+		prog := p.ParseProgram()
+
+		if len(p.Errors()) > 0 {
+			fmt.Println("❌ Galat Sintaks:")
+			for _, e := range p.Errors() {
+				fmt.Println("   -", e)
+			}
+			continue
+		}
+
+		env := evaluator.InitGlobalEnvironment()
+		evaluator.Eval(prog, env)
+		fmt.Println()
+	}
+
+	fmt.Println("✨ Pengujian Tolak Ukur Selesai.")
+}
+
 
 

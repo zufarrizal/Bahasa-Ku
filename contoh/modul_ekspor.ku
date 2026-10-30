@@ -1,0 +1,18 @@
+paket modul_uji
+
+pakai "cetak"
+
+// Simbol dengan Huruf Kapital (Terekspor ke berkas pemanggil)
+var VersiPublik = "1.0.0"
+var NamaAplikasi = "Aplikasi Modular Ku"
+
+fungsi HitungTambah(a, b) {
+    kembalikan a + b
+}
+
+// Simbol dengan huruf kecil (Privat, tidak terekspor)
+var rahasiaInternal = "KUNCI_PRIVAT_12345"
+
+fungsi bantuInternal() {
+    kembalikan "hanya untuk internal modul"
+}

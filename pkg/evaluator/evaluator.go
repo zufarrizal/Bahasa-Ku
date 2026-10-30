@@ -181,6 +181,10 @@ func (e *Environment) Update(name string, val Object) bool {
 	return false
 }
 
+func (e *Environment) GetStore() map[string]Object {
+	return e.store
+}
+
 var globalPanic Object = nil
 
 type SubFileEvaluator func(path string, env *Environment)
@@ -5221,6 +5225,46 @@ func InitGlobalEnvironment() *Environment {
 			return FALSE
 		},
 	}
+	ujiMap.Pairs["tolakUkur"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			// Benchmark: uji.tolakUkur("Nama Tolak Ukur", fungsi(b) { ... })
+			if len(args) < 2 {
+				return NIL
+			}
+			benchName := args[0].Inspect()
+			fn, isFn := args[1].(*Function)
+			if !isFn {
+				return NIL
+			}
+
+			// Iterasi penyesuaian durasi adaptif ala testing.B Go (100, 1000, 10000, ...)
+			bObj := &Map{Pairs: make(map[string]Object)}
+			var iterCount int64 = 1000
+			bObj.Pairs["N"] = &Integer{Value: iterCount}
+
+			start := time.Now()
+			applyFunction(fn, []Object{bObj}, env)
+			elapsed := time.Since(start)
+
+			// Sesuaikan jika terlalu cepat (< 100ms)
+			if elapsed < 100*time.Millisecond {
+				iterCount = 100000
+				bObj.Pairs["N"] = &Integer{Value: iterCount}
+				start = time.Now()
+				applyFunction(fn, []Object{bObj}, env)
+				elapsed = time.Since(start)
+			}
+
+			nsPerOp := float64(elapsed.Nanoseconds()) / float64(iterCount)
+			fmt.Printf("⏱️  [TOLAK UKUR] %-30s %10d iterasi\t%10.2f ns/op\n", benchName, iterCount, nsPerOp)
+
+			resMap := &Map{Pairs: make(map[string]Object)}
+			resMap.Pairs["nama"] = &String{Value: benchName}
+			resMap.Pairs["iterasi"] = &Integer{Value: iterCount}
+			resMap.Pairs["nsPerOp"] = &Float{Value: nsPerOp}
+			return resMap
+		},
+	}
 	env.Set("uji", ujiMap)
 
 	// Modul waktu (Pengelolaan Tanggal dan Durasi Waktu)
@@ -5999,6 +6043,17 @@ func Eval(node ast.Node, env *Environment) Object {
 				return ret.Value
 			}
 		}
+		// Jalankan fungsi inisiasi / init otomatis jika ada (filosofi func init() Go)
+		if initFn, ok := env.Get("inisiasi"); ok {
+			if fn, ok := initFn.(*Function); ok {
+				res := applyFunction(fn, []Object{}, env)
+				if p, ok := res.(*PanicObject); ok {
+					fmt.Println("💥 Galat Panik pada inisiasi():", p.Value.Inspect())
+					return p
+				}
+			}
+		}
+
 		if mainFn, ok := env.Get("utama"); ok {
 			if fn, ok := mainFn.(*Function); ok {
 				res := applyFunction(fn, []Object{}, env)

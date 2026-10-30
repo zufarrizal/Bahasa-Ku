@@ -411,6 +411,10 @@
               <td>Menjalankan suite pengujian unit test internal</td>
             </tr>
             <tr>
+              <td><code>ku tolakUkur [berkas_bench.ku]</code></td>
+              <td>Menjalankan pengujian tolok ukur kecepatan eksekusi (benchmark) ala <code>testing.B</code></td>
+            </tr>
+            <tr>
               <td><code>ku interaktif</code></td>
               <td>Membuka mode REPL interaktif di terminal</td>
             </tr>
@@ -424,15 +428,27 @@
 
       <!-- Struktur Program Dasar -->
       <section id="struktur-program" class="docs-section">
-        <h2>Struktur Program Dasar</h2>
-        <p>Setiap program Bahasa Ku diawali dengan deklarasi paket dan impor pustaka, diikuti dengan fungsi entri utama <code>fungsi utama()</code>:</p>
+        <h2>Struktur Program Dasar, Inisiasi & Aturan Ekspor</h2>
+        <p>Setiap program Bahasa Ku diawali dengan deklarasi paket dan impor pustaka, diikuti fungsi inisialisasi opsional <code>fungsi inisiasi()</code> yang otomatis berjalan lebih awal, dan fungsi entri utama <code>fungsi utama()</code>:</p>
         <pre><code>paket utama
 
 pakai "cetak"
 
+// Berjalan otomatis lebih dulu sebelum utama() (mirip func init() di Go)
+fungsi inisiasi() {
+    cetak.tulis("Menyiapkan konfigurasi awal...")
+}
+
 fungsi utama() {
     cetak.tulis("Halo dari Bahasa Ku!")
 }</code></pre>
+
+        <h3>Aturan Ekspor Paket (Kapitalisasi ala Go)</h3>
+        <p>Ketika Anda mengimpor berkas modul lain melalui <code>pakai "./helper.ku"</code>:</p>
+        <ul>
+          <li>Simbol yang diawali <strong>Huruf Kapital</strong> (misal: <code>HitungNilai</code>, <code>Versi</code>) otomatis <strong>Publik & Terekspor</strong> ke paket pemanggil.</li>
+          <li>Simbol yang diawali <strong>huruf kecil</strong> (misal: <code>rahasiaInternal</code>, <code>bantu()</code>) bersifat <strong>Privat</strong> hanya di modul tersebut.</li>
+        </ul>
       </section>
 
       <!-- PEMBATAS KATEGORI 2: SINTAKSIS & FONDASI -->
