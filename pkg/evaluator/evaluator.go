@@ -585,6 +585,22 @@ func InitGlobalEnvironment() *Environment {
 			return &String{Value: time.Now().Format("2006-01-02 15:04:05")}
 		},
 	}
+	sistemMap.Pairs["tidur"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return NIL
+			}
+			sec := int64(1)
+			if i, ok := args[0].(*Integer); ok {
+				sec = i.Value
+			} else if f, ok := args[0].(*Float); ok {
+				time.Sleep(time.Duration(f.Value * float64(time.Second)))
+				return NIL
+			}
+			time.Sleep(time.Duration(sec) * time.Second)
+			return NIL
+		},
+	}
 	sistemMap.Pairs["argumen"] = &Builtin{
 		Fn: func(args ...Object) Object {
 			arr := &Array{Elements: []Object{}}
@@ -918,6 +934,19 @@ func InitGlobalEnvironment() *Environment {
 			lama := args[1].Inspect()
 			baru := args[2].Inspect()
 			return &String{Value: strings.ReplaceAll(s, lama, baru)}
+		},
+	}
+	teksMap.Pairs["format"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) == 0 {
+				return &String{Value: ""}
+			}
+			template := args[0].Inspect()
+			for i := 1; i < len(args); i++ {
+				placeholder := fmt.Sprintf("{%d}", i-1)
+				template = strings.ReplaceAll(template, placeholder, args[i].Inspect())
+			}
+			return &String{Value: template}
 		},
 	}
 	env.Set("teks", teksMap)
@@ -1484,6 +1513,13 @@ func Eval(node ast.Node, env *Environment) Object {
 			Eval(n.Expression, env)
 		}
 		env.deferStack = append(env.deferStack, deferredCall)
+		return NIL
+
+	case *ast.KuStatement:
+		go func() {
+			kEnv := NewEnclosedEnvironment(env)
+			Eval(n.Expression, kEnv)
+		}()
 		return NIL
 
 	case *ast.ExpressionStatement:

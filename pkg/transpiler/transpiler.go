@@ -225,6 +225,9 @@ func (t *Transpiler) Transpile(node ast.Node) string {
 	case *ast.DeferStatement:
 		return fmt.Sprintf("defer %s", t.Transpile(n.Expression))
 
+	case *ast.KuStatement:
+		return fmt.Sprintf("go %s", t.Transpile(n.Expression))
+
 	case *ast.ExpressionStatement:
 		return t.Transpile(n.Expression)
 

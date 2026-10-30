@@ -97,6 +97,14 @@ type DeferStatement struct {
 func (ds *DeferStatement) statementNode()       {}
 func (ds *DeferStatement) TokenLiteral() string { return ds.Token.Literal }
 
+type KuStatement struct {
+	Token      token.Token // token.KU (konkurensi Ku-routine)
+	Expression Expression
+}
+
+func (ks *KuStatement) statementNode()       {}
+func (ks *KuStatement) TokenLiteral() string { return ks.Token.Literal }
+
 type ExpressionStatement struct {
 	Token      token.Token
 	Expression Expression

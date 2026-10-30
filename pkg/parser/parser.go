@@ -142,6 +142,8 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseReturnStatement()
 	case token.TUNDA:
 		return p.parseDeferStatement()
+	case token.KU:
+		return p.parseKuStatement()
 	case token.HENTI:
 		stmt := &ast.BreakStatement{Token: p.curToken}
 		if p.peekTokenIs(token.SEMICOLON) {
@@ -535,6 +537,16 @@ func (p *Parser) parseReturnStatement() ast.Statement {
 
 func (p *Parser) parseDeferStatement() ast.Statement {
 	stmt := &ast.DeferStatement{Token: p.curToken}
+	p.nextToken()
+	stmt.Expression = p.parseExpression(LOWEST)
+	if p.peekTokenIs(token.SEMICOLON) {
+		p.nextToken()
+	}
+	return stmt
+}
+
+func (p *Parser) parseKuStatement() ast.Statement {
+	stmt := &ast.KuStatement{Token: p.curToken}
 	p.nextToken()
 	stmt.Expression = p.parseExpression(LOWEST)
 	if p.peekTokenIs(token.SEMICOLON) {

@@ -1,0 +1,24 @@
+paket utama
+
+pakai "cetak"
+pakai "teks"
+
+fungsi ujiPerhitungan() {
+    var a = 25
+    var b = 75
+    uji.sama(a + b, 100)
+    uji.benar(b > a)
+}
+
+fungsi ujiTeksFormat() {
+    var nama = "Budi"
+    var poin = 95
+    var pesan = teks.format("Halo {0}, skor Anda adalah {1}!", nama, poin)
+    uji.sama(pesan, "Halo Budi, skor Anda adalah 95!")
+}
+
+fungsi utama() {
+    cetak.tulis("Memulai pengujian unit internal...")
+    ujiPerhitungan()
+    ujiTeksFormat()
+}

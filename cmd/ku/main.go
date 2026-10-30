@@ -89,6 +89,13 @@ func main() {
 		}
 		formatKuFile(targetFile, writeBack)
 
+	case "uji", "test":
+		targetPath := "."
+		if len(args) >= 2 {
+			targetPath = args[1]
+		}
+		runTests(targetPath)
+
 	default:
 		fmt.Printf("Perintah '%s' tidak dikenal. Ketik 'ku' untuk bantuan.\n", command)
 		os.Exit(1)
@@ -99,6 +106,7 @@ func printHelp() {
 	fmt.Printf(`Penggunaan CLI Bahasa Ku (Go Native):
   ku                       Membuka REPL (terminal interaktif)
   ku jalankan <berkas.ku>  Menjalankan berkas kode .ku
+  ku uji [berkas/_uji.ku]  Menjalankan pengujian unit test otomatis
   ku rapi [-w] <berkas.ku> Merapikan format kode secara otomatis (mirip gofmt)
   ku kompilasi <berkas.ku> [-o keluar.exe]  Kompilasi langsung ke biner mandiri (.exe)
   ku inisiasi <web|desktop|cli> <nama_folder>  Membuat kerangka kerja proyek baru
@@ -108,6 +116,7 @@ func printHelp() {
 Contoh:
   ku
   ku jalankan contoh/halo.ku
+  ku uji
   ku rapi -w contoh/halo.ku
   ku kompilasi contoh/halo.ku -o HaloApp.exe
   ku inisiasi web portal-berita
@@ -357,6 +366,66 @@ func formatKuFile(filename string, writeBack bool) {
 	} else {
 		fmt.Print(formatted)
 	}
+}
+
+func runTests(targetPath string) {
+	testFiles := []string{}
+
+	info, err := os.Stat(targetPath)
+	if err != nil {
+		fmt.Printf("Galat mengakses '%s': %v\n", targetPath, err)
+		os.Exit(1)
+	}
+
+	if !info.IsDir() {
+		testFiles = append(testFiles, targetPath)
+	} else {
+		filepath.Walk(targetPath, func(path string, f os.FileInfo, err error) error {
+			if err != nil {
+				return nil
+			}
+			if !f.IsDir() && (strings.HasSuffix(f.Name(), "_uji.ku") || strings.HasSuffix(f.Name(), "_test.ku")) {
+				testFiles = append(testFiles, path)
+			}
+			return nil
+		})
+	}
+
+	if len(testFiles) == 0 {
+		fmt.Println("ℹ️  Tidak ditemukan berkas pengujian (*_uji.ku).")
+		return
+	}
+
+	fmt.Printf("🔍 Menjalankan pengujian Bahasa Ku (%d berkas)...\n\n", len(testFiles))
+	totalLulus := 0
+
+	for _, file := range testFiles {
+		fmt.Printf("=== MENJALANKAN %s ===\n", file)
+		content, err := os.ReadFile(file)
+		if err != nil {
+			fmt.Printf("❌ Gagal membaca %s: %v\n", file, err)
+			continue
+		}
+
+		l := lexer.New(string(content))
+		p := parser.New(l)
+		prog := p.ParseProgram()
+
+		if len(p.Errors()) > 0 {
+			fmt.Println("❌ Galat Sintaks:")
+			for _, e := range p.Errors() {
+				fmt.Println("   -", e)
+			}
+			continue
+		}
+
+		env := evaluator.InitGlobalEnvironment()
+		evaluator.Eval(prog, env)
+		totalLulus++
+		fmt.Printf("--- SELESAI %s\n\n", file)
+	}
+
+	fmt.Printf("✨ Pengujian Selesai: %d/%d berkas pengujian berhasil dijalankan.\n", totalLulus, len(testFiles))
 }
 
 

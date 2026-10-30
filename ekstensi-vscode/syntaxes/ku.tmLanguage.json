@@ -23,7 +23,7 @@
       "patterns": [
         {
           "name": "keyword.control.ku",
-          "match": "\\b(jika|lainnya|untuk|selama|dalam|rentang|pilih|kasus|bawaan|kembalikan|tunda|henti|lanjut)\\b"
+          "match": "\\b(ku|jika|lainnya|untuk|selama|dalam|rentang|pilih|kasus|bawaan|kembalikan|tunda|henti|lanjut)\\b"
         },
         {
           "name": "keyword.declaration.ku",

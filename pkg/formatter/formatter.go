@@ -205,6 +205,9 @@ func (f *Formatter) Format(node ast.Node) string {
 	case *ast.DeferStatement:
 		return fmt.Sprintf("tunda %s", f.Format(n.Expression))
 
+	case *ast.KuStatement:
+		return fmt.Sprintf("ku %s", f.Format(n.Expression))
+
 	case *ast.ExpressionStatement:
 		return f.Format(n.Expression)
 

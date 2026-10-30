@@ -93,9 +93,11 @@ const (
 	SALAH      = "SALAH"
 	KOSONG     = "KOSONG"
 	CACAH      = "CACAH"
+	KU         = "KU"
 )
 
 var keywords = map[string]TokenType{
+	"ku":         KU,
 	"paket":      PAKET,
 	"pakai":      PAKAI,
 	"impor":      PAKAI,

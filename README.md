@@ -139,6 +139,7 @@ Agar penulisan kode `.ku` memiliki warna sintaksis (*syntax highlighting*) dan i
 | `break` | `henti` | Keluar dari perulangan |
 | `continue` | `lanjut` | Lewati ke iterasi berikutnya |
 | `defer` | `tunda` | Eksekusi LIFO di akhir fungsi |
+| `go fn()` | `ku fn()` | Konkurensi Ku-routine di latar belakang |
 | `return` | `kembalikan` | Mengembalikan nilai fungsi |
 | `len(arr)` | `panjang(arr)` | Menghitung panjang array/string/map |
 | `append(arr, item)` | `tambah(arr, item)` | Menambah elemen ke array/slice |
@@ -371,6 +372,33 @@ fungsi utama() {
 
     prosesTransaksi(10000)
     prosesTransaksi(-500) // Memantik panik & tertangkap oleh pulih()
+}
+```
+
+### 9. Konkurensi Ku-Routine (Kata Kunci `ku`) (`contoh/dasar_konkurensi.ku`)
+```ku
+paket utama
+
+pakai "cetak"
+pakai "sistem"
+
+fungsi unduhAset(nama) {
+    cetak.tulis("Mulai mengunduh:", nama)
+    sistem.tidur(1)
+    cetak.tulis("Selesai unduh:", nama)
+}
+
+fungsi utama() {
+    // Menjalankan tugas di latar belakang (paralel) menggunakan kata kunci 'ku'
+    ku unduhAset("gambar.png")
+    ku unduhAset("audio.mp3")
+
+    // Fungsi anonim di latar belakang
+    ku fungsi() {
+        cetak.tulis("Ku-routine anonim aktif!")
+    }()
+
+    sistem.tidur(2)
 }
 ```
 
