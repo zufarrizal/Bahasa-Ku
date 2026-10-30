@@ -1674,6 +1674,7 @@ jika mysqlDb["terhubung"] {
             <tr><td><code>desktop.pilihFolder([judul])</code></td><td>Membuka folder browser dialog native untuk memilih direktori kerja</td></tr>
             <tr><td><code>desktop.salinTeks(teks)</code></td><td>Menyalin teks string langsung ke Papan Klip (Clipboard) sistem operasi</td></tr>
             <tr><td><code>desktop.bacaKlip()</code></td><td>Membaca teks yang sedang tersimpan di Papan Klip (Clipboard) sistem operasi</td></tr>
+            <tr><td><code>desktop.daftarkanFungsi(nama, fn)</code> / <code>jendela.ikat(nama, fn)</code></td><td>Mendaftarkan fungsi Bahasa Ku agar dapat dipanggil langsung dari JavaScript webview melalui <code>window.ku.panggil(nama, ...args)</code> (IPC Native Binding)</td></tr>
             <tr><td><code>desktop.buka(opsi)</code></td><td>Membuka jendela GUI webview desktop independen (mendukung <code>judul</code>, <code>url</code>, <code>konten</code> HTML, <code>lebar</code>, <code>tinggi</code>)</td></tr>
           </tbody>
         </table>
@@ -1688,12 +1689,23 @@ cetak.tulis("Berkas dipilih:", file)
 var folder = desktop.pilihFolder("Pilih Folder Backup")
 cetak.tulis("Folder dipilih:", folder)
 
-// 3. Jendela Desktop GUI Mandiri (App Mode)
+// 3. Jembatan IPC Native (Interaksi UI JS Langsung ke Basis Data SQLite / Logika Tanpa Port HTTP Manual)
+jendela.daftarkanFungsi("ambilPengguna", fungsi() {
+    var db = basisdata.bukaBerkas("data.db")
+    var data = db.kueri("SELECT id, nama, peran FROM pengguna")
+    db.tutup()
+    kembalikan data
+})
+
+// Di dalam antarmuka HTML UI / WebView:
+// const data = await window.ku.panggil("ambilPengguna");
+
+// 4. Jendela Desktop GUI Mandiri (App Mode)
 desktop.buka({
     "judul": "Aplikasi Kasir Ku",
     "lebar": 1024,
     "tinggi": 720,
-    "url": "http://localhost:8080" // atau konten HTML langsung
+    "konten": "<h1>Sistem Kasir</h1><button onclick=\"window.ku.panggil('ambilPengguna').then(console.log)\">Muat</button>"
 })</code></pre>
       </section>
 

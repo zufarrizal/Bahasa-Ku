@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
@@ -55,10 +56,37 @@ func init() {
 	})
 }
 
+// Gunakan delimiter biner unik di akhir berkas
+var embeddedMarker = []byte("\n<--KU_APP_BUNDLED_PAYLOAD_START-->\n")
+
 func main() {
 	args := os.Args[1:]
 
+	// 1. Cek mode biner mandiri hasil kompilasi
 	if len(args) == 0 {
+		selfExe, err := os.Executable()
+		if err == nil {
+			selfData, err := os.ReadFile(selfExe)
+			if err == nil {
+				idx := bytes.LastIndex(selfData, embeddedMarker)
+				if idx != -1 && idx > 5000000 {
+					embeddedScript := string(selfData[idx+len(embeddedMarker):])
+					l := lexer.New(embeddedScript)
+					p := parser.New(l)
+					prog := p.ParseProgram()
+					if len(p.Errors()) > 0 {
+						fmt.Println("Galat Sintaks pada Program Mandiri:")
+						for _, e := range p.Errors() {
+							fmt.Println(" -", e)
+						}
+						os.Exit(1)
+					}
+					env := evaluator.InitGlobalEnvironment()
+					evaluator.Eval(prog, env)
+					return
+				}
+			}
+		}
 		repl.Start(os.Stdin, os.Stdout, version)
 		return
 	}
@@ -259,40 +287,6 @@ func compileDirectToBinary(source, outputExe string) {
 		os.Exit(1)
 	}
 
-	tr := transpiler.New()
-	goCode := tr.Transpile(prog)
-
-	// Buat folder sementara untuk build
-	tempDir, err := os.MkdirTemp("", "ku_build_*")
-	if err != nil {
-		fmt.Printf("Galat direktori sementara: %v\n", err)
-		os.Exit(1)
-	}
-	defer os.RemoveAll(tempDir)
-
-	tempGoFile := filepath.Join(tempDir, "main.go")
-	err = os.WriteFile(tempGoFile, []byte(goCode), 0644)
-	if err != nil {
-		fmt.Printf("Galat menulis kode sementara: %v\n", err)
-		os.Exit(1)
-	}
-
-	goExe := "go"
-	if p, err := exec.LookPath("go"); err == nil {
-		goExe = p
-	} else {
-		// Cari di path standar Go jika tidak ada di PATH session
-		defaultGo := filepath.Join(os.Getenv("ProgramFiles"), "Go", "bin", "go.exe")
-		if _, err := os.Stat(defaultGo); err == nil {
-			goExe = defaultGo
-		}
-	}
-
-	// Inisialisasi go.mod di folder sementara
-	goModCmd := exec.Command(goExe, "mod", "init", "kuapp")
-	goModCmd.Dir = tempDir
-	_ = goModCmd.Run()
-
 	if outputExe == "" {
 		base := strings.TrimSuffix(filepath.Base(source), filepath.Ext(source))
 		if runtime.GOOS == "windows" {
@@ -303,8 +297,121 @@ func compileDirectToBinary(source, outputExe string) {
 	}
 
 	absOutput, _ := filepath.Abs(outputExe)
+
+	// Metode 1: Kompilasi mandiri via Go Toolchain resmi dengan embedding runner runtime
+	// Menghasilkan executable biner asli OS yang 100% valid, mandiri, dan bebas error antarmuka Windows PE
+	goExe := "go"
+	if p, err := exec.LookPath("go"); err == nil {
+		goExe = p
+	} else {
+		defaultGo := filepath.Join(os.Getenv("ProgramFiles"), "Go", "bin", "go.exe")
+		if _, err := os.Stat(defaultGo); err == nil {
+			goExe = defaultGo
+		}
+	}
+
+	tempDir, err := os.MkdirTemp("", "ku_build_*")
+	if err == nil {
+		defer os.RemoveAll(tempDir)
+
+		runnerCode := fmt.Sprintf(`package main
+
+import (
+	"fmt"
+	"os"
+
+	"github.com/zufarrizal/bahasa-ku/pkg/evaluator"
+	"github.com/zufarrizal/bahasa-ku/pkg/lexer"
+	"github.com/zufarrizal/bahasa-ku/pkg/parser"
+)
+
+const scriptSource = %q
+
+func main() {
+	l := lexer.New(scriptSource)
+	p := parser.New(l)
+	prog := p.ParseProgram()
+	if len(p.Errors()) > 0 {
+		fmt.Println("Galat Sintaks pada Program Mandiri:")
+		for _, e := range p.Errors() {
+			fmt.Println(" -", e)
+		}
+		os.Exit(1)
+	}
+	env := evaluator.InitGlobalEnvironment()
+	evaluator.Eval(prog, env)
+}
+`, string(content))
+
+		tempGoFile := filepath.Join(tempDir, "main.go")
+		_ = os.WriteFile(tempGoFile, []byte(runnerCode), 0644)
+
+		// Susun go.mod sementara yang me-replace github.com/zufarrizal/bahasa-ku ke repositori lokal
+		cwd, _ := os.Getwd()
+		absCwd, _ := filepath.Abs(cwd)
+		// Cari root folder proyek yang memiliki go.mod
+		projRoot := absCwd
+		for {
+			if _, err := os.Stat(filepath.Join(projRoot, "go.mod")); err == nil {
+				break
+			}
+			parent := filepath.Dir(projRoot)
+			if parent == projRoot {
+				break
+			}
+			projRoot = parent
+		}
+
+		goModContent := fmt.Sprintf(`module kuapp
+
+go 1.22
+
+require github.com/zufarrizal/bahasa-ku v0.0.0
+
+replace github.com/zufarrizal/bahasa-ku => %q
+`, filepath.ToSlash(projRoot))
+
+		_ = os.WriteFile(filepath.Join(tempDir, "go.mod"), []byte(goModContent), 0644)
+
+		// Jalankan go mod tidy agar dependensi disinkronkan
+		tidyCmd := exec.Command(goExe, "mod", "tidy")
+		tidyCmd.Dir = tempDir
+		_ = tidyCmd.Run()
+
+		buildCmd := exec.Command(goExe, "build", "-ldflags=-s -w", "-o", absOutput, "main.go")
+		buildCmd.Dir = tempDir
+		buildOutput, err := buildCmd.CombinedOutput()
+		if err == nil {
+			fmt.Printf("Berhasil mengompilasi '%s' -> '%s' (Biner Mandiri Bahasa Ku)! 🎉\n", source, outputExe)
+			return
+		}
+		fmt.Printf("Gagal metode bundler: %s\n", string(buildOutput))
+	}
+
+	// Metode 2: Fallback ke transpiler Go native
+	tr := transpiler.New()
+	goCode := tr.Transpile(prog)
+
+	tempDir2, err := os.MkdirTemp("", "ku_build_*")
+	if err != nil {
+		fmt.Printf("Galat direktori sementara: %v\n", err)
+		os.Exit(1)
+	}
+	defer os.RemoveAll(tempDir2)
+
+	tempGoFile := filepath.Join(tempDir2, "main.go")
+	err = os.WriteFile(tempGoFile, []byte(goCode), 0644)
+	if err != nil {
+		fmt.Printf("Galat menulis kode sementara: %v\n", err)
+		os.Exit(1)
+	}
+
+	goModCmd := exec.Command(goExe, "mod", "init", "kuapp")
+	goModCmd.Dir = tempDir2
+	_ = goModCmd.Run()
+
 	buildCmd := exec.Command(goExe, "build", "-ldflags=-s -w", "-o", absOutput, "main.go")
-	buildCmd.Dir = tempDir
+	buildCmd.Dir = tempDir2
 	buildOutput, err := buildCmd.CombinedOutput()
 
 	if err != nil {

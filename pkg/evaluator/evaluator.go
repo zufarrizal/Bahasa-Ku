@@ -571,27 +571,75 @@ func InitGlobalEnvironment() *Environment {
 			reqParts = strings.Split(cleaned, "/")
 		}
 
-		for _, r := range webRoutes {
+		type matchCandidate struct {
+			route  *webRoute
+			params map[string]string
+			score  int // Semakin tinggi skor, semakin spesifik rute (exact match > param > wildcard)
+		}
+
+		var bestCandidate *matchCandidate
+
+		for i := range webRoutes {
+			r := &webRoutes[i]
 			if r.method != "ALL" && r.method != reqMethod {
 				continue
 			}
-			if len(r.parts) != len(reqParts) {
+
+			// 1. Dukungan Rute Catch-All Root atau Wildcard
+			if r.pattern == "/" && len(reqParts) == 0 {
+				cand := &matchCandidate{route: r, params: make(map[string]string), score: 100}
+				if bestCandidate == nil || cand.score > bestCandidate.score {
+					bestCandidate = cand
+				}
 				continue
 			}
-			matched := true
-			params := make(map[string]string)
-			for i, p := range r.parts {
-				if strings.HasPrefix(p, ":") {
-					paramName := strings.TrimPrefix(p, ":")
-					params[paramName] = reqParts[i]
-				} else if p != reqParts[i] {
-					matched = false
-					break
+
+			// 2. Pencocokan segmen presisi
+			if len(r.parts) == len(reqParts) {
+				matched := true
+				params := make(map[string]string)
+				score := 0
+				for j, p := range r.parts {
+					if strings.HasPrefix(p, ":") {
+						paramName := strings.TrimPrefix(p, ":")
+						params[paramName] = reqParts[j]
+						score += 10 // Parameter dinamis bernilai 10
+					} else if p == reqParts[j] {
+						score += 100 // Exact segment bernilai 100
+					} else {
+						matched = false
+						break
+					}
+				}
+				if matched {
+					cand := &matchCandidate{route: r, params: params, score: score}
+					if bestCandidate == nil || cand.score > bestCandidate.score {
+						bestCandidate = cand
+					}
+				}
+			} else if len(r.parts) > 0 && r.parts[len(r.parts)-1] == "*" {
+				// Wildcard prefix /api/*
+				prefixLen := len(r.parts) - 1
+				if len(reqParts) >= prefixLen {
+					matched := true
+					for j := 0; j < prefixLen; j++ {
+						if r.parts[j] != reqParts[j] {
+							matched = false
+							break
+						}
+					}
+					if matched {
+						cand := &matchCandidate{route: r, params: make(map[string]string), score: 5}
+						if bestCandidate == nil || cand.score > bestCandidate.score {
+							bestCandidate = cand
+						}
+					}
 				}
 			}
-			if matched {
-				return &r, params
-			}
+		}
+
+		if bestCandidate != nil {
+			return bestCandidate.route, bestCandidate.params
 		}
 		return nil, nil
 	}
@@ -782,6 +830,92 @@ func InitGlobalEnvironment() *Environment {
 
 	// Modul desktop: jendela & dialog
 	jendelaMap := &Map{Pairs: make(map[string]Object)}
+
+	// IPC Registry untuk jembatan native JS di WebView -> runtime Bahasa Ku
+	ipcHandlers := make(map[string]Object)
+	var ipcServerPort int = 0
+	var ipcServerOnce sync.Once
+
+	startIPCServer := func() int {
+		ipcServerOnce.Do(func() {
+			listener, err := net.Listen("tcp", "127.0.0.1:0")
+			if err != nil {
+				return
+			}
+			ipcServerPort = listener.Addr().(*net.TCPAddr).Port
+
+			mux := http.NewServeMux()
+			mux.HandleFunc("/ku_ipc", func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Access-Control-Allow-Origin", "*")
+				w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+				w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+				if r.Method == "OPTIONS" {
+					w.WriteHeader(http.StatusOK)
+					return
+				}
+				if r.Method != "POST" {
+					http.Error(w, "Metode harus POST", http.StatusMethodNotAllowed)
+					return
+				}
+
+				body, _ := io.ReadAll(r.Body)
+				var reqPayload struct {
+					Fungsi   string        `json:"fungsi"`
+					Argumen []interface{} `json:"argumen"`
+				}
+				if err := json.Unmarshal(body, &reqPayload); err != nil {
+					http.Error(w, "Payload JSON tidak valid", http.StatusBadRequest)
+					return
+				}
+
+				fnObj, exists := ipcHandlers[reqPayload.Fungsi]
+				if !exists {
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.NewEncoder(w).Encode(map[string]interface{}{
+						"galat": fmt.Sprintf("Fungsi handler IPC '%s' tidak ditemukan", reqPayload.Fungsi),
+					})
+					return
+				}
+
+				// Konversi argumen JSON ke Object Bahasa Ku
+				callArgs := []Object{}
+				for _, a := range reqPayload.Argumen {
+					callArgs = append(callArgs, convertGoToKuObject(a))
+				}
+
+				var res Object = NIL
+				if b, ok := fnObj.(*Builtin); ok {
+					res = b.Fn(callArgs...)
+				} else if f, ok := fnObj.(*Function); ok {
+					res = applyFunction(f, callArgs, env)
+				}
+
+				w.Header().Set("Content-Type", "application/json")
+				_ = json.NewEncoder(w).Encode(map[string]interface{}{
+					"hasil": convertKuToGoObject(res),
+				})
+			})
+
+			go func() {
+				_ = http.Serve(listener, mux)
+			}()
+		})
+		return ipcServerPort
+	}
+
+	jendelaMap.Pairs["daftarkanFungsi"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return FALSE
+			}
+			nama := args[0].Inspect()
+			fn := args[1]
+			ipcHandlers[nama] = fn
+			startIPCServer()
+			return TRUE
+		},
+	}
+	jendelaMap.Pairs["ikat"] = jendelaMap.Pairs["daftarkanFungsi"]
 	jendelaMap.Pairs["pesan"] = &Builtin{
 		Fn: func(args ...Object) Object {
 			judul := "Bahasa Ku"
@@ -883,6 +1017,23 @@ func InitGlobalEnvironment() *Environment {
 			if url == "" {
 				tempDir := os.TempDir()
 				htmlFile := filepath.Join(tempDir, "ku_app.html")
+
+				port := startIPCServer()
+				ipcBridgeScript := fmt.Sprintf(`<script>
+window.ku = {
+  panggil: async function(fungsi, ...argumen) {
+    const res = await fetch("http://127.0.0.1:%d/ku_ipc", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fungsi: fungsi, argumen: argumen })
+    });
+    const data = await res.json();
+    if (data.galat) throw new Error(data.galat);
+    return data.hasil;
+  }
+};
+</script>`, port)
+
 				htmlContent := fmt.Sprintf(`<!DOCTYPE html>
 <html>
 <head>
@@ -892,11 +1043,12 @@ func InitGlobalEnvironment() *Environment {
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 24px; background: #f8fafc; color: #1e293b; margin: 0; }
   h1 { color: #0284c7; }
 </style>
+%s
 </head>
 <body>
 %s
 </body>
-</html>`, judul, konten)
+</html>`, judul, ipcBridgeScript, konten)
 				_ = os.WriteFile(htmlFile, []byte(htmlContent), 0644)
 				url = htmlFile
 			}
