@@ -34,6 +34,7 @@ import (
 	"unicode"
 
 	_ "github.com/go-sql-driver/mysql"
+	_ "modernc.org/sqlite"
 	"github.com/zufarrizal/bahasa-ku/pkg/ast"
 )
 
@@ -686,6 +687,23 @@ func InitGlobalEnvironment() *Environment {
 		},
 	}
 
+	jendelaMap.Pairs["salinTeks"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return FALSE
+			}
+			ok := salinPapanKlipNative(args[0].Inspect())
+			return &Boolean{Value: ok}
+		},
+	}
+
+	jendelaMap.Pairs["bacaKlip"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			text := bacaPapanKlipNative()
+			return &String{Value: text}
+		},
+	}
+
 	jendelaMap.Pairs["buka"] = &Builtin{
 		Fn: func(args ...Object) Object {
 			if len(args) < 1 {
@@ -858,6 +876,16 @@ func InitGlobalEnvironment() *Environment {
 			}
 
 			return connMap
+		},
+	}
+	basisdataMap.Pairs["bukaBerkas"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return NIL
+			}
+			pathStr := args[0].Inspect()
+			// Buka basis data lokal SQLite
+			return basisdataMap.Pairs["sambung"].(*Builtin).Fn(&String{Value: "sqlite"}, &String{Value: pathStr})
 		},
 	}
 	env.Set("basisdata", basisdataMap)
@@ -1814,6 +1842,60 @@ func InitGlobalEnvironment() *Environment {
 				resMap.Pairs["json"] = NIL
 			}
 			return resMap
+		},
+	}
+	jaringanMap.Pairs["ambilJSON"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return NIL
+			}
+			cfg := &Map{Pairs: make(map[string]Object)}
+			cfg.Pairs["metode"] = &String{Value: "GET"}
+			cfg.Pairs["url"] = args[0]
+			if len(args) >= 2 {
+				cfg.Pairs["tajuk"] = args[1]
+			}
+			res := jaringanMap.Pairs["permintaan"].(*Builtin).Fn(cfg)
+			if rMap, ok := res.(*Map); ok {
+				if jVal, exists := rMap.Pairs["json"]; exists && jVal != NIL {
+					return jVal
+				}
+			}
+			return NIL
+		},
+	}
+	jaringanMap.Pairs["kirimJSON"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return NIL
+			}
+			cfg := &Map{Pairs: make(map[string]Object)}
+			cfg.Pairs["metode"] = &String{Value: "POST"}
+			cfg.Pairs["url"] = args[0]
+
+			// Marshal JSON body
+			goObj := convertKuToGoObject(args[1])
+			b, _ := json.Marshal(goObj)
+			cfg.Pairs["badan"] = &String{Value: string(b)}
+
+			headers := &Map{Pairs: make(map[string]Object)}
+			headers.Pairs["Content-Type"] = &String{Value: "application/json"}
+			if len(args) >= 3 {
+				if userHeaders, ok := args[2].(*Map); ok {
+					for k, v := range userHeaders.Pairs {
+						headers.Pairs[k] = v
+					}
+				}
+			}
+			cfg.Pairs["tajuk"] = headers
+
+			res := jaringanMap.Pairs["permintaan"].(*Builtin).Fn(cfg)
+			if rMap, ok := res.(*Map); ok {
+				if jVal, exists := rMap.Pairs["json"]; exists && jVal != NIL {
+					return jVal
+				}
+			}
+			return NIL
 		},
 	}
 	env.Set("jaringan", jaringanMap)

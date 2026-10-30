@@ -62,3 +62,18 @@ func dialogPilihFolderNative(judul string) string {
 	}
 	return strings.TrimSpace(string(out))
 }
+
+func salinPapanKlipNative(teks string) bool {
+	cmd := exec.Command("powershell", "-NoProfile", "-Command", "$input | Set-Clipboard")
+	cmd.Stdin = strings.NewReader(teks)
+	return cmd.Run() == nil
+}
+
+func bacaPapanKlipNative() string {
+	cmd := exec.Command("powershell", "-NoProfile", "-Command", "Get-Clipboard")
+	out, err := cmd.Output()
+	if err != nil {
+		return ""
+	}
+	return strings.TrimRight(string(out), "\r\n")
+}

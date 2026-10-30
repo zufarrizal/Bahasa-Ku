@@ -348,6 +348,7 @@
               <li><a href="#modul-bita">`bita` (Byte Buffer)</a></li>
               <li><a href="#modul-enkoding">`enkoding` (CSV, URL, Hex)</a></li>
               <li><a href="#modul-url">`url` (Parsing URL/URI)</a></li>
+              <li><a href="#modul-jaringan">`jaringan` (HTTP Client)</a></li>
               <li><a href="#modul-web">`web` (HTTP Server)</a></li>
               <li><a href="#modul-soket">`soket` (TCP Network)</a></li>
               <li><a href="#modul-basisdata">`basisdata` (MySQL)</a></li>
@@ -1332,6 +1333,32 @@ cetak.tulis("Port:", u["port"])     // 8080
 cetak.tulis("Jalur:", u["jalur"])   // /v1/users</code></pre>
       </section>
 
+<section id="modul-jaringan" class="docs-section">
+        <h2>Modul `jaringan` (HTTP Client & API Konsumsi)</h2>
+        <p>Memanggil API pihak ketiga atau webhook menggunakan HTTP Client bawaan:</p>
+        <table>
+          <thead>
+            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>jaringan.ambil(url)</code></td><td>Melakukan request HTTP GET (mengembalikan teks body respons)</td></tr>
+            <tr><td><code>jaringan.ambilJSON(url, [headers])</code></td><td>Melakukan HTTP GET dan langsung mengembalikan objek JSON yang sudah diurai</td></tr>
+            <tr><td><code>jaringan.kirim(url, data)</code></td><td>Melakukan HTTP POST payload teks string</td></tr>
+            <tr><td><code>jaringan.kirimJSON(url, payload, [headers])</code></td><td>Melakukan HTTP POST JSON otomatis dengan header <code>Content-Type: application/json</code></td></tr>
+            <tr><td><code>jaringan.permintaan(konfigurasi)</code></td><td>Request HTTP lanjutan dengan kontrol penuh: <code>metode</code>, <code>url</code>, <code>tajuk</code>, <code>badan</code>, <code>tenggatDetik</code></td></tr>
+          </tbody>
+        </table>
+        <pre><code>// 1. Ambil data JSON publik
+var pengguna = jaringan.ambilJSON("https://jsonplaceholder.typicode.com/users/1")
+cetak.tulis("Nama pengguna:", pengguna["name"])
+
+// 2. Kirim data JSON ke Webhook / Endpoint
+var respons = jaringan.kirimJSON("https://api.domain.id/order", {
+    "produk": "Kopi Ku",
+    "jumlah": 2
+}, {"Authorization": "Bearer token_rahasia"})</code></pre>
+      </section>
+
       <!-- Modul Standar: Web -->
       <section id="modul-web" class="docs-section">
         <h2>Modul `web` (REST API Server & Berkas Statis)</h2>
@@ -1400,16 +1427,22 @@ jika klien != kosong {
       </section>
 
 <section id="modul-basisdata" class="docs-section">
-        <h2>Modul `basisdata` (MySQL)</h2>
-        <pre><code>// Sambungkan ke server MySQL
-basisdata.buka("mysql", "root:kata_sandi@tcp(127.0.0.1:3306)/db_ku")
+        <h2>Modul `basisdata` (SQLite & MySQL)</h2>
+        <p>Mendukung database berkas portabel tanpa server (SQLite) dan database jaringan (MySQL):</p>
+        <pre><code>// 1. Basis Data Berkas Portabel (SQLite - Tanpa Server)
+var db = basisdata.bukaBerkas("aplikasi.db")
+db.eksekusi("CREATE TABLE IF NOT EXISTS produk (id INTEGER PRIMARY KEY, nama TEXT, harga INTEGER);")
+db.eksekusi("INSERT INTO produk (nama, harga) VALUES ('Kopi Ku', 15000);")
 
-// Eksekusi DDL / DML
-basisdata.eksekusi("INSERT INTO pengguna (nama, email) VALUES ('Zufar', 'zufar@ku.id')")
+var daftar = db.kueri("SELECT id, nama, harga FROM produk")
+cetak.tulis("Daftar produk:", daftar)
+db.tutup()
 
-// Kueri data
-var hasil = basisdata.kueri("SELECT id, nama, email FROM pengguna")
-cetak.tulis("Data pengguna:", hasil)</code></pre>
+// 2. Basis Data MySQL Terpusat
+var mysqlDb = basisdata.sambung("mysql", "root:kata_sandi@tcp(127.0.0.1:3306)/db_ku")
+jika mysqlDb["terhubung"] {
+    cetak.tulis("Koneksi MySQL aktif!")
+}</code></pre>
       </section>
 
       <!-- Modul Standar: Jendela -->
@@ -1424,6 +1457,8 @@ cetak.tulis("Data pengguna:", hasil)</code></pre>
             <tr><td><code>desktop.pesan(judul, pesan, [tipe])</code></td><td>Menampilkan dialog pesan native OS (pilihan tipe: <code>"info"</code>, <code>"peringatan"</code>, <code>"galat"</code>, <code>"tanya"</code>)</td></tr>
             <tr><td><code>desktop.pilihBerkas([judul], [filter])</code></td><td>Membuka file dialog explorer native untuk memilih berkas fisik</td></tr>
             <tr><td><code>desktop.pilihFolder([judul])</code></td><td>Membuka folder browser dialog native untuk memilih direktori kerja</td></tr>
+            <tr><td><code>desktop.salinTeks(teks)</code></td><td>Menyalin teks string langsung ke Papan Klip (Clipboard) sistem operasi</td></tr>
+            <tr><td><code>desktop.bacaKlip()</code></td><td>Membaca teks yang sedang tersimpan di Papan Klip (Clipboard) sistem operasi</td></tr>
             <tr><td><code>desktop.buka(opsi)</code></td><td>Membuka jendela GUI webview desktop independen (mendukung <code>judul</code>, <code>url</code>, <code>konten</code> HTML, <code>lebar</code>, <code>tinggi</code>)</td></tr>
           </tbody>
         </table>

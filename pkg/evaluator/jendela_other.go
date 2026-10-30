@@ -15,3 +15,11 @@ func dialogPilihBerkasNative(judul, filter string) string {
 func dialogPilihFolderNative(judul string) string {
 	return ""
 }
+
+func salinPapanKlipNative(teks string) bool {
+	return false
+}
+
+func bacaPapanKlipNative() string {
+	return ""
+}
