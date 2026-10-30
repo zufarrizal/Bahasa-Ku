@@ -637,21 +637,52 @@ func InitGlobalEnvironment() *Environment {
 	webMap.Pairs["jalankan"] = webMap.Pairs["dengarkan"]
 	env.Set("web", webMap)
 
-	// Modul desktop: jendela
+	// Modul desktop: jendela & dialog
 	jendelaMap := &Map{Pairs: make(map[string]Object)}
 	jendelaMap.Pairs["pesan"] = &Builtin{
 		Fn: func(args ...Object) Object {
 			judul := "Bahasa Ku"
 			isi := ""
+			tipe := "info"
 			if len(args) == 1 {
 				isi = args[0].Inspect()
-			} else if len(args) >= 2 {
+			} else if len(args) == 2 {
 				judul = args[0].Inspect()
 				isi = args[1].Inspect()
+			} else if len(args) >= 3 {
+				judul = args[0].Inspect()
+				isi = args[1].Inspect()
+				tipe = args[2].Inspect()
 			}
 
-			tampilkanPesanNative(judul, isi)
+			tampilkanPesanNative(judul, isi, tipe)
 			return NIL
+		},
+	}
+
+	jendelaMap.Pairs["pilihBerkas"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			judul := "Pilih Berkas"
+			filter := "Semua Berkas (*.*)|*.*"
+			if len(args) >= 1 {
+				judul = args[0].Inspect()
+			}
+			if len(args) >= 2 {
+				filter = args[1].Inspect()
+			}
+			res := dialogPilihBerkasNative(judul, filter)
+			return &String{Value: res}
+		},
+	}
+
+	jendelaMap.Pairs["pilihFolder"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			judul := "Pilih Direktori / Folder"
+			if len(args) >= 1 {
+				judul = args[0].Inspect()
+			}
+			res := dialogPilihFolderNative(judul)
+			return &String{Value: res}
 		},
 	}
 
@@ -664,6 +695,8 @@ func InitGlobalEnvironment() *Environment {
 			judul := "Aplikasi Desktop Bahasa Ku"
 			konten := "<h1>Bahasa Ku Desktop</h1>"
 			url := ""
+			lebar := 900
+			tinggi := 650
 
 			if m, ok := args[0].(*Map); ok {
 				if j, ok := m.Pairs["judul"]; ok {
@@ -674,6 +707,16 @@ func InitGlobalEnvironment() *Environment {
 				}
 				if u, ok := m.Pairs["url"]; ok {
 					url = u.Inspect()
+				}
+				if w, ok := m.Pairs["lebar"]; ok {
+					if i, isInt := w.(*Integer); isInt && i.Value > 0 {
+						lebar = int(i.Value)
+					}
+				}
+				if h, ok := m.Pairs["tinggi"]; ok {
+					if i, isInt := h.(*Integer); isInt && i.Value > 0 {
+						tinggi = int(i.Value)
+					}
 				}
 			}
 
@@ -702,7 +745,7 @@ func InitGlobalEnvironment() *Environment {
 				// Membuka jendela webview mandiri menggunakan browser app mode
 				edgePath := filepath.Join(os.Getenv("ProgramFiles(x86)"), "Microsoft", "Edge", "Application", "msedge.exe")
 				if _, err := os.Stat(edgePath); err == nil {
-					cmd := exec.Command(edgePath, fmt.Sprintf("--app=%s", url), "--window-size=900,650")
+					cmd := exec.Command(edgePath, fmt.Sprintf("--app=%s", url), fmt.Sprintf("--window-size=%d,%d", lebar, tinggi))
 					_ = cmd.Start()
 					return NIL
 				}
@@ -716,6 +759,7 @@ func InitGlobalEnvironment() *Environment {
 		},
 	}
 	env.Set("jendela", jendelaMap)
+	env.Set("desktop", jendelaMap)
 
 	// Modul basisdata (Database / MySQL)
 	basisdataMap := &Map{Pairs: make(map[string]Object)}

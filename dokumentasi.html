@@ -351,7 +351,7 @@
               <li><a href="#modul-web">`web` (HTTP Server)</a></li>
               <li><a href="#modul-soket">`soket` (TCP Network)</a></li>
               <li><a href="#modul-basisdata">`basisdata` (MySQL)</a></li>
-              <li><a href="#modul-jendela">`jendela` (GUI Desktop)</a></li>
+              <li><a href="#modul-jendela">`desktop` / `jendela` (GUI Desktop)</a></li>
               <li><a href="#modul-uji">`uji` (Unit Test)</a></li>
             </ul>
           </div>
@@ -1414,15 +1414,37 @@ cetak.tulis("Data pengguna:", hasil)</code></pre>
 
       <!-- Modul Standar: Jendela -->
       <section id="modul-jendela" class="docs-section">
-        <h2>Modul `jendela` (Aplikasi Desktop GUI Native)</h2>
-        <p>Menampilkan kotak dialog GUI asli sistem operasi tanpa pustaka pihak ketiga:</p>
-        <pre><code>// Menampilkan kotak pesan dialog native OS
-jendela.pesan("Halo", "Aplikasi Desktop Bahasa Ku Native!")
+        <h2>Modul `desktop` / `jendela` (GUI Desktop & Dialog Native)</h2>
+        <p>Pengembangan aplikasi GUI desktop mandiri tanpa CGO dan kotak dialog sistem operasi asli:</p>
+        <table>
+          <thead>
+            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>desktop.pesan(judul, pesan, [tipe])</code></td><td>Menampilkan dialog pesan native OS (pilihan tipe: <code>"info"</code>, <code>"peringatan"</code>, <code>"galat"</code>, <code>"tanya"</code>)</td></tr>
+            <tr><td><code>desktop.pilihBerkas([judul], [filter])</code></td><td>Membuka file dialog explorer native untuk memilih berkas fisik</td></tr>
+            <tr><td><code>desktop.pilihFolder([judul])</code></td><td>Membuka folder browser dialog native untuk memilih direktori kerja</td></tr>
+            <tr><td><code>desktop.buka(opsi)</code></td><td>Membuka jendela GUI webview desktop independen (mendukung <code>judul</code>, <code>url</code>, <code>konten</code> HTML, <code>lebar</code>, <code>tinggi</code>)</td></tr>
+          </tbody>
+        </table>
+        <pre><code>// 1. Kotak Dialog Native
+desktop.pesan("Pemberitahuan", "Aplikasi berhasil diinstal!", "info")
+desktop.pesan("Peringatan", "Koneksi database terputus", "peringatan")
 
-// Menampilkan kotak tanya konfirmasi
-jika jendela.konfirmasi("Konfirmasi", "Apakah Anda yakin ingin lanjut?") {
-    cetak.tulis("Pengguna menyetujui.")
-}</code></pre>
+// 2. Pemilih Berkas & Folder Native OS
+var file = desktop.pilihBerkas("Pilih Laporan CSV", "Berkas CSV (*.csv)|*.csv")
+cetak.tulis("Berkas dipilih:", file)
+
+var folder = desktop.pilihFolder("Pilih Folder Backup")
+cetak.tulis("Folder dipilih:", folder)
+
+// 3. Jendela Desktop GUI Mandiri (App Mode)
+desktop.buka({
+    "judul": "Aplikasi Kasir Ku",
+    "lebar": 1024,
+    "tinggi": 720,
+    "url": "http://localhost:8080" // atau konten HTML langsung
+})</code></pre>
       </section>
 
 <section id="modul-uji" class="docs-section">

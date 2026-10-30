@@ -4,6 +4,14 @@ package evaluator
 
 import "fmt"
 
-func tampilkanPesanNative(judul, isi string) {
-	fmt.Printf("[%s] %s\n", judul, isi)
+func tampilkanPesanNative(judul, isi, tipe string) {
+	fmt.Printf("[%s][%s] %s\n", tipe, judul, isi)
+}
+
+func dialogPilihBerkasNative(judul, filter string) string {
+	return ""
+}
+
+func dialogPilihFolderNative(judul string) string {
+	return ""
 }
