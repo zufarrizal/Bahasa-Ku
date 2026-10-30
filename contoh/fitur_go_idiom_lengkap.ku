@@ -1,0 +1,38 @@
+paket utama
+
+pakai "cetak"
+
+fungsi kirimAngka(ch) {
+    untuk i := 1; i <= 4; i++ {
+        ch <- i * 10
+    }
+    // 1. Penutupan kanal ala close(ch) di Go
+    tutup(ch)
+}
+
+fungsi utama() {
+    cetak.tulis("=== DEMO ADOPSI IDIOM FUNDAMENTAL GO LENGKAP ===")
+
+    // 2. Fungsi konstruktor buat(...) universal ala make(...)
+    var antrean = buat("kanal", 4)
+    var larikAngka = buat("larik", 3, 5) // Panjang 3, kapasitas 5
+    larikAngka[0] = 100
+    larikAngka[1] = 200
+    larikAngka[2] = 300
+    cetak.tulis("Larik dibuat via buat('larik', 3, 5):", larikAngka, "Panjang:", panjang(larikAngka), "Kapasitas:", kapasitas(larikAngka))
+
+    // Jalankan produser konkurensi
+    ku kirimAngka(antrean)
+
+    // 3. Drain loop kanal: untuk v dalam ch (for v := range ch)
+    cetak.tulis("\nMenerima aliran data kanal hingga ditutup:")
+    untuk v dalam antrean {
+        cetak.tulis("-> Menerima item:", v)
+    }
+
+    // 4. Pengecekan koma-ok kanal: v, ok := <-ch
+    var nilaiSisa, masihBuka = <-antrean
+    cetak.tulis("Kanal setelah habis & ditutup -> Nilai:", nilaiSisa, "| Masih buka?:", masihBuka)
+
+    cetak.tulis("\nSemua idiom fundamental Go (buat/make, tutup/close, drain loop, comma-ok) sukses!")
+}

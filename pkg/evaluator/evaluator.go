@@ -36,6 +36,8 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/zufarrizal/bahasa-ku/pkg/ast"
+	"github.com/zufarrizal/bahasa-ku/pkg/lexer"
+	"github.com/zufarrizal/bahasa-ku/pkg/parser"
 )
 
 type ObjectType string
@@ -213,6 +215,40 @@ var subFileRunner SubFileEvaluator
 
 func RegisterSubFileEvaluator(sfe SubFileEvaluator) {
 	subFileRunner = sfe
+}
+
+func init() {
+	RegisterSubFileEvaluator(func(path string, env *Environment) {
+		content, err := os.ReadFile(path)
+		if err != nil {
+			return
+		}
+		l := lexer.New(string(content))
+		p := parser.New(l)
+		prog := p.ParseProgram()
+		if len(p.Errors()) == 0 {
+			subEnv := NewEnclosedEnvironment(env)
+			for _, stmt := range prog.Statements {
+				if _, isPaket := stmt.(*ast.PaketStatement); !isPaket {
+					Eval(stmt, subEnv)
+				}
+			}
+
+			// Jalankan inisiasi() pada sub-file jika ada
+			if initObj, ok := subEnv.Get("inisiasi"); ok {
+				if fn, isFn := initObj.(*Function); isFn {
+					Eval(fn.Body, subEnv)
+				}
+			}
+
+			// Ekspor simbol: Huruf kapital terekspor ke paket pemanggil (aturan visibilitas Go)
+			for name, val := range subEnv.GetStore() {
+				if len(name) > 0 && unicode.IsUpper(rune(name[0])) {
+					env.Set(name, val)
+				}
+			}
+		}
+	})
 }
 
 func SetGlobalPanic(p Object) {
@@ -4545,6 +4581,24 @@ func InitGlobalEnvironment() *Environment {
 		},
 	})
 
+	// Bawaan: tutup (Go close() pada Kanal)
+	env.Set("tutup", &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return FALSE
+			}
+			if chObj, ok := args[0].(*ChannelObject); ok {
+				close(chObj.Ch)
+				return TRUE
+			} else if m, ok := args[0].(*Map); ok {
+				if tutupFn, ok := m.Pairs["tutup"].(*Builtin); ok {
+					return tutupFn.Fn()
+				}
+			}
+			return FALSE
+		},
+	})
+
 	// Bawaan: panik (panic ala Go)
 	env.Set("panik", &Builtin{
 		Fn: func(args ...Object) Object {
@@ -4653,14 +4707,9 @@ func InitGlobalEnvironment() *Environment {
 						capVal = c.Value
 					}
 				}
-				if kObj, ok := env.Get("kanal"); ok {
-					if km, ok := kObj.(*Map); ok {
-						if buatFn, ok := km.Pairs["buat"].(*Builtin); ok {
-							return buatFn.Fn(&Integer{Value: capVal})
-						}
-					}
-				}
-				return NIL
+				ch := make(chan Object, capVal)
+				chObj := &ChannelObject{Ch: ch}
+				return chObj
 			default:
 				return NIL
 			}
@@ -4733,6 +4782,7 @@ func InitGlobalEnvironment() *Environment {
 			}
 			ch := make(chan Object, capVal)
 			chInst := &Map{Pairs: make(map[string]Object)}
+			chInst.Pairs["_rawChan"] = &ChannelObject{Ch: ch}
 			chInst.Pairs["kirim"] = &Builtin{
 				Fn: func(mArgs ...Object) Object {
 					if len(mArgs) > 0 {
@@ -4745,11 +4795,14 @@ func InitGlobalEnvironment() *Environment {
 			}
 			chInst.Pairs["terima"] = &Builtin{
 				Fn: func(mArgs ...Object) Object {
-					val := <-ch
-					if val == nil {
-						return NIL
+					val, ok := <-ch
+					if !ok {
+						return &ReturnValue{Value: NIL, Values: []Object{NIL, FALSE}}
 					}
-					return val
+					if val == nil {
+						val = NIL
+					}
+					return &ReturnValue{Value: val, Values: []Object{val, TRUE}}
 				},
 			}
 			chInst.Pairs["terimaDenganWaktu"] = &Builtin{
@@ -6764,6 +6817,68 @@ func Eval(node ast.Node, env *Environment) Object {
 					_ = i
 				}
 				return NIL
+			} else if chObj, ok := iterObj.(*ChannelObject); ok {
+				// Iterasi drain kanal: untuk val dalam ch { ... } (ala for val := range ch di Go)
+				for val := range chObj.Ch {
+					if n.Key != nil && n.Value != nil {
+						loopEnv.Set(n.Key.Value, val)
+					} else if n.Key != nil {
+						loopEnv.Set(n.Key.Value, val)
+					} else if n.Value != nil {
+						loopEnv.Set(n.Value.Value, val)
+					}
+					res := Eval(n.Body, loopEnv)
+					if res != nil {
+						if res.Type() == RETURN_VALUE_OBJ {
+							return res
+						}
+						if res.Type() == BREAK_OBJ {
+							if b, ok := res.(*Break); ok && b.Label != "" {
+								return res
+							}
+							break
+						}
+						if res.Type() == CONTINUE_OBJ {
+							if c, ok := res.(*Continue); ok && c.Label != "" {
+								return res
+							}
+							continue
+						}
+					}
+				}
+				return NIL
+			} else if m, ok := iterObj.(*Map); ok {
+				if raw, okRaw := m.Pairs["_rawChan"].(*ChannelObject); okRaw {
+					for val := range raw.Ch {
+						if n.Key != nil && n.Value != nil {
+							loopEnv.Set(n.Key.Value, val)
+						} else if n.Key != nil {
+							loopEnv.Set(n.Key.Value, val)
+						} else if n.Value != nil {
+							loopEnv.Set(n.Value.Value, val)
+						}
+						res := Eval(n.Body, loopEnv)
+						if res != nil {
+							if res.Type() == RETURN_VALUE_OBJ {
+								return res
+							}
+							if res.Type() == BREAK_OBJ {
+								if b, ok := res.(*Break); ok && b.Label != "" {
+									return res
+								}
+								break
+							}
+							if res.Type() == CONTINUE_OBJ {
+								if c, ok := res.(*Continue); ok && c.Label != "" {
+									return res
+								}
+								continue
+							}
+						}
+					}
+					return NIL
+				}
+				return NIL
 			}
 			return NIL
 		}
@@ -7230,11 +7345,14 @@ func Eval(node ast.Node, env *Environment) Object {
 		if n.Operator == "<-" {
 			// Operasi terima kanal: <-ch
 			if chObj, ok := right.(*ChannelObject); ok {
-				val := <-chObj.Ch
-				if val == nil {
-					return NIL
+				val, okChan := <-chObj.Ch
+				if !okChan {
+					return &ReturnValue{Value: NIL, Values: []Object{NIL, FALSE}}
 				}
-				return val
+				if val == nil {
+					val = NIL
+				}
+				return &ReturnValue{Value: val, Values: []Object{val, TRUE}}
 			} else if m, ok := right.(*Map); ok {
 				if terimaFn, ok := m.Pairs["terima"].(*Builtin); ok {
 					return terimaFn.Fn()
@@ -7275,7 +7393,10 @@ func Eval(node ast.Node, env *Environment) Object {
 func tryReceiveChannel(chObj Object) (Object, bool) {
 	if c, ok := chObj.(*ChannelObject); ok {
 		select {
-		case v := <-c.Ch:
+		case v, okChan := <-c.Ch:
+			if !okChan {
+				return NIL, false
+			}
 			if v == nil {
 				v = NIL
 			}
@@ -7284,6 +7405,20 @@ func tryReceiveChannel(chObj Object) (Object, bool) {
 			return NIL, false
 		}
 	} else if m, ok := chObj.(*Map); ok {
+		if raw, okRaw := m.Pairs["_rawChan"].(*ChannelObject); okRaw {
+			select {
+			case v, okChan := <-raw.Ch:
+				if !okChan {
+					return NIL, false
+				}
+				if v == nil {
+					v = NIL
+				}
+				return v, true
+			default:
+				return NIL, false
+			}
+		}
 		if cobaTerimaFn, ok := m.Pairs["cobaTerima"].(*Builtin); ok {
 			res := cobaTerimaFn.Fn()
 			if ret, ok := res.(*ReturnValue); ok && len(ret.Values) > 1 {

@@ -760,7 +760,47 @@ var msg = &lt;-ch
 var angka = &lt;-ch
 cetak.tulis(msg, angka) // "Halo Dunia 42"</code></pre>
 
-        <h3>2. Kanal Multiplexing (`pilih` / `select`)</h3>
+        <h3>2. Siklus Hidup Kanal: Penutupan (`tutup`), Drain Loop (`untuk ... dalam`), & Pengecekan Status (`v, ok := &lt;-ch`)</h3>
+        <p>Bahasa Ku mengadopsi siklus penutupan kanal ala <code>close(ch)</code> di Go:</p>
+        <pre><code>var antrean = buat("kanal", 3)
+antrean &lt;- "Tugas 1"
+antrean &lt;- "Tugas 2"
+antrean &lt;- "Tugas 3"
+
+// Menutup kanal setelah selesai mengirim data
+tutup(antrean)
+
+// Menerima aliran data hingga kanal habis dan tertutup (for v := range ch)
+untuk tugas dalam antrean {
+    cetak.tulis("Memproses:", tugas)
+}
+
+// Pengecekan idiom koma-ok (comma-ok receive):
+var dataSisa, masihBuka = &lt;-antrean
+jika !masihBuka {
+    cetak.tulis("Kanal telah ditutup dan semua buffer telah terbaca.")
+}</code></pre>
+
+        <h3>3. Fungsi Konstruktor Universal `buat(...)` (ala Go `make()`)</h3>
+        <p>Gunakan <code>buat()</code> untuk membuat larik (slice) berkapasitas tertentu, peta (map), atau kanal (chan):</p>
+        <pre><code>// 1. Buat larik dengan panjang 3 dan kapasitas alokasi 10:
+var data = buat("larik", 3, 10)
+cetak.tulis("Panjang:", panjang(data), "Kapasitas:", kapasitas(data)) // 3 10
+
+// 2. Buat kanal dengan kapasitas buffer 5:
+var ch = buat("kanal", 5)
+
+// 3. Buat peta (map):
+var kamus = buat("peta")</code></pre>
+
+        <h3>4. Aturan Visibilitas Paket (Enkapsulasi Huruf Kapital ala Go)</h3>
+        <p>Saat membagi program ke dalam beberapa berkas modul dengan <code>pakai "./modul.ku"</code>:</p>
+        <ul>
+          <li><strong>Huruf Kapital Awal</strong> (contoh: <code>HitungGaji</code>, <code>NamaPengguna</code>) &rarr; Terekspor ke paket pemanggil (Public).</li>
+          <li><strong>Huruf Kecil Awal</strong> (contoh: <code>rahasiaInternal</code>, <code>kunciKoneksi</code>) &rarr; Tetap privat dan terisolasi di dalam modul (Package-Private).</li>
+        </ul>
+
+        <h3>5. Kanal Multiplexing (`pilih` / `select`)</h3>
         <p>Blok <code>pilih</code> tanpa ekspresi subjek berfungsi sebagai channel <code>select</code> di Go, memungkinkan menunggu beberapa kanal secara bersamaan atau non-blocking dengan <code>bawaan:</code>:</p>
         <pre><code>var ch1 = kanal.buat(1)
 var ch2 = kanal.buat(1)
