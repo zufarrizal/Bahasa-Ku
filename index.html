@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bahasa Ku - Bahasa Pemrograman Edukatif Bernuansa Go</title>
+  <link rel="icon" type="image/svg+xml" href="aset/logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: #111827;
+      --border: #1f2937;
+      --text: #f3f4f6;
+      --muted: #9ca3af;
+      --accent: #00f0ff;
+      --accent-blue: #0077ff;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: var(--text); line-height: 1.6; }
+
+    /* Navigasi */
+    header { border-bottom: 1px solid var(--border); padding: 16px 24px; position: sticky; top: 0; background: rgba(9, 13, 22, 0.85); backdrop-filter: blur(12px); z-index: 50; }
+    .nav-container { max-width: 1200px; margin: auto; display: flex; justify-content: space-between; align-items: center; }
+    .logo-brand { display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 1.25rem; color: var(--text); text-decoration: none; }
+    .logo-brand img { width: 36px; height: 36px; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-weight: 500; font-size: 0.95rem; margin-left: 24px; transition: color 0.2s; }
+    .nav-links a:hover { color: var(--accent); }
+
+    /* Hero */
+    .hero { max-width: 900px; margin: 60px auto 40px; text-align: center; padding: 0 20px; }
+    .hero-badge { display: inline-block; padding: 6px 16px; background: rgba(0, 240, 255, 0.1); border: 1px solid rgba(0, 240, 255, 0.3); border-radius: 9999px; font-size: 0.85rem; color: var(--accent); font-weight: 600; margin-bottom: 20px; }
+    .hero h1 { font-size: 3rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 16px; line-height: 1.2; }
+    .hero h1 span { background: linear-gradient(135deg, #00f0ff, #0077ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .hero p { font-size: 1.15rem; color: var(--muted); margin-bottom: 32px; max-width: 650px; margin-inline: auto; }
+
+    /* One-Line Install Card */
+    .install-box { max-width: 680px; margin: auto; background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; font-family: 'Fira Code', monospace; font-size: 0.9rem; }
+    .install-cmd { color: var(--accent); overflow-x: auto; white-space: nowrap; }
+    .btn-copy { background: rgba(255, 255, 255, 0.1); border: none; color: white; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; transition: background 0.2s; }
+    .btn-copy:hover { background: rgba(255, 255, 255, 0.2); }
+
+    /* Playground Section */
+    .playground-section { max-width: 1200px; margin: 60px auto 80px; padding: 0 20px; }
+    .section-title { font-size: 1.8rem; font-weight: 700; margin-bottom: 8px; text-align: center; }
+    .section-desc { text-align: center; color: var(--muted); margin-bottom: 32px; font-size: 0.95rem; }
+
+    .playground-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 850px) { .playground-grid { grid-template-columns: 1fr; } }
+
+    .editor-pane, .output-pane { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+    .pane-header { background: #0c121e; border-bottom: 1px solid var(--border); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; font-weight: 600; color: var(--muted); }
+    
+    .editor-textarea { width: 100%; height: 380px; background: transparent; border: none; padding: 16px; color: #e5e7eb; font-family: 'Fira Code', monospace; font-size: 0.95rem; line-height: 1.5; resize: none; outline: none; }
+    .output-screen { padding: 16px; color: #34d399; font-family: 'Fira Code', monospace; font-size: 0.9rem; line-height: 1.6; height: 380px; overflow-y: auto; white-space: pre-wrap; background: #0a0e17; }
+
+    .btn-run { background: linear-gradient(135deg, #00f0ff, #0077ff); color: #000; border: none; padding: 8px 18px; border-radius: 6px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: opacity 0.2s; }
+    .btn-run:hover { opacity: 0.9; }
+
+    /* Feature Grid */
+    .features-grid { max-width: 1200px; margin: 40px auto 100px; padding: 0 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
+    .feature-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 24px; }
+    .feature-icon { font-size: 1.8rem; margin-bottom: 12px; }
+    .feature-card h3 { font-size: 1.15rem; margin-bottom: 8px; color: var(--text); }
+    .feature-card p { color: var(--muted); font-size: 0.9rem; }
+
+    /* Footer */
+    footer { border-top: 1px solid var(--border); padding: 32px 20px; text-align: center; color: var(--muted); font-size: 0.85rem; }
+    footer a { color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="nav-container">
+      <a href="#" class="logo-brand">
+        <img src="aset/logo.svg" alt="Logo Ku">
+        <span>Bahasa Ku</span>
+      </a>
+      <nav class="nav-links">
+        <a href="#playground">Playground</a>
+        <a href="#fitur">Fitur</a>
+        <a href="https://github.com/zufarrizal/Bahasa-Ku" target="_blank">GitHub</a>
+        <a href="https://github.com/zufarrizal/Bahasa-Ku/releases" target="_blank">Unduh v0.2.0</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-badge">🚀 Bahasa Pemrograman Edukatif Bernuansa Go</div>
+      <h1>Koding Bahasa Go dengan Rasa <span>Bahasa Indonesia</span></h1>
+      <p>Bahasa Ku hadir untuk mempermudah siapa saja memahami logika dan arsitektur komputasi modern tanpa hambatan kendala bahasa Inggris.</p>
+      
+      <div class="install-box">
+        <span class="install-cmd">irm https://raw.githubusercontent.com/zufarrizal/Bahasa-Ku/main/pasang.ps1 | iex</span>
+        <button class="btn-copy" onclick="copyInstall()">Salin</button>
+      </div>
+    </section>
+
+    <!-- Playground Online -->
+    <section class="playground-section" id="playground">
+      <h2 class="section-title">Coba Langsung di Browser</h2>
+      <p class="section-desc">Ketik atau modifikasi kode Bahasa Ku di bawah ini, lalu tekan tombol "Jalankan".</p>
+
+      <div class="playground-grid">
+        <div class="editor-pane">
+          <div class="pane-header">
+            <span>Editor Kode (.ku)</span>
+            <button class="btn-run" onclick="jalankanPlayground()">▶ Jalankan</button>
+          </div>
+          <textarea id="editor" class="editor-textarea" spellcheck="false">paket utama
+
+pakai "cetak"
+
+fungsi hitungFaktorial(n) {
+    jika n <= 1 {
+        kembalikan 1
+    }
+    kembalikan n * hitungFaktorial(n - 1)
+}
+
+fungsi utama() {
+    cetak.tulis("=== Selamat Datang di Bahasa Ku! ===")
+    
+    var nama = "Dunia"
+    cetak.tulis("Halo,", nama)
+
+    untuk i := 1; i <= 5; i++ {
+        cetak.tulis("Faktorial dari", i, "=", hitungFaktorial(i))
+    }
+}</textarea>
+        </div>
+
+        <div class="output-pane">
+          <div class="pane-header">
+            <span>Hasil Terminal</span>
+            <button class="btn-copy" onclick="clearOutput()">Bersihkan</button>
+          </div>
+          <div id="output" class="output-screen">Tekan tombol "▶ Jalankan" untuk melihat hasil eksekusi kode...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Fitur -->
+    <section class="features-grid" id="fitur">
+      <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <h3>Compiler Go Native Murni</h3>
+        <p>Dibangun langsung menggunakan toolchain Go modern, menghasilkan biner mandiri <code>ku.exe</code> tanpa ketergantungan runtime luar.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🌐</div>
+        <h3>Backend Web & REST API</h3>
+        <p>Dilengkapi modul <code>web</code> untuk membangun server HTTP dan API endpoint JSON siap produksi.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🖥️</div>
+        <h3>Aplikasi Desktop GUI</h3>
+        <p>Buka kotak dialog native dan jendela aplikasi desktop modern menggunakan modul <code>jendela</code> tanpa Electron.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💾</div>
+        <h3>Database MySQL Native</h3>
+        <p>Koneksi database langsung dengan modul <code>basisdata</code> untuk kueri SQL SELECT, INSERT, UPDATE, dan DELETE.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📁</div>
+        <h3>I/O Berkas & Jaringan</h3>
+        <p>Modul <code>berkas</code> untuk manipulasi file lokal dan <code>jaringan</code> untuk HTTP Client (Fetch GET/POST).</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎨</div>
+        <h3>Dukungan VS Code</h3>
+        <p>Dilengkapi ekstensi resmi untuk Visual Studio Code dengan pewarnaan sintaksis rapi dan ikon file unik.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Bahasa Ku &copy; 2026 Zufar Rizal. Didistribusikan di bawah lisensi terbuka MIT License.</p>
+    <p style="margin-top: 6px;">Proyek edukatif independen yang terinspirasi oleh filosofi dan kesederhanaan bahasa Go (The Go Authors / Google LLC).</p>
+  </footer>
+
+  <script>
+    function copyInstall() {
+      const text = "irm https://raw.githubusercontent.com/zufarrizal/Bahasa-Ku/main/pasang.ps1 | iex";
+      navigator.clipboard.writeText(text);
+      alert("Perintah instalasi disalin ke clipboard!");
+    }
+
+    function clearOutput() {
+      document.getElementById("output").textContent = "";
+    }
+
+    // Mini Browser Runner untuk Playground Ku
+    function jalankanPlayground() {
+      const kode = document.getElementById("editor").value;
+      const outputElem = document.getElementById("output");
+      outputElem.textContent = "Menjalankan program...";
+
+      const logs = [];
+      const cetak = {
+        tulis: (...args) => {
+          logs.push(args.join(" "));
+        }
+      };
+
+      try {
+        // Simulasi parser & evaluator bahasa Ku di web browser
+        let jsCode = kode;
+
+        // Bersihkan deklarasi paket & pakai
+        jsCode = jsCode.replace(/paket\s+\w+/g, "");
+        jsCode = jsCode.replace(/pakai\s+["'][^"']+["']/g, "");
+
+        // Ubah kata kunci Ku ke JS runtime sandbox
+        jsCode = jsCode.replace(/\bfungsi\s+(\w+)\s*\(([^)]*)\)/g, "function $1($2)");
+        jsCode = jsCode.replace(/\bvar\s+/g, "let ");
+        jsCode = jsCode.replace(/\b([a-zA-Z_][a-zA-Z0-9_]*)\s*:=\s*/g, "let $1 = ");
+        jsCode = jsCode.replace(/\bjika\b/g, "if");
+        jsCode = jsCode.replace(/\blainnya\b/g, "else");
+        jsCode = jsCode.replace(/\buntuk\b/g, "for");
+        jsCode = jsCode.replace(/\bkembalikan\b/g, "return");
+        jsCode = jsCode.replace(/\bbenar\b/g, "true");
+        jsCode = jsCode.replace(/\bsalah\b/g, "false");
+        jsCode = jsCode.replace(/\bkosong\b/g, "null");
+
+        // Panggil fungsi utama() jika ada
+        jsCode += "\nif (typeof utama === 'function') { utama(); }";
+
+        const runner = new Function("cetak", jsCode);
+        runner(cetak);
+
+        outputElem.textContent = logs.join("\n") || "(Program selesai tanpa output)";
+      } catch (err) {
+        outputElem.textContent = "Galat Eksekusi:\n" + err.message;
+      }
+    }
+  </script>
+</body>
+</html>

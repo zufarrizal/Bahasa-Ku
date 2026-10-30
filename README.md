@@ -9,6 +9,11 @@
   <i>Cepat, Modern, Multiplatform, dan Ramah bagi Pemula.</i>
 </p>
 
+<p align="center">
+  <a href="https://zufarrizal.github.io/Bahasa-Ku/" target="_blank">🌐 <b>Coba Online Playground</b></a> &nbsp;|&nbsp;
+  <a href="https://github.com/zufarrizal/Bahasa-Ku/releases/tag/v0.2.0">📦 <b>Unduh Biner v0.2.0</b></a>
+</p>
+
 ---
 
 ## 🚀 Fitur Utama
