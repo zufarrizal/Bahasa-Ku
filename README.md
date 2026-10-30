@@ -10,6 +10,8 @@ Engine compiler & runtime **Ku** dibangun langsung menggunakan **Go Murni** (men
 
 - **Native Binary (`ku.exe`):** Berdiri sendiri tanpa dependensi runtime eksternal.
 - **Sintaks Berbahasa Indonesia:** Mengganti kata kunci bahasa Inggris dengan kosakata alami bahasa Indonesia.
+- **Dukungan Web Server Native (`web`):** Siap membuat web server HTTP dan REST API JSON.
+- **Dukungan Desktop GUI Native (`jendela`):** Siap membuka antarmuka GUI desktop dan kotak pesan native di Windows.
 - **Filosofi Mirip Go:** Deklarasi fungsi `fungsi utama()`, deklarasi variabel `var` atau `:=`, modul `cetak.tulis(...)` (*fmt.Println*), data struktur `tipe ... struktur` (*struct*), serta kontrol `tunda` (*defer* LIFO).
 - **Transpiler ke Go Murni:** Dapat langsung mengonversi file `.ku` ke `.go` asli.
 
@@ -29,12 +31,16 @@ go build -o ku.exe ./cmd/ku
 .\ku.exe versi
 ```
 
-3. **Menjalankan Program:**
+### 3. Menjalankan Program:
 ```bash
+# Program CLI Halo Dunia
 .\ku.exe jalankan contoh/halo.ku
-.\ku.exe jalankan contoh/logika.ku
-.\ku.exe jalankan contoh/fitur_lanjutan.ku
-.\ku.exe jalankan contoh/tunda.ku
+
+# Server Web HTTP & REST API JSON
+.\ku.exe jalankan contoh/server_web.ku
+
+# Aplikasi Desktop GUI Windows
+.\ku.exe jalankan contoh/aplikasi_desktop.ku
 ```
 
 4. **Kompilasi / Transpilasi ke Go:**

@@ -1,8 +1,16 @@
 package evaluator
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/http"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"runtime"
 	"strings"
+	"syscall"
+	"unsafe"
 
 	"github.com/zufarrizal/bahasa-ku/pkg/ast"
 )
@@ -187,6 +195,146 @@ func InitGlobalEnvironment() *Environment {
 	}
 	cetakMap.Pairs["tulisBaris"] = cetakMap.Pairs["tulis"]
 	env.Set("cetak", cetakMap)
+
+	// Modul web bawaan
+	webMap := &Map{Pairs: make(map[string]Object)}
+	webMap.Pairs["tangani"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return NIL
+			}
+			pathStr := args[0].Inspect()
+			fnObj := args[1]
+
+			http.HandleFunc(pathStr, func(w http.ResponseWriter, r *http.Request) {
+				reqMap := &Map{Pairs: make(map[string]Object)}
+				reqMap.Pairs["metode"] = &String{Value: r.Method}
+				reqMap.Pairs["jalur"] = &String{Value: r.URL.Path}
+
+				respObj := applyFunction(fnObj, []Object{reqMap}, env)
+				if respObj == nil || respObj == NIL {
+					return
+				}
+
+				if m, ok := respObj.(*Map); ok {
+					// Balas sebagai JSON
+					data := make(map[string]interface{})
+					for k, v := range m.Pairs {
+						data[k] = v.Inspect()
+					}
+					w.Header().Set("Content-Type", "application/json")
+					json.NewEncoder(w).Encode(data)
+					return
+				}
+
+				w.Header().Set("Content-Type", "text/html; charset=utf-8")
+				fmt.Fprint(w, respObj.Inspect())
+			})
+			return NIL
+		},
+	}
+	webMap.Pairs["dengarkan"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return NIL
+			}
+			addr := args[0].Inspect()
+			err := http.ListenAndServe(addr, nil)
+			if err != nil {
+				fmt.Printf("Galat server web: %v\n", err)
+			}
+			return NIL
+		},
+	}
+	env.Set("web", webMap)
+
+	// Modul desktop: jendela
+	jendelaMap := &Map{Pairs: make(map[string]Object)}
+	jendelaMap.Pairs["pesan"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			judul := "Bahasa Ku"
+			isi := ""
+			if len(args) == 1 {
+				isi = args[0].Inspect()
+			} else if len(args) >= 2 {
+				judul = args[0].Inspect()
+				isi = args[1].Inspect()
+			}
+
+			if runtime.GOOS == "windows" {
+				user32 := syscall.NewLazyDLL("user32.dll")
+				msgBox := user32.NewProc("MessageBoxW")
+				tPtr, _ := syscall.UTF16PtrFromString(judul)
+				cPtr, _ := syscall.UTF16PtrFromString(isi)
+				msgBox.Call(0, uintptr(unsafe.Pointer(cPtr)), uintptr(unsafe.Pointer(tPtr)), 0)
+			} else {
+				fmt.Printf("[%s] %s\n", judul, isi)
+			}
+			return NIL
+		},
+	}
+
+	jendelaMap.Pairs["buka"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return NIL
+			}
+
+			judul := "Aplikasi Desktop Bahasa Ku"
+			konten := "<h1>Bahasa Ku Desktop</h1>"
+			url := ""
+
+			if m, ok := args[0].(*Map); ok {
+				if j, ok := m.Pairs["judul"]; ok {
+					judul = j.Inspect()
+				}
+				if k, ok := m.Pairs["konten"]; ok {
+					konten = k.Inspect()
+				}
+				if u, ok := m.Pairs["url"]; ok {
+					url = u.Inspect()
+				}
+			}
+
+			if url == "" {
+				tempDir := os.TempDir()
+				htmlFile := filepath.Join(tempDir, "ku_app.html")
+				htmlContent := fmt.Sprintf(`<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>%s</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 24px; background: #f8fafc; color: #1e293b; margin: 0; }
+  h1 { color: #0284c7; }
+</style>
+</head>
+<body>
+%s
+</body>
+</html>`, judul, konten)
+				_ = os.WriteFile(htmlFile, []byte(htmlContent), 0644)
+				url = htmlFile
+			}
+
+			if runtime.GOOS == "windows" {
+				// Membuka jendela webview mandiri menggunakan browser app mode
+				edgePath := filepath.Join(os.Getenv("ProgramFiles(x86)"), "Microsoft", "Edge", "Application", "msedge.exe")
+				if _, err := os.Stat(edgePath); err == nil {
+					cmd := exec.Command(edgePath, fmt.Sprintf("--app=%s", url), "--window-size=900,650")
+					_ = cmd.Start()
+					return NIL
+				}
+				// Fallback standar default browser
+				_ = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
+			} else {
+				_ = exec.Command("xdg-open", url).Start()
+			}
+
+			return NIL
+		},
+	}
+	env.Set("jendela", jendelaMap)
 
 	// Bawaan: panjang & tambah
 	env.Set("panjang", &Builtin{

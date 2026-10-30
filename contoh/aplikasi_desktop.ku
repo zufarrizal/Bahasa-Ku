@@ -1,0 +1,15 @@
+paket utama
+
+pakai "cetak"
+pakai "jendela"
+
+fungsi utama() {
+    cetak.tulis("Menyiapkan aplikasi desktop Bahasa Ku...")
+
+    jendela.buka({
+        "judul": "Aplikasi Desktop Bahasa Ku",
+        "konten": "<h1>Halo dari Aplikasi Desktop Bahasa Ku! 🖥️</h1><p>Aplikasi GUI Desktop ini dibuka langsung secara native tanpa Electron.</p><div style='padding: 16px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'><p>Bahasa Ku kini siap untuk:</p><ul><li>Pemrograman Sistem & Logika CLI</li><li>Backend & Server Web REST API</li><li>Aplikasi Desktop GUI Windows</li></ul></div>"
+    })
+
+    cetak.tulis("Aplikasi desktop berhasil dibuka!")
+}
