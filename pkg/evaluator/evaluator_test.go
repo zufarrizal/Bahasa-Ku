@@ -316,3 +316,50 @@ fungsi utama() {
 		t.Errorf("Diharapkan 400, didapat %d", intVal.Value)
 	}
 }
+
+func TestTabelProgresDanVersi(t *testing.T) {
+	input := `
+paket utama
+fungsi utama() {
+    // 1. Uji formatBita
+    var kb = konversi.formatBita(1024)
+    jika kb != "1.00 KB" {
+        kembalikan 1
+    }
+    var mb = konversi.formatBita(1048576 * 5)
+    jika mb != "5.00 MB" {
+        kembalikan 2
+    }
+
+    // 2. Uji bandingkanVersi (SemVer)
+    var cmp1 = sistem.bandingkanVersi("v1.2.0", "v1.1.9")
+    jika cmp1 != 1 {
+        kembalikan 3
+    }
+    var cmp2 = sistem.bandingkanVersi("0.2.0", "0.3.0")
+    jika cmp2 != -1 {
+        kembalikan 4
+    }
+    var cmp3 = sistem.bandingkanVersi("v2.0.0", "2.0.0")
+    jika cmp3 != 0 {
+        kembalikan 5
+    }
+
+    // 3. Uji terminal tabel & progres
+    terminal.progres(50, 100, 10)
+    var headers = ["ID", "NAMA"]
+    var rows = [["1", "Zufar"], ["2", "Rizal"]]
+    terminal.tabel(headers, rows)
+
+    kembalikan 500
+}
+`
+	val := runKuCode(input)
+	intVal, ok := val.(*evaluator.Integer)
+	if !ok {
+		t.Fatalf("Nilai bukan Integer: %v", val)
+	}
+	if intVal.Value != 500 {
+		t.Errorf("Diharapkan 500, didapat %d", intVal.Value)
+	}
+}

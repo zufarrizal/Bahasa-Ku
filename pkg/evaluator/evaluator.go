@@ -1062,6 +1062,48 @@ func InitGlobalEnvironment() *Environment {
 			return TRUE
 		},
 	}
+	sistemMap.Pairs["bandingkanVersi"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return &Integer{Value: 0}
+			}
+			cleanVer := func(s string) []int {
+				s = strings.TrimPrefix(strings.TrimSpace(s), "v")
+				s = strings.TrimPrefix(s, "V")
+				parts := strings.Split(s, ".")
+				nums := []int{}
+				for _, p := range parts {
+					// Ambil angka saja jika ada suffix (e.g., -beta)
+					numStr := ""
+					for _, ch := range p {
+						if ch >= '0' && ch <= '9' {
+							numStr += string(ch)
+						} else {
+							break
+						}
+					}
+					n, _ := strconv.Atoi(numStr)
+					nums = append(nums, n)
+				}
+				for len(nums) < 3 {
+					nums = append(nums, 0)
+				}
+				return nums
+			}
+			v1 := cleanVer(args[0].Inspect())
+			v2 := cleanVer(args[1].Inspect())
+
+			for i := 0; i < len(v1) && i < len(v2); i++ {
+				if v1[i] > v2[i] {
+					return &Integer{Value: 1}
+				}
+				if v1[i] < v2[i] {
+					return &Integer{Value: -1}
+				}
+			}
+			return &Integer{Value: 0}
+		},
+	}
 	env.Set("sistem", sistemMap)
 
 	// Modul jaringan (HTTP Client / Fetch API)
@@ -2194,6 +2236,29 @@ func InitGlobalEnvironment() *Environment {
 			return &Boolean{Value: args[0] == nil || args[0].Type() == NIL_OBJ}
 		},
 	}
+	konversiMap.Pairs["formatBita"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: "0 B"}
+			}
+			var b float64
+			if i, ok := args[0].(*Integer); ok {
+				b = float64(i.Value)
+			} else if f, ok := args[0].(*Float); ok {
+				b = f.Value
+			}
+			units := []string{"B", "KB", "MB", "GB", "TB", "PB"}
+			idx := 0
+			for b >= 1024 && idx < len(units)-1 {
+				b /= 1024
+				idx++
+			}
+			if idx == 0 {
+				return &String{Value: fmt.Sprintf("%.0f B", b)}
+			}
+			return &String{Value: fmt.Sprintf("%.2f %s", b, units[idx])}
+		},
+	}
 	env.Set("konversi", konversiMap)
 
 	// Modul bita (Manipulasi Byte Array & Buffer Biner)
@@ -2928,6 +2993,111 @@ func InitGlobalEnvironment() *Environment {
 	terminalMap.Pairs["tampilkanKursor"] = &Builtin{
 		Fn: func(args ...Object) Object {
 			fmt.Print("\033[?25h")
+			return NIL
+		},
+	}
+	terminalMap.Pairs["progres"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return NIL
+			}
+			var cur, total float64
+			if i, ok := args[0].(*Integer); ok {
+				cur = float64(i.Value)
+			} else if f, ok := args[0].(*Float); ok {
+				cur = f.Value
+			}
+			if i, ok := args[1].(*Integer); ok {
+				total = float64(i.Value)
+			} else if f, ok := args[1].(*Float); ok {
+				total = f.Value
+			}
+			width := 20
+			if len(args) >= 3 {
+				if i, ok := args[2].(*Integer); ok && i.Value > 0 {
+					width = int(i.Value)
+				}
+			}
+			if total <= 0 {
+				total = 1
+			}
+			ratio := cur / total
+			if ratio > 1 {
+				ratio = 1
+			}
+			if ratio < 0 {
+				ratio = 0
+			}
+			filled := int(ratio * float64(width))
+			empty := width - filled
+			bar := strings.Repeat("█", filled) + strings.Repeat("░", empty)
+			persen := int(ratio * 100)
+			fmt.Printf("\r[%s] %d%% (%.0f/%.0f)", bar, persen, cur, total)
+			if cur >= total {
+				fmt.Println()
+			}
+			return NIL
+		},
+	}
+	terminalMap.Pairs["tabel"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return NIL
+			}
+			headersArr, ok1 := args[0].(*Array)
+			rowsArr, ok2 := args[1].(*Array)
+			if !ok1 || !ok2 {
+				return NIL
+			}
+			headers := []string{}
+			for _, h := range headersArr.Elements {
+				headers = append(headers, h.Inspect())
+			}
+			rows := [][]string{}
+			for _, rObj := range rowsArr.Elements {
+				if rArr, ok := rObj.(*Array); ok {
+					row := []string{}
+					for _, c := range rArr.Elements {
+						row = append(row, c.Inspect())
+					}
+					rows = append(rows, row)
+				}
+			}
+			colWidths := make([]int, len(headers))
+			for i, h := range headers {
+				colWidths[i] = len(h)
+			}
+			for _, row := range rows {
+				for i, cell := range row {
+					if i < len(colWidths) && len(cell) > colWidths[i] {
+						colWidths[i] = len(cell)
+					}
+				}
+			}
+			sepParts := []string{}
+			for _, w := range colWidths {
+				sepParts = append(sepParts, strings.Repeat("-", w+2))
+			}
+			sep := "+" + strings.Join(sepParts, "+") + "+"
+			fmt.Println(sep)
+			headerParts := []string{}
+			for i, h := range headers {
+				headerParts = append(headerParts, fmt.Sprintf(" %-*s ", colWidths[i], h))
+			}
+			fmt.Println("|" + strings.Join(headerParts, "|") + "|")
+			fmt.Println(sep)
+			for _, row := range rows {
+				cellParts := []string{}
+				for i := 0; i < len(colWidths); i++ {
+					val := ""
+					if i < len(row) {
+						val = row[i]
+					}
+					cellParts = append(cellParts, fmt.Sprintf(" %-*s ", colWidths[i], val))
+				}
+				fmt.Println("|" + strings.Join(cellParts, "|") + "|")
+			}
+			fmt.Println(sep)
 			return NIL
 		},
 	}

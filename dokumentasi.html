@@ -795,6 +795,7 @@ var sensor = pola.ganti("[0-9]", "Kode PIN: 8492", "*") // Kode PIN: ****</code>
             <tr><td><code>konversi.apakahLarik(val)</code></td><td>Memeriksa apakah bertipe larik array (boolean)</td></tr>
             <tr><td><code>konversi.apakahPeta(val)</code></td><td>Memeriksa apakah bertipe peta map (boolean)</td></tr>
             <tr><td><code>konversi.apakahKosong(val)</code></td><td>Memeriksa apakah bernilai kosong / nihil (boolean)</td></tr>
+            <tr><td><code>konversi.formatBita(bytes)</code></td><td>Format ukuran byte menjadi string yang mudah dibaca manusia (contoh: <code>1024 -> "1.00 KB"</code>)</td></tr>
           </tbody>
         </table>
       </section>
@@ -1068,6 +1069,7 @@ sistem.aturLingkungan("APLIKASI_ENV", "produksi")
 var envVal = sistem.lingkungan("APLIKASI_ENV")
 var cwd = sistem.folderKerja() // current directory
 var args = sistem.argumen() // argumen baris perintah CLI
+var cmp = sistem.bandingkanVersi("v1.2.0", "v1.1.5") // 1 (lebih baru), 0 (sama), -1 (lebih lama)
 var info = sistem.perintah("git", "--version") // eksekusi subprocess shell
 cetak.tulis("Output:", info["keluaran"])
 var mem = sistem.memori() // monitoring alokasi RAM (alokasiMB, dll)
@@ -1145,11 +1147,22 @@ catatan.galat("Gagal memproses transaksi ID #102")</code></pre>
             <tr><td><code>terminal.bersihkan()</code></td><td>Membersihkan layar terminal konsol</td></tr>
             <tr><td><code>terminal.sembunyikanKursor()</code></td><td>Menyembunyikan kursor terminal (berguna untuk progress bar)</td></tr>
             <tr><td><code>terminal.tampilkanKursor()</code></td><td>Menampilkan kembali kursor terminal</td></tr>
+            <tr><td><code>terminal.progres(sekarang, total, [lebar])</code></td><td>Menampilkan visual progress bar interaktif di tempat dengan baris <code>\r</code></td></tr>
+            <tr><td><code>terminal.tabel(header, baris2D)</code></td><td>Mencetak tabel ASCII dengan auto-sizing lebar kolom dan pemisah garis rapi</td></tr>
           </tbody>
         </table>
         <pre><code>cetak.tulis(terminal.hijau("✔ Operasi Berhasil!"))
 cetak.tulis(terminal.merah("✖ Terjadi Kesalahan Kritis!"))
-cetak.tulis(terminal.tebal(terminal.kuning("Peringatan: Kapasitas RAM menipis")))</code></pre>
+cetak.tulis(terminal.tebal(terminal.kuning("Peringatan: Kapasitas RAM menipis")))
+
+// Cetak Tabel CLI
+terminal.tabel(["ID", "Nama", "Peran"], [
+  ["1", "Budi", "Admin"],
+  ["2", "Siti", "Developer"]
+])
+
+// Progress Bar CLI
+terminal.progres(50, 100, 30) // [===============>...............] 50% (50/100)</code></pre>
       </section>
 
       <!-- SUB-KATEGORI D: JARINGAN & KEAMANAN -->
