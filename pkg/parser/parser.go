@@ -228,13 +228,16 @@ func (p *Parser) parseTypeStructStatement() ast.Statement {
 	for !p.peekTokenIs(token.RBRACE) && !p.peekTokenIs(token.EOF) {
 		p.nextToken()
 		if p.curTokenIs(token.IDENT) {
-			fieldName := p.curToken.Literal
-			fieldType := "apapun"
+			first := p.curToken.Literal
 			if p.peekTokenIs(token.IDENT) {
+				// fieldName fieldType
 				p.nextToken()
-				fieldType = p.curToken.Literal
+				fieldType := p.curToken.Literal
+				stmt.Fields = append(stmt.Fields, ast.StructField{Name: first, Type: fieldType})
+			} else {
+				// Anonymous / Embedded field ala Go: nama struct = tipe struct
+				stmt.Fields = append(stmt.Fields, ast.StructField{Name: first, Type: first})
 			}
-			stmt.Fields = append(stmt.Fields, ast.StructField{Name: fieldName, Type: fieldType})
 		}
 	}
 
@@ -325,8 +328,12 @@ func (p *Parser) parseFunctionStatement() ast.Statement {
 	stmt.Parameters = params
 	stmt.IsVariadic = isVariadic
 
-	// opsional return type (misal fungsi tes() angka { ... })
-	if p.peekTokenIs(token.IDENT) {
+	// opsional return type (misal fungsi tes() angka { ... } atau named return: fungsi tes() (hasil, err) { ... })
+	if p.peekTokenIs(token.LPAREN) {
+		p.nextToken() // ke '('
+		retParams, _ := p.parseFunctionParameters()
+		stmt.ReturnParams = retParams
+	} else if p.peekTokenIs(token.IDENT) {
 		p.nextToken()
 	}
 
@@ -533,7 +540,16 @@ func (p *Parser) parseSwitchStatement() ast.Statement {
 	stmt := &ast.SwitchStatement{Token: p.curToken}
 	if !p.peekTokenIs(token.LBRACE) {
 		p.nextToken()
-		stmt.Value = p.parseExpression(LOWEST)
+		// Cek apakah bentuk assignment: pilih v := x.(tipe) { ... }
+		firstExprOrStmt := p.parseExpressionOrAssignStatement()
+		if assignStmt, ok := firstExprOrStmt.(*ast.AssignStatement); ok {
+			stmt.Init = assignStmt
+			stmt.Value = assignStmt.Value
+		} else if exprStmt, ok := firstExprOrStmt.(*ast.ExpressionStatement); ok {
+			stmt.Value = exprStmt.Expression
+		} else {
+			stmt.Value = p.parseExpression(LOWEST)
+		}
 	}
 
 	if !p.expectPeek(token.LBRACE) {
@@ -584,6 +600,18 @@ func (p *Parser) parseSwitchStatement() ast.Statement {
 
 func (p *Parser) parseReturnStatement() ast.Statement {
 	stmt := &ast.ReturnStatement{Token: p.curToken, ReturnValues: []ast.Expression{}}
+
+	// Jika setelah 'kembalikan' langsung ';' (semicolon)
+	if p.peekTokenIs(token.SEMICOLON) {
+		p.nextToken()
+		return stmt
+	}
+
+	// Jika setelah 'kembalikan' langsung '}' (tutup blok), ini naked return tanpa semicolon
+	if p.peekTokenIs(token.RBRACE) {
+		return stmt
+	}
+
 	p.nextToken()
 	if !p.curTokenIs(token.SEMICOLON) && !p.curTokenIs(token.RBRACE) {
 		val := p.parseExpression(LOWEST)
@@ -870,6 +898,24 @@ func (p *Parser) parseCallExpression(fn ast.Expression) ast.Expression {
 
 func (p *Parser) parseDotExpression(left ast.Expression) ast.Expression {
 	tok := p.curToken
+
+	// Cek apakah bentuk Type Assertion atau Type Switch: x.(Tipe) atau x.(tipe)
+	if p.peekTokenIs(token.LPAREN) {
+		p.nextToken() // ke '('
+		p.nextToken() // ke identifier tipe atau kata kunci 'tipe'
+		typeName := p.curToken.Literal
+		isTypeWord := p.curToken.Type == token.TIPE || typeName == "tipe" || typeName == "type"
+		if !p.expectPeek(token.RPAREN) {
+			return nil
+		}
+		return &ast.TypeAssertionExpression{
+			Token:  tok,
+			Left:   left,
+			Type:   typeName,
+			IsType: isTypeWord,
+		}
+	}
+
 	p.nextToken()
 	propName := p.curToken.Literal
 	return &ast.DotExpression{Token: tok, Left: left, Property: &ast.Identifier{Token: p.curToken, Value: propName}}
@@ -985,8 +1031,12 @@ func (p *Parser) parseFunctionLiteral() ast.Expression {
 	lit.Parameters = params
 	lit.IsVariadic = isVariadic
 
-	// opsional return type
-	if p.peekTokenIs(token.IDENT) {
+	// opsional return type atau named return: fungsi() (a, b) { ... }
+	if p.peekTokenIs(token.LPAREN) {
+		p.nextToken() // ke '('
+		retParams, _ := p.parseFunctionParameters()
+		lit.ReturnParams = retParams
+	} else if p.peekTokenIs(token.IDENT) {
 		p.nextToken()
 	}
 

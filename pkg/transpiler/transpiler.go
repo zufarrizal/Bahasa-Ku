@@ -52,13 +52,18 @@ func (t *Transpiler) Transpile(node ast.Node) string {
 		out := fmt.Sprintf("type %s struct {\n", n.Name.Value)
 		t.indent++
 		for _, f := range n.Fields {
-			typ := f.Type
-			if typ == "angka" {
-				typ = "int"
-			} else if typ == "teks" {
-				typ = "string"
+			if f.Name == f.Type {
+				// Anonymous / Embedded struct
+				out += fmt.Sprintf("%s%s\n", t.spasi(), f.Name)
+			} else {
+				typ := f.Type
+				if typ == "angka" {
+					typ = "int"
+				} else if typ == "teks" {
+					typ = "string"
+				}
+				out += fmt.Sprintf("%s%s %s\n", t.spasi(), f.Name, typ)
 			}
-			out += fmt.Sprintf("%s%s %s\n", t.spasi(), f.Name, typ)
 		}
 		t.indent--
 		out += "}\n"
@@ -287,6 +292,17 @@ func (t *Transpiler) Transpile(node ast.Node) string {
 
 	case *ast.DotExpression:
 		return fmt.Sprintf("%s.%s", t.Transpile(n.Left), n.Property.Value)
+
+	case *ast.TypeAssertionExpression:
+		tName := n.Type
+		if tName == "angka" {
+			tName = "int"
+		} else if tName == "teks" {
+			tName = "string"
+		} else if tName == "tipe" {
+			tName = "type"
+		}
+		return fmt.Sprintf("%s.(%s)", t.Transpile(n.Left), tName)
 
 	case *ast.IndexExpression:
 		if n.IsSlice {

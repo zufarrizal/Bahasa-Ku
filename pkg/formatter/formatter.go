@@ -64,7 +64,15 @@ func (f *Formatter) Format(node ast.Node) string {
 		if n.Receiver != nil {
 			recStr = fmt.Sprintf("(%s %s) ", n.Receiver.Name, n.Receiver.Type)
 		}
-		out := fmt.Sprintf("\nfungsi %s%s(%s) ", recStr, n.Name.Value, strings.Join(params, ", "))
+		retStr := ""
+		if len(n.ReturnParams) > 0 {
+			rets := []string{}
+			for _, rp := range n.ReturnParams {
+				rets = append(rets, rp.Value)
+			}
+			retStr = fmt.Sprintf(" (%s)", strings.Join(rets, ", "))
+		}
+		out := fmt.Sprintf("\nfungsi %s%s(%s)%s ", recStr, n.Name.Value, strings.Join(params, ", "), retStr)
 		out += f.Format(n.Body)
 		return out
 
@@ -77,7 +85,15 @@ func (f *Formatter) Format(node ast.Node) string {
 				params = append(params, p.Value)
 			}
 		}
-		out := fmt.Sprintf("fungsi(%s) ", strings.Join(params, ", "))
+		retStr := ""
+		if len(n.ReturnParams) > 0 {
+			rets := []string{}
+			for _, rp := range n.ReturnParams {
+				rets = append(rets, rp.Value)
+			}
+			retStr = fmt.Sprintf(" (%s)", strings.Join(rets, ", "))
+		}
+		out := fmt.Sprintf("fungsi(%s)%s ", strings.Join(params, ", "), retStr)
 		out += f.Format(n.Body)
 		return out
 
@@ -158,7 +174,9 @@ func (f *Formatter) Format(node ast.Node) string {
 
 	case *ast.SwitchStatement:
 		valStr := ""
-		if n.Value != nil {
+		if n.Init != nil {
+			valStr = " " + f.Format(n.Init)
+		} else if n.Value != nil {
 			valStr = " " + f.Format(n.Value)
 		}
 		out := fmt.Sprintf("pilih%s {\n", valStr)
@@ -250,6 +268,9 @@ func (f *Formatter) Format(node ast.Node) string {
 
 	case *ast.DotExpression:
 		return fmt.Sprintf("%s.%s", f.Format(n.Left), n.Property.Value)
+
+	case *ast.TypeAssertionExpression:
+		return fmt.Sprintf("%s.(%s)", f.Format(n.Left), n.Type)
 
 	case *ast.IndexExpression:
 		if n.IsSlice {

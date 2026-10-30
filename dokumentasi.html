@@ -534,6 +534,25 @@ jika var err = simpanDatabase(); err == kosong {
     bawaan:
         cetak.tulis("Akses pengunjung biasa")
 }</code></pre>
+
+        <h3>3. Type Switch & Type Assertion (ala Go <code>pilih v := x.(tipe)</code> & <code>x.(Tipe)</code>)</h3>
+        <p>Memeriksa dan mengekstrak tipe data dinamis secara aman saat runtime:</p>
+        <pre><code>fungsi cekTipe(x) {
+    pilih v := x.(tipe) {
+    kasus teks:
+        cetak.tulis("Nilai adalah teks string:", v)
+    kasus angka:
+        cetak.tulis("Nilai adalah angka dikali dua:", v * 2)
+    kasus Manusia:
+        cetak.tulis("Nilai adalah struct Manusia bernama:", v.nama)
+    bawaan:
+        cetak.tulis("Tipe data lainnya")
+    }
+}
+
+// Type Assertion langsung:
+var data = "Bahasa Ku"
+var str = data.(teks) // Berhasil mengambil nilai teks string</code></pre>
       </section>
 
       <!-- Perulangan -->
@@ -617,6 +636,17 @@ var kuadrat = fungsi(x) {
     kembalikan x * x
 }
 cetak.tulis("Hasil kuadrat 5:", kuadrat(5))</code></pre>
+
+        <h3>3. Named Return Values & Naked Return (Pengembalian Bernama Ala Go)</h3>
+        <p>Mendeklarasikan nama variabel hasil pengembalian di signature fungsi, dan menggunakan kata kunci <code>kembalikan</code> tanpa argumen (naked return) untuk mengembalikan nilai variabel tersebut:</p>
+        <pre><code>fungsi hitungPersegi(sisi) (luas, keliling) {
+    luas = sisi * sisi
+    keliling = 4 * sisi
+    kembalikan // Otomatis mengembalikan nilai 'luas' dan 'keliling'
+}
+
+var l, k = hitungPersegi(5)
+cetak.tulis("Luas:", l, "Keliling:", k) // Luas: 25 Keliling: 20</code></pre>
       </section>
 
       <!-- Struktur & Method -->
@@ -634,17 +664,17 @@ fungsi (p Persegi) luas() {
 
 // Komposisi Struct Embedding ala Go (Field & Method Promosi Otomatis)
 tipe KotakWarna struktur {
-    bentuk Persegi // embedding
+    Persegi // Anonymous field embedding tanpa deklarasi nama properti ganda
     warna
 }
 
 fungsi utama() {
     var k = KotakWarna({
         "warna": "Merah",
-        "bentuk": Persegi({"panjang": 10, "lebar": 5})
+        "Persegi": Persegi({"panjang": 10, "lebar": 5})
     })
 
-    // Field dan method Persegi otomatis dipromosikan:
+    // Field dan method Persegi otomatis dipromosikan langsung ke objek k:
     cetak.tulis("Warna:", k.warna)
     cetak.tulis("Panjang (promosi):", k.panjang)
     cetak.tulis("Luas (promosi method):", k.luas())

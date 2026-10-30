@@ -237,11 +237,12 @@ func (b *Builtin) Type() ObjectType { return BUILTIN_OBJ }
 func (b *Builtin) Inspect() string  { return "fungsi bawaan" }
 
 type Function struct {
-	Receiver   *ast.FunctionReceiver
-	Parameters []*ast.Identifier
-	IsVariadic bool
-	Body       *ast.BlockStatement
-	Env        *Environment
+	Receiver     *ast.FunctionReceiver
+	Parameters   []*ast.Identifier
+	ReturnParams []*ast.Identifier // Named return parameters
+	IsVariadic   bool
+	Body         *ast.BlockStatement
+	Env          *Environment
 }
 
 func (f *Function) Type() ObjectType { return FUNCTION_OBJ }
@@ -297,6 +298,39 @@ var (
 	FALSE = &Boolean{Value: false}
 	NIL   = &Nil{}
 )
+
+func getObjectTypeString(obj Object) string {
+	if obj == nil {
+		return "kosong"
+	}
+	switch v := obj.(type) {
+	case *Integer:
+		return "angka"
+	case *Float:
+		return "desimal"
+	case *Boolean:
+		return "boolean"
+	case *String:
+		return "teks"
+	case *Array:
+		return "larik"
+	case *Map:
+		return "peta"
+	case *Nil:
+		return "kosong"
+	case *Function, *Builtin:
+		return "fungsi"
+	case *StructInstance:
+		if v.Def != nil {
+			return v.Def.Name
+		}
+		return "struktur"
+	case *ChannelObject:
+		return "kanal"
+	default:
+		return strings.ToLower(string(obj.Type()))
+	}
+}
 
 func formatTipeIndo(obj Object) string {
 	if obj == nil {
@@ -6405,6 +6439,19 @@ func Eval(node ast.Node, env *Environment) Object {
 		} else if dotExpr, ok := n.Target.(*ast.DotExpression); ok {
 			left := Eval(dotExpr.Left, env)
 			if si, ok := left.(*StructInstance); ok {
+				if _, hasField := si.Fields[dotExpr.Property.Value]; hasField {
+					si.Fields[dotExpr.Property.Value] = val
+					return val
+				}
+				// Cari apakah field berada pada embedded struct
+				for _, fieldVal := range si.Fields {
+					if embeddedSI, isEmbed := fieldVal.(*StructInstance); isEmbed {
+						if _, hasEmbField := embeddedSI.Fields[dotExpr.Property.Value]; hasEmbField {
+							embeddedSI.Fields[dotExpr.Property.Value] = val
+							return val
+						}
+					}
+				}
 				si.Fields[dotExpr.Property.Value] = val
 			} else if m, ok := left.(*Map); ok {
 				m.Pairs[dotExpr.Property.Value] = val
@@ -6415,11 +6462,12 @@ func Eval(node ast.Node, env *Environment) Object {
 
 	case *ast.FunctionStatement:
 		fn := &Function{
-			Receiver:   n.Receiver,
-			Parameters: n.Parameters,
-			IsVariadic: n.IsVariadic,
-			Body:       n.Body,
-			Env:        env,
+			Receiver:     n.Receiver,
+			Parameters:   n.Parameters,
+			ReturnParams: n.ReturnParams,
+			IsVariadic:   n.IsVariadic,
+			Body:         n.Body,
+			Env:          env,
 		}
 		// Jika merupakan method receiver: fungsi (p Pengguna) sapa() { ... }
 		if n.Receiver != nil {
@@ -6435,10 +6483,11 @@ func Eval(node ast.Node, env *Environment) Object {
 
 	case *ast.FunctionLiteral:
 		return &Function{
-			Parameters: n.Parameters,
-			IsVariadic: n.IsVariadic,
-			Body:       n.Body,
-			Env:        env,
+			Parameters:   n.Parameters,
+			ReturnParams: n.ReturnParams,
+			IsVariadic:   n.IsVariadic,
+			Body:         n.Body,
+			Env:          env,
 		}
 
 	case *ast.BreakStatement:
@@ -6711,32 +6760,81 @@ func Eval(node ast.Node, env *Environment) Object {
 		return NIL
 
 	case *ast.SwitchStatement:
+		switchEnv := env
+		var rawSubject Object = nil
+		isTypeSwitch := false
+
+		// Cek apakah ada statement assignment pembuat variabel, misal: pilih v := x.(tipe) { ... }
+		if n.Init != nil {
+			switchEnv = NewEnclosedEnvironment(env)
+			if assign, ok := n.Init.(*ast.AssignStatement); ok {
+				if typeAssert, isTA := assign.Value.(*ast.TypeAssertionExpression); isTA && typeAssert.IsType {
+					isTypeSwitch = true
+					rawSubject = Eval(typeAssert.Left, env)
+					if ident, isIdent := assign.Target.(*ast.Identifier); isIdent {
+						switchEnv.Set(ident.Value, rawSubject)
+					}
+				} else {
+					Eval(n.Init, switchEnv)
+				}
+			} else {
+				Eval(n.Init, switchEnv)
+			}
+		}
+
 		var targetVal Object = TRUE
 		if n.Value != nil {
-			targetVal = Eval(n.Value, env)
+			if typeAssert, isTA := n.Value.(*ast.TypeAssertionExpression); isTA && typeAssert.IsType {
+				isTypeSwitch = true
+				rawSubject = Eval(typeAssert.Left, env)
+			} else if !isTypeSwitch {
+				targetVal = Eval(n.Value, switchEnv)
+			}
 		}
+
 		fallthroughNext := false
 		for idx, c := range n.Cases {
 			matched := fallthroughNext
 			if !matched {
-				if len(c.Values) > 0 {
+				if isTypeSwitch {
+					subjectType := strings.ToLower(getObjectTypeString(rawSubject))
 					for _, vExpr := range c.Values {
-						val := Eval(vExpr, env)
-						if objectsEqual(targetVal, val) {
+						typeStr := ""
+						if ident, ok := vExpr.(*ast.Identifier); ok {
+							typeStr = strings.ToLower(ident.Value)
+						} else {
+							typeStr = strings.ToLower(Eval(vExpr, switchEnv).Inspect())
+						}
+
+						if typeStr == subjectType ||
+							(subjectType == "angka" && (typeStr == "int" || typeStr == "angka")) ||
+							(subjectType == "teks" && (typeStr == "string" || typeStr == "teks")) ||
+							(subjectType == "desimal" && (typeStr == "float" || typeStr == "desimal")) ||
+							(subjectType == "boolean" && (typeStr == "bool" || typeStr == "boolean")) {
 							matched = true
 							break
 						}
 					}
-				} else if c.Value != nil {
-					val := Eval(c.Value, env)
-					if objectsEqual(targetVal, val) {
-						matched = true
+				} else {
+					if len(c.Values) > 0 {
+						for _, vExpr := range c.Values {
+							val := Eval(vExpr, switchEnv)
+							if objectsEqual(targetVal, val) {
+								matched = true
+								break
+							}
+						}
+					} else if c.Value != nil {
+						val := Eval(c.Value, switchEnv)
+						if objectsEqual(targetVal, val) {
+							matched = true
+						}
 					}
 				}
 			}
 
 			if matched {
-				res := Eval(c.Body, env)
+				res := Eval(c.Body, switchEnv)
 				if res != nil && res.Type() == FALLTHROUGH_OBJ {
 					fallthroughNext = true
 					continue
@@ -6747,7 +6845,7 @@ func Eval(node ast.Node, env *Environment) Object {
 			_ = idx
 		}
 		if n.Default != nil {
-			return Eval(n.Default, env)
+			return Eval(n.Default, switchEnv)
 		}
 		return NIL
 
@@ -6894,6 +6992,27 @@ func Eval(node ast.Node, env *Environment) Object {
 		}
 		return NIL
 
+	case *ast.TypeAssertionExpression:
+		val := Eval(n.Left, env)
+		if n.IsType {
+			// Type switch helper x.(tipe) / x.(type) -> kembalikan representasi tipe
+			return &String{Value: getObjectTypeString(val)}
+		}
+
+		// x.(Tipe) Type assertion:
+		targetType := strings.ToLower(n.Type)
+		actualType := getObjectTypeString(val)
+		if strings.EqualFold(targetType, actualType) || (actualType == "angka" && targetType == "int") || (actualType == "teks" && targetType == "string") {
+			return val
+		}
+		// Jika tipe struct custom:
+		if si, ok := val.(*StructInstance); ok && si.Def != nil {
+			if strings.EqualFold(si.Def.Name, n.Type) {
+				return val
+			}
+		}
+		return NIL
+
 	case *ast.DotExpression:
 		left := Eval(n.Left, env)
 		if m, ok := left.(*Map); ok {
@@ -7028,6 +7147,15 @@ func applyFunction(fn Object, args []Object, outerEnv *Environment) Object {
 			}
 		}
 
+		// Inisialisasi variabel return bernama (Named Return Values ala Go) dengan NIL / Zero value
+		if len(f.ReturnParams) > 0 {
+			for _, rp := range f.ReturnParams {
+				if _, exists := fnEnv.Get(rp.Value); !exists {
+					fnEnv.Set(rp.Value, NIL)
+				}
+			}
+		}
+
 		res := Eval(f.Body, fnEnv)
 
 		if pObj, isPanic := res.(*PanicObject); isPanic {
@@ -7051,11 +7179,45 @@ func applyFunction(fn Object, args []Object, outerEnv *Environment) Object {
 		}
 
 		if ret, ok := res.(*ReturnValue); ok {
+			// Naked return: jika kembalikan dipanggil tanpa nilai dan fungsi memiliki named return parameters
+			if len(ret.Values) == 0 || (len(ret.Values) == 1 && ret.Values[0] == NIL && len(f.ReturnParams) > 0) {
+				namedVals := []Object{}
+				for _, rp := range f.ReturnParams {
+					if v, ok := fnEnv.Get(rp.Value); ok {
+						namedVals = append(namedVals, v)
+					} else {
+						namedVals = append(namedVals, NIL)
+					}
+				}
+				if len(namedVals) > 1 {
+					return &ReturnValue{Value: namedVals[0], Values: namedVals}
+				} else if len(namedVals) == 1 {
+					return namedVals[0]
+				}
+			}
 			if len(ret.Values) > 1 {
 				return ret
 			}
 			return ret.Value
 		}
+
+		// Jika fungsi selesai tanpa eksplisit kembalikan, tapi ada ReturnParams
+		if len(f.ReturnParams) > 0 {
+			namedVals := []Object{}
+			for _, rp := range f.ReturnParams {
+				if v, ok := fnEnv.Get(rp.Value); ok {
+					namedVals = append(namedVals, v)
+				} else {
+					namedVals = append(namedVals, NIL)
+				}
+			}
+			if len(namedVals) > 1 {
+				return &ReturnValue{Value: namedVals[0], Values: namedVals}
+			} else if len(namedVals) == 1 {
+				return namedVals[0]
+			}
+		}
+
 		return NIL
 	}
 
@@ -7121,6 +7283,67 @@ func objectsEqual(a, b Object) bool {
 }
 
 func evalInfixExpression(op string, left, right Object) Object {
+	// Operasi aritmatika & perbandingan jika melibatkan Float atau Integer
+	if (left.Type() == FLOAT_OBJ || left.Type() == INTEGER_OBJ) && (right.Type() == FLOAT_OBJ || right.Type() == INTEGER_OBJ) {
+		if left.Type() == FLOAT_OBJ || right.Type() == FLOAT_OBJ {
+			var lVal, rVal float64
+			if left.Type() == FLOAT_OBJ {
+				lVal = left.(*Float).Value
+			} else {
+				lVal = float64(left.(*Integer).Value)
+			}
+			if right.Type() == FLOAT_OBJ {
+				rVal = right.(*Float).Value
+			} else {
+				rVal = float64(right.(*Integer).Value)
+			}
+
+			switch op {
+			case "+":
+				return &Float{Value: lVal + rVal}
+			case "-":
+				return &Float{Value: lVal - rVal}
+			case "*":
+				return &Float{Value: lVal * rVal}
+			case "/":
+				if rVal == 0 {
+					return &Float{Value: 0}
+				}
+				return &Float{Value: lVal / rVal}
+			case "==":
+				if lVal == rVal {
+					return TRUE
+				}
+				return FALSE
+			case "!=":
+				if lVal != rVal {
+					return TRUE
+				}
+				return FALSE
+			case "<":
+				if lVal < rVal {
+					return TRUE
+				}
+				return FALSE
+			case "<=":
+				if lVal <= rVal {
+					return TRUE
+				}
+				return FALSE
+			case ">":
+				if lVal > rVal {
+					return TRUE
+				}
+				return FALSE
+			case ">=":
+				if lVal >= rVal {
+					return TRUE
+				}
+				return FALSE
+			}
+		}
+	}
+
 	if left.Type() == INTEGER_OBJ && right.Type() == INTEGER_OBJ {
 		lVal := left.(*Integer).Value
 		rVal := right.(*Integer).Value

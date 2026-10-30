@@ -165,22 +165,24 @@ type FunctionReceiver struct {
 }
 
 type FunctionStatement struct {
-	Token      token.Token // token.FUNGSI
-	Receiver   *FunctionReceiver // Opsional method receiver: (l Lingkaran)
-	Name       *Identifier
-	Parameters []*Identifier
-	IsVariadic bool // Parameter terakhir variadic (...args)
-	Body       *BlockStatement
+	Token        token.Token // token.FUNGSI
+	Receiver     *FunctionReceiver // Opsional method receiver: (l Lingkaran)
+	Name         *Identifier
+	Parameters   []*Identifier
+	ReturnParams []*Identifier     // Named return variables: fungsi f() (a, b) { ... }
+	IsVariadic   bool // Parameter terakhir variadic (...args)
+	Body         *BlockStatement
 }
 
 func (fs *FunctionStatement) statementNode()       {}
 func (fs *FunctionStatement) TokenLiteral() string { return fs.Token.Literal }
 
 type FunctionLiteral struct {
-	Token      token.Token // token.FUNGSI
-	Parameters []*Identifier
-	IsVariadic bool
-	Body       *BlockStatement
+	Token        token.Token // token.FUNGSI
+	Parameters   []*Identifier
+	ReturnParams []*Identifier     // Named return variables: fungsi() (a, b) { ... }
+	IsVariadic   bool
+	Body         *BlockStatement
 }
 
 func (fl *FunctionLiteral) expressionNode()      {}
@@ -231,6 +233,7 @@ type SwitchCase struct {
 
 type SwitchStatement struct {
 	Token   token.Token // token.PILIH
+	Init    Statement   // Opsional assignment: pilih v := x.(tipe) { ... }
 	Value   Expression
 	Cases   []SwitchCase
 	Default *BlockStatement
@@ -361,6 +364,16 @@ type MapLiteral struct {
 	Token token.Token // LBRACE
 	Pairs []MapPair
 }
+
+type TypeAssertionExpression struct {
+	Token  token.Token // token.DOT
+	Left   Expression  // ekspresi yang di-assert, misal 'x'
+	Type   string      // nama tipe tujuan, misal "angka", "teks", "Pengguna" atau "tipe" untuk type switch
+	IsType bool        // true jika x.(tipe) / x.(type)
+}
+
+func (tae *TypeAssertionExpression) expressionNode()      {}
+func (tae *TypeAssertionExpression) TokenLiteral() string { return tae.Token.Literal }
 
 func (ml *MapLiteral) expressionNode()      {}
 func (ml *MapLiteral) TokenLiteral() string { return ml.Token.Literal }
