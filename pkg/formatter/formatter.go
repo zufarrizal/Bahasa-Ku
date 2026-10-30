@@ -202,6 +202,20 @@ func (f *Formatter) Format(node ast.Node) string {
 	case *ast.ContinueStatement:
 		return "lanjut"
 
+	case *ast.TryCatchStatement:
+		res := "coba " + f.Format(n.TryBlock)
+		if n.CatchBlock != nil {
+			if n.CatchIdent != nil {
+				res += fmt.Sprintf(" tangkap (%s) ", n.CatchIdent.Value) + f.Format(n.CatchBlock)
+			} else {
+				res += " tangkap " + f.Format(n.CatchBlock)
+			}
+		}
+		if n.FinallyBlock != nil {
+			res += " akhirnya " + f.Format(n.FinallyBlock)
+		}
+		return res
+
 	case *ast.DeferStatement:
 		return fmt.Sprintf("tunda %s", f.Format(n.Expression))
 

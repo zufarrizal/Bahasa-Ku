@@ -105,6 +105,17 @@ type KuStatement struct {
 func (ks *KuStatement) statementNode()       {}
 func (ks *KuStatement) TokenLiteral() string { return ks.Token.Literal }
 
+type TryCatchStatement struct {
+	Token       token.Token // token.COBA
+	TryBlock    *BlockStatement
+	CatchIdent  *Identifier
+	CatchBlock  *BlockStatement
+	FinallyBlock *BlockStatement
+}
+
+func (ts *TryCatchStatement) statementNode()       {}
+func (ts *TryCatchStatement) TokenLiteral() string { return ts.Token.Literal }
+
 type ExpressionStatement struct {
 	Token      token.Token
 	Expression Expression

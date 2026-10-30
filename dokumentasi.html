@@ -196,6 +196,7 @@
           <li><a href="#modul-teks">Modul `teks`</a></li>
           <li><a href="#modul-konversi">Modul `konversi`</a></li>
           <li><a href="#modul-json">Modul `json`</a></li>
+          <li><a href="#modul-validasi">Modul `validasi`</a></li>
           <li><a href="#modul-matematika">Modul `matematika`</a></li>
           <li><a href="#modul-kripto">Modul `kripto`</a></li>
           <li><a href="#modul-berkas-sistem">Modul `berkas` & `sistem`</a></li>
@@ -370,6 +371,17 @@ untuk _, item dalam warna {
 untuk angka <= 10 {
     angka += 2
 }</code></pre>
+
+        <h3>4. Kontrol Perulangan (`henti` / `berhenti` & `lanjut`)</h3>
+        <pre><code>untuk i := 0; i < 10; i++ {
+    jika i == 3 {
+        lanjut // Lewati iterasi saat i bernilai 3
+    }
+    jika i == 7 {
+        berhenti // Hentikan perulangan sepenuhnya saat i bernilai 7 (alias: henti)
+    }
+    cetak.tulis("Nilai:", i)
+}</code></pre>
       </section>
 
       <!-- Fungsi & Closure -->
@@ -428,8 +440,24 @@ fungsi utama() {
 
       <!-- Penanganan Error -->
       <section id="penanganan-error" class="docs-section">
-        <h2>Panik & Pulih (`panik` & `pulih`)</h2>
-        <p>Mekanisme penanganan eksepsi bawaan setara Go <code>panic</code> dan <code>recover</code>:</p>
+        <h2>Penanganan Galat (`coba - tangkap - akhirnya` & `panik - pulih`)</h2>
+        
+        <h3>1. Blok Eksepsi Terstruktur (`coba`, `tangkap`, `akhirnya`)</h3>
+        <p>Bahasa Ku menyediakan sintaks penanganan galat modern yang ramah pengguna:</p>
+        <pre><code>coba {
+    cetak.tulis("Membaca berkas konfigurasi...")
+    var isi = berkas.baca("konfig-rahasia.json")
+    jika isi == kosong {
+        panik("Berkas konfigurasi tidak ditemukan!")
+    }
+} tangkap (galat) {
+    cetak.tulis("⚠️ Terjadi kesalahan tertangkap:", galat)
+} akhirnya {
+    cetak.tulis("✔️ Blok akhirnya selalu dijalankan untuk pembersihan aset.")
+}</code></pre>
+
+        <h3>2. Panik & Pulih Tingkat Rendah (`panik` & `pulih`)</h3>
+        <p>Mekanisme penanganan eksepsi bawaan setara Go <code>panic</code> dan <code>recover</code> menggunakan <code>tunda</code>:</p>
         <pre><code>fungsi prosesData() {
     tunda fungsi() {
         var err = pulih()
@@ -779,14 +807,51 @@ var token = acak.teks(16) // Token unik acak</code></pre>
 
       <!-- Modul Standar: JSON -->
       <section id="modul-json" class="docs-section">
-        <h2>Modul `json`</h2>
+        <h2>Modul `json` (Format Objek & Serialisasi)</h2>
+        <table>
+          <thead>
+            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>json.urai(teksJSON)</code></td><td>Membaca string JSON menjadi objek Peta (`{}`) atau Larik (`[]`)</td></tr>
+            <tr><td><code>json.kodekan(data)</code></td><td>Mengonversi objek/larik Bahasa Ku menjadi string JSON kompak</td></tr>
+            <tr><td><code>json.format(data, [indent])</code></td><td>Mengonversi objek/larik menjadi string JSON dengan lekukan rapi (*pretty-print*)</td></tr>
+            <tr><td><code>json.valid(teks)</code></td><td>Memeriksa apakah string merupakan format JSON yang valid (boolean)</td></tr>
+          </tbody>
+        </table>
         <pre><code>// Serialisasi
-var payload = {"status": "sukses", "kode": 200}
-var stringJSON = json.kodekan(payload)
+var payload = {"status": "sukses", "kode": 200, "daftar": ["A", "B"]}
+var teksJSON = json.format(payload, 2)
 
-// Deserialisasi
-var objek = json.urai(stringJSON)
-cetak.tulis("Status:", objek["status"])</code></pre>
+// Deserialisasi & Validasi
+jika json.valid(teksJSON) {
+    var data = json.urai(teksJSON)
+    cetak.tulis("Status:", data["status"])
+}</code></pre>
+      </section>
+
+      <!-- Modul Standar: Validasi -->
+      <section id="modul-validasi" class="docs-section">
+        <h2>Modul `validasi` (Pemeriksaan Format Data)</h2>
+        <table>
+          <thead>
+            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>validasi.apakahEmail(teks)</code></td><td>Memeriksa format alamat email valid (boolean)</td></tr>
+            <tr><td><code>validasi.apakahURL(teks)</code></td><td>Memeriksa format URL web dengan skema protokol yang sah (boolean)</td></tr>
+            <tr><td><code>validasi.apakahIP(teks)</code></td><td>Memeriksa format alamat IPv4 atau IPv6 yang sah (boolean)</td></tr>
+            <tr><td><code>validasi.apakahAlfabet(teks)</code></td><td>Memeriksa apakah seluruh karakter hanya berisi huruf (boolean)</td></tr>
+            <tr><td><code>validasi.apakahNumerik(teks)</code></td><td>Memeriksa apakah seluruh karakter hanya berisi digit angka (boolean)</td></tr>
+            <tr><td><code>validasi.apakahAlfanumerik(teks)</code></td><td>Memeriksa apakah string hanya terdiri dari kombinasi huruf dan angka (boolean)</td></tr>
+          </tbody>
+        </table>
+        <pre><code>jika validasi.apakahEmail("pengguna@domain.id") {
+    cetak.tulis("Email pengguna valid!")
+}
+jika validasi.apakahIP("192.168.1.1") {
+    cetak.tulis("Alamat IP lokal valid.")
+}</code></pre>
       </section>
 
       <!-- Modul Standar: Matematika -->
@@ -846,6 +911,10 @@ berkas.salin("catatan.txt", "salinan.txt")
 berkas.pindah("salinan.txt", "arsip.txt")
 berkas.buatFolder("data/arsip")
 var daftarBerkas = berkas.daftar(".")
+var apakahDir = berkas.apakahFolder("data/arsip") // true
+var apakahFile = berkas.apakahBerkas("arsip.txt")  // true
+var izinBerkas = berkas.izin("arsip.txt")         // -rw-r--r--
+berkas.salinFolder("data/arsip", "backup/arsip")  // rekursif salin direktori
 
 // Modul Sistem & Lingkungan OS
 var osName = sistem.os() // windows, linux, darwin

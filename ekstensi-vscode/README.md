@@ -10,7 +10,7 @@ Ekstensi resmi Visual Studio Code untuk bahasa pemrograman **Bahasa Ku** (`.ku`)
 
 ## ✨ Fitur
 
-- 🎨 **Syntax Highlighting Lengkap:** Mewarnai seluruh kata kunci kontrol (`jika`, `lainnya`, `untuk`, `pilih`, `kembalikan`, `tunda`), deklarasi (`fungsi`, `paket`, `pakai`, `var`, `tetap`, `tipe`), modul bawaan (`cetak`, `waktu`, `pola`, `larik`, `peta`, `kompresi`, `jalur`, `enkoding`, `bita`, `acak`, `teks`, `konversi`, `kripto`, `berkas`, `sistem`, `web`, `jendela`, `basisdata`, `uji`), konstanta, string, dan komentar.
+- 🎨 **Syntax Highlighting Lengkap:** Mewarnai seluruh kata kunci kontrol (`jika`, `lainnya`, `untuk`, `pilih`, `kembalikan`, `tunda`, `henti`, `berhenti`, `lanjut`, `coba`, `tangkap`, `akhirnya`), deklarasi (`fungsi`, `paket`, `pakai`, `var`, `tetap`, `tipe`), modul bawaan (`cetak`, `waktu`, `pola`, `larik`, `peta`, `kompresi`, `jalur`, `enkoding`, `bita`, `acak`, `teks`, `konversi`, `kripto`, `berkas`, `sistem`, `web`, `jendela`, `basisdata`, `uji`, `json`, `validasi`), konstanta, string, dan komentar.
 - 📁 **Ikon Berkas Resmi:** Menampilkan ikon resmi Bahasa Ku di samping setiap file berekstensi `.ku`.
 - ⌨️ **Konfigurasi Bahasa Pintar:**
   - Auto-closing tanda kurung `()`, kurung kurawal `{}`, kurung siku `[]`, dan tanda kutip `""` / ` `` `.

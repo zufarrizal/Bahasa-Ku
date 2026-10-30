@@ -23,7 +23,7 @@
       "patterns": [
         {
           "name": "keyword.control.ku",
-          "match": "\\b(ku|jika|lainnya|untuk|selama|dalam|rentang|pilih|kasus|bawaan|kembalikan|tunda|henti|lanjut)\\b"
+          "match": "\\b(ku|jika|lainnya|untuk|selama|dalam|rentang|pilih|kasus|bawaan|kembalikan|tunda|henti|berhenti|lanjut|coba|tangkap|akhirnya)\\b"
         },
         {
           "name": "keyword.declaration.ku",
@@ -35,7 +35,7 @@
         },
         {
           "name": "support.class.ku",
-          "match": "\\b(cetak|web|jendela|basisdata|berkas|sistem|jaringan|kripto|matematika|teks|konversi|masukan|panjang|tambah|hapus|panik|pulih|uji|kanal|json|larik|waktu|pola|kelompokTunggu|jalur|enkoding|peta|kompresi|catatan|bita|acak)\\b"
+          "match": "\\b(cetak|web|jendela|basisdata|berkas|sistem|jaringan|kripto|matematika|teks|konversi|masukan|panjang|tambah|hapus|panik|pulih|uji|kanal|json|larik|waktu|pola|kelompokTunggu|jalur|enkoding|peta|kompresi|catatan|bita|acak|validasi)\\b"
         }
       ]
     },

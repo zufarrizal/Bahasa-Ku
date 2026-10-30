@@ -146,6 +146,8 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseDeferStatement()
 	case token.KU:
 		return p.parseKuStatement()
+	case token.COBA:
+		return p.parseTryCatchStatement()
 	case token.HENTI:
 		stmt := &ast.BreakStatement{Token: p.curToken}
 		if p.peekTokenIs(token.SEMICOLON) {
@@ -392,6 +394,11 @@ func (p *Parser) parseForStatement() ast.Statement {
 		return stmt
 	}
 
+	// Dukung untuk var i = 0; i < 10; i = i + 1 { ... }
+	if p.curTokenIs(token.VAR) {
+		p.nextToken() // skip 'var'
+	}
+
 	// Cek apakah pola for ... dalam koleksi:
 	// untuk item dalam list { ... } atau untuk i, item dalam list { ... }
 	if p.curTokenIs(token.IDENT) && (p.peekTokenIs(token.COMMA) || p.peekTokenIs(token.DALAM) || p.peekTokenIs(token.RENTANG)) {
@@ -554,6 +561,46 @@ func (p *Parser) parseKuStatement() ast.Statement {
 	if p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()
 	}
+	return stmt
+}
+
+func (p *Parser) parseTryCatchStatement() ast.Statement {
+	stmt := &ast.TryCatchStatement{Token: p.curToken}
+
+	if !p.expectPeek(token.LBRACE) {
+		return nil
+	}
+	stmt.TryBlock = p.parseBlockStatement()
+
+	if p.peekTokenIs(token.TANGKAP) {
+		p.nextToken() // ke 'tangkap'
+		if p.peekTokenIs(token.LPAREN) {
+			p.nextToken() // ke '('
+			if !p.expectPeek(token.IDENT) {
+				return nil
+			}
+			stmt.CatchIdent = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+			if !p.expectPeek(token.RPAREN) {
+				return nil
+			}
+		} else if p.peekTokenIs(token.IDENT) {
+			p.nextToken()
+			stmt.CatchIdent = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+		}
+		if !p.expectPeek(token.LBRACE) {
+			return nil
+		}
+		stmt.CatchBlock = p.parseBlockStatement()
+	}
+
+	if p.peekTokenIs(token.AKHIRNYA) {
+		p.nextToken() // ke 'akhirnya'
+		if !p.expectPeek(token.LBRACE) {
+			return nil
+		}
+		stmt.FinallyBlock = p.parseBlockStatement()
+	}
+
 	return stmt
 }
 

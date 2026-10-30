@@ -17,6 +17,7 @@ import (
 	"io"
 	"math"
 	mrand "math/rand"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -29,6 +30,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/zufarrizal/bahasa-ku/pkg/ast"
@@ -684,6 +686,80 @@ func InitGlobalEnvironment() *Environment {
 			dstPath := args[1].Inspect()
 			err := os.Rename(srcPath, dstPath)
 			return &Boolean{Value: err == nil}
+		},
+	}
+	berkasMap.Pairs["apakahFolder"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return FALSE
+			}
+			fi, err := os.Stat(args[0].Inspect())
+			if err != nil {
+				return FALSE
+			}
+			return &Boolean{Value: fi.IsDir()}
+		},
+	}
+	berkasMap.Pairs["apakahDirektori"] = berkasMap.Pairs["apakahFolder"]
+	berkasMap.Pairs["apakahBerkas"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return FALSE
+			}
+			fi, err := os.Stat(args[0].Inspect())
+			if err != nil {
+				return FALSE
+			}
+			return &Boolean{Value: !fi.IsDir()}
+		},
+	}
+	berkasMap.Pairs["salinFolder"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return FALSE
+			}
+			src := args[0].Inspect()
+			dst := args[1].Inspect()
+
+			err := filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
+				if err != nil {
+					return err
+				}
+				rel, err := filepath.Rel(src, path)
+				if err != nil {
+					return err
+				}
+				targetPath := filepath.Join(dst, rel)
+				if info.IsDir() {
+					return os.MkdirAll(targetPath, info.Mode())
+				}
+				sFile, err := os.Open(path)
+				if err != nil {
+					return err
+				}
+				defer sFile.Close()
+				dFile, err := os.OpenFile(targetPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, info.Mode())
+				if err != nil {
+					return err
+				}
+				defer dFile.Close()
+				_, err = io.Copy(dFile, sFile)
+				return err
+			})
+			return &Boolean{Value: err == nil}
+		},
+	}
+	berkasMap.Pairs["salinDirektori"] = berkasMap.Pairs["salinFolder"]
+	berkasMap.Pairs["izin"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			fi, err := os.Stat(args[0].Inspect())
+			if err != nil {
+				return &String{Value: ""}
+			}
+			return &String{Value: fi.Mode().String()}
 		},
 	}
 	env.Set("berkas", berkasMap)
@@ -1928,6 +2004,180 @@ func InitGlobalEnvironment() *Environment {
 	}
 	env.Set("enkoding", enkodingMap)
 
+	// Modul json (Serialisasi & Deserialisasi JSON Standar)
+	jsonMap := &Map{Pairs: make(map[string]Object)}
+	jsonMap.Pairs["urai"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return NIL
+			}
+			rawStr := args[0].Inspect()
+			var parsed interface{}
+			err := json.Unmarshal([]byte(rawStr), &parsed)
+			if err != nil {
+				return NIL
+			}
+			return convertGoToKuObject(parsed)
+		},
+	}
+	jsonMap.Pairs["kodekan"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: "null"}
+			}
+			goObj := convertKuToGoObject(args[0])
+			b, err := json.Marshal(goObj)
+			if err != nil {
+				return &String{Value: "null"}
+			}
+			return &String{Value: string(b)}
+		},
+	}
+	jsonMap.Pairs["format"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: "null"}
+			}
+			indentStr := "  "
+			if len(args) > 1 {
+				if intObj, ok := args[1].(*Integer); ok {
+					indentStr = strings.Repeat(" ", int(intObj.Value))
+				} else {
+					indentStr = args[1].Inspect()
+				}
+			}
+			goObj := convertKuToGoObject(args[0])
+			b, err := json.MarshalIndent(goObj, "", indentStr)
+			if err != nil {
+				return &String{Value: "null"}
+			}
+			return &String{Value: string(b)}
+		},
+	}
+	jsonMap.Pairs["valid"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return FALSE
+			}
+			var parsed interface{}
+			err := json.Unmarshal([]byte(args[0].Inspect()), &parsed)
+			return &Boolean{Value: err == nil}
+		},
+	}
+	env.Set("json", jsonMap)
+
+	// Modul validasi (Pemeriksaan Format Data Dasar)
+	validasiMap := &Map{Pairs: make(map[string]Object)}
+	validasiEmailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)
+	validasiMap.Pairs["apakahEmail"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return FALSE
+			}
+			str := args[0].Inspect()
+			if sObj, ok := args[0].(*String); ok {
+				str = sObj.Value
+			}
+			matched := validasiEmailRegex.MatchString(str)
+			if matched {
+				return TRUE
+			}
+			return FALSE
+		},
+	}
+	validasiMap.Pairs["apakahURL"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return FALSE
+			}
+			str := args[0].Inspect()
+			if sObj, ok := args[0].(*String); ok {
+				str = sObj.Value
+			}
+			u, err := url.ParseRequestURI(str)
+			if err != nil || u.Scheme == "" || u.Host == "" {
+				return FALSE
+			}
+			return TRUE
+		},
+	}
+	validasiMap.Pairs["apakahIP"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return FALSE
+			}
+			str := args[0].Inspect()
+			if sObj, ok := args[0].(*String); ok {
+				str = sObj.Value
+			}
+			if net.ParseIP(str) != nil {
+				return TRUE
+			}
+			return FALSE
+		},
+	}
+	validasiMap.Pairs["apakahAlfabet"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return FALSE
+			}
+			s := args[0].Inspect()
+			if sObj, ok := args[0].(*String); ok {
+				s = sObj.Value
+			}
+			if len(s) == 0 {
+				return FALSE
+			}
+			for _, r := range s {
+				if !unicode.IsLetter(r) {
+					return FALSE
+				}
+			}
+			return TRUE
+		},
+	}
+	validasiMap.Pairs["apakahNumerik"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return FALSE
+			}
+			s := args[0].Inspect()
+			if sObj, ok := args[0].(*String); ok {
+				s = sObj.Value
+			}
+			if len(s) == 0 {
+				return FALSE
+			}
+			for _, r := range s {
+				if !unicode.IsDigit(r) {
+					return FALSE
+				}
+			}
+			return TRUE
+		},
+	}
+	validasiMap.Pairs["apakahAlfanumerik"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return FALSE
+			}
+			s := args[0].Inspect()
+			if sObj, ok := args[0].(*String); ok {
+				s = sObj.Value
+			}
+			if len(s) == 0 {
+				return FALSE
+			}
+			for _, r := range s {
+				if !unicode.IsLetter(r) && !unicode.IsDigit(r) {
+					return FALSE
+				}
+			}
+			return TRUE
+		},
+	}
+	env.Set("validasi", validasiMap)
+
 	// Modul catatan (Logging Terstruktur dengan Timestamp)
 	catatanMap := &Map{Pairs: make(map[string]Object)}
 	catatanMap.Pairs["info"] = &Builtin{
@@ -2282,50 +2532,6 @@ func InitGlobalEnvironment() *Environment {
 		},
 	}
 	env.Set("kanal", kanalMap)
-
-	// Modul json (Serialisasi & Deserialisasi JSON)
-	jsonMap := &Map{Pairs: make(map[string]Object)}
-	jsonMap.Pairs["kodekan"] = &Builtin{
-		Fn: func(args ...Object) Object {
-			if len(args) == 0 {
-				return &String{Value: "null"}
-			}
-			goObj := convertKuToGoObject(args[0])
-			b, err := json.Marshal(goObj)
-			if err != nil {
-				return &String{Value: "{}"}
-			}
-			return &String{Value: string(b)}
-		},
-	}
-	jsonMap.Pairs["kodekanRapi"] = &Builtin{
-		Fn: func(args ...Object) Object {
-			if len(args) == 0 {
-				return &String{Value: "null"}
-			}
-			goObj := convertKuToGoObject(args[0])
-			b, err := json.MarshalIndent(goObj, "", "  ")
-			if err != nil {
-				return &String{Value: "{}"}
-			}
-			return &String{Value: string(b)}
-		},
-	}
-	jsonMap.Pairs["urai"] = &Builtin{
-		Fn: func(args ...Object) Object {
-			if len(args) == 0 {
-				return NIL
-			}
-			jsonStr := strings.TrimSpace(args[0].Inspect())
-			var raw interface{}
-			err := json.Unmarshal([]byte(jsonStr), &raw)
-			if err != nil {
-				return NIL
-			}
-			return convertGoToKuObject(raw)
-		},
-	}
-	env.Set("json", jsonMap)
 
 	// Modul larik (Operasi Array Fungsional)
 	larikMap := &Map{Pairs: make(map[string]Object)}
@@ -3226,6 +3432,67 @@ func Eval(node ast.Node, env *Environment) Object {
 
 	case *ast.ContinueStatement:
 		return &Continue{}
+
+	case *ast.TryCatchStatement:
+		// Simpan panic sebelumnya jika ada
+		prevPanic := GetGlobalPanic()
+		SetGlobalPanic(nil)
+
+		// Evaluasi blok coba
+		tryEnv := NewEnclosedEnvironment(env)
+		res := Eval(n.TryBlock, tryEnv)
+
+		var caughtPanic Object = nil
+		if pObj, isPanic := res.(*PanicObject); isPanic {
+			caughtPanic = pObj.Value
+			SetGlobalPanic(nil)
+		} else if activeP := GetGlobalPanic(); activeP != nil {
+			caughtPanic = activeP
+			SetGlobalPanic(nil)
+		}
+
+		var catchResult Object = nil
+		if caughtPanic != nil && n.CatchBlock != nil {
+			catchEnv := NewEnclosedEnvironment(env)
+			if n.CatchIdent != nil {
+				catchEnv.Set(n.CatchIdent.Value, caughtPanic)
+			}
+			catchResult = Eval(n.CatchBlock, catchEnv)
+		}
+
+		// Jalankan blok akhirnya jika ada
+		if n.FinallyBlock != nil {
+			finEnv := NewEnclosedEnvironment(env)
+			finRes := Eval(n.FinallyBlock, finEnv)
+			if finRes != nil {
+				if finRes.Type() == RETURN_VALUE_OBJ || finRes.Type() == BREAK_OBJ || finRes.Type() == CONTINUE_OBJ || finRes.Type() == PANIC_OBJ {
+					return finRes
+				}
+			}
+		}
+
+		if catchResult != nil {
+			if catchResult.Type() == RETURN_VALUE_OBJ || catchResult.Type() == BREAK_OBJ || catchResult.Type() == CONTINUE_OBJ || catchResult.Type() == PANIC_OBJ {
+				return catchResult
+			}
+			return catchResult
+		}
+
+		if caughtPanic != nil && n.CatchBlock == nil {
+			// Jika tidak ada catch handler, lempar kembali
+			SetGlobalPanic(caughtPanic)
+			return &PanicObject{Value: caughtPanic}
+		}
+
+		// Pulihkan status panic sebelumnya jika tidak ada panic baru
+		if prevPanic != nil && caughtPanic == nil {
+			SetGlobalPanic(prevPanic)
+		}
+
+		if res != nil && (res.Type() == RETURN_VALUE_OBJ || res.Type() == BREAK_OBJ || res.Type() == CONTINUE_OBJ) {
+			return res
+		}
+		return NIL
 
 	case *ast.BlockStatement:
 		var result Object = NIL

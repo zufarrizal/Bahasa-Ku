@@ -222,6 +222,26 @@ func (t *Transpiler) Transpile(node ast.Node) string {
 	case *ast.ContinueStatement:
 		return "continue"
 
+	case *ast.TryCatchStatement:
+		var sb strings.Builder
+		sb.WriteString("func() {\n")
+		if n.CatchBlock != nil {
+			catchVar := "err"
+			if n.CatchIdent != nil {
+				catchVar = n.CatchIdent.Value
+			}
+			sb.WriteString(fmt.Sprintf("\tdefer func() {\n\t\tif r := recover(); r != nil {\n\t\t\t%s := r\n\t\t\t_ = %s\n\t\t\t%s\n\t\t}\n", catchVar, catchVar, t.Transpile(n.CatchBlock)))
+			if n.FinallyBlock != nil {
+				sb.WriteString(fmt.Sprintf("\t\t%s\n", t.Transpile(n.FinallyBlock)))
+			}
+			sb.WriteString("\t}()\n")
+		} else if n.FinallyBlock != nil {
+			sb.WriteString(fmt.Sprintf("\tdefer func() {\n\t\t%s\n\t}()\n", t.Transpile(n.FinallyBlock)))
+		}
+		sb.WriteString(fmt.Sprintf("\t%s\n", t.Transpile(n.TryBlock)))
+		sb.WriteString("}()")
+		return sb.String()
+
 	case *ast.DeferStatement:
 		return fmt.Sprintf("defer %s", t.Transpile(n.Expression))
 
