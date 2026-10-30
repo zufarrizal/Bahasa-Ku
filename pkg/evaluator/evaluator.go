@@ -35,7 +35,6 @@ import (
 	"unicode"
 
 	_ "github.com/go-sql-driver/mysql"
-	_ "modernc.org/sqlite"
 	"github.com/zufarrizal/bahasa-ku/pkg/ast"
 )
 
