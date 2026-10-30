@@ -2,18 +2,45 @@
 
 Bahasa pemrograman bernuansa Go (*Go-flavored*) dengan sintaks murni berbahasa Indonesia, dirancang agar ramah dan mudah dipelajari oleh penutur bahasa Indonesia.
 
+Engine compiler & runtime **Ku** dibangun langsung menggunakan **Go Murni** (menghasilkan binary mandiri `ku.exe`), serta tetap menyediakan dukungan dual engine (Go & Node.js).
+
 ---
 
 ## 🚀 Fitur Utama
 
+- **Native Binary (`ku.exe`):** Berdiri sendiri tanpa dependensi runtime eksternal.
 - **Sintaks Berbahasa Indonesia:** Mengganti kata kunci bahasa Inggris dengan kosakata alami bahasa Indonesia.
-- **Filosofi Mirip Go:** Struktur deklarasi fungsi `fungsi utama()`, deklarasi variabel `var` atau `:=`, serta modul bawaan `cetak.tulis(...)` (ekivalen `fmt.Println`).
-- **CLI Runner:** Dapat langsung dijalankan dengan perintah `node bin/ku.js jalankan <berkas.ku>`.
-- **Ekspresif & Ringan:** Sudah mendukung perulangan `untuk`, percabangan `jika` - `lainnya`, fungsi rekursif, dan operasi aritmatika/logika lengkap.
+- **Filosofi Mirip Go:** Deklarasi fungsi `fungsi utama()`, deklarasi variabel `var` atau `:=`, modul `cetak.tulis(...)` (*fmt.Println*), data struktur `tipe ... struktur` (*struct*), serta kontrol `tunda` (*defer* LIFO).
+- **Transpiler ke Go Murni:** Dapat langsung mengonversi file `.ku` ke `.go` asli.
 
 ---
 
-## 📖 Padanan Kata Kunci (Go vs Ku)
+## 🛠️ Cara Menjalankan
+
+### Menggunakan Native Binary (`ku.exe`)
+
+1. **Build compiler:**
+```bash
+go build -o ku.exe ./cmd/ku
+```
+
+2. **Cek Versi:**
+```bash
+.\ku.exe versi
+```
+
+3. **Menjalankan Program:**
+```bash
+.\ku.exe jalankan contoh/halo.ku
+.\ku.exe jalankan contoh/logika.ku
+.\ku.exe jalankan contoh/fitur_lanjutan.ku
+.\ku.exe jalankan contoh/tunda.ku
+```
+
+4. **Kompilasi / Transpilasi ke Go:**
+```bash
+.\ku.exe buat contoh/tunda.ku hasil.go
+```
 
 | Go | Ku | Deskripsi |
 | :--- | :--- | :--- |
