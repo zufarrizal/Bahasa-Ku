@@ -688,7 +688,7 @@ jika peta.ada(data, "nama") {
 
       <!-- Modul Standar: Kompresi -->
       <section id="modul-kompresi" class="docs-section">
-        <h2>Modul `kompresi` (Gzip)</h2>
+        <h2>Modul `kompresi` (Gzip & ZIP Archive)</h2>
         <table>
           <thead>
             <tr><th>Fungsi</th><th>Deskripsi</th></tr>
@@ -696,10 +696,17 @@ jika peta.ada(data, "nama") {
           <tbody>
             <tr><td><code>kompresi.gzip(teks)</code></td><td>Mengompresi data teks menjadi format Base64 Gzip</td></tr>
             <tr><td><code>kompresi.ungzip(teksGz)</code></td><td>Mendekompresi data Base64 Gzip kembali ke teks asli</td></tr>
+            <tr><td><code>kompresi.buatZip(sumber, zipFile)</code></td><td>Mengompres berkas atau direktori folder menjadi file arsip <code>.zip</code></td></tr>
+            <tr><td><code>kompresi.ekstrakZip(zipFile, targetDir)</code></td><td>Mengekstrak seluruh isi file arsip <code>.zip</code> ke folder tujuan</td></tr>
           </tbody>
         </table>
-        <pre><code>var gz = kompresi.gzip("Teks panjang yang ingin dikompresi...")
-var asli = kompresi.ungzip(gz)</code></pre>
+        <pre><code>// Kompresi Teks Ringan
+var gz = kompresi.gzip("Teks panjang yang ingin dikompresi...")
+var asli = kompresi.ungzip(gz)
+
+// Arsip Berkas / Folder
+kompresi.buatZip("proyek", "arsip-proyek.zip")
+kompresi.ekstrakZip("arsip-proyek.zip", "ekstraksi/")</code></pre>
       </section>
 
       <!-- Modul Standar: Jalur -->
@@ -1014,8 +1021,19 @@ jika klien != kosong {
             <tr><td><code>kripto.tokenAcak(panjang)</code></td><td>Menghasilkan string heksadesimal acak kriptografis</td></tr>
             <tr><td><code>kripto.kodekanBase64(teks)</code></td><td>Encoding teks ke format Base64</td></tr>
             <tr><td><code>kripto.dekodekanBase64(str)</code></td><td>Decoding string Base64 kembali ke teks asli</td></tr>
+            <tr><td><code>kripto.buatJWT(payload, rahasia, [exp])</code></td><td>Membuat token JWT bertanda tangan HMAC-SHA256 (opsional masa kedaluwarsa dalam detik)</td></tr>
+            <tr><td><code>kripto.verifikasiJWT(token, rahasia)</code></td><td>Memvalidasi integritas dan masa aktif token JWT serta mengembalikan objek payload</td></tr>
           </tbody>
         </table>
+        <pre><code>// Penerbitan JWT Token
+var payload = {"sub": "user_42", "peran": "admin"}
+var token = kripto.buatJWT(payload, "kunci_rahasia_anda", 3600) // aktif 1 jam
+
+// Verifikasi di Endpoint API
+var dataPengguna = kripto.verifikasiJWT(token, "kunci_rahasia_anda")
+jika dataPengguna != kosong {
+    cetak.tulis("ID Pengguna Terotentikasi:", dataPengguna["sub"])
+}</code></pre>
       </section>
 
       <!-- Modul Standar: Berkas & Sistem -->
@@ -1025,6 +1043,7 @@ jika klien != kosong {
 berkas.tulis("catatan.txt", "Isi pesan penting\n")
 berkas.tambah("catatan.txt", "Baris tambahan\n")
 var isi = berkas.baca("catatan.txt")
+var barisSemua = berkas.bacaBaris("catatan.txt") // Larik baris teks tanpa \n
 var ada = berkas.ada("catatan.txt")
 berkas.salin("catatan.txt", "salinan.txt")
 berkas.pindah("salinan.txt", "arsip.txt")
@@ -1036,7 +1055,10 @@ var izinBerkas = berkas.izin("arsip.txt")         // -rw-r--r--
 berkas.salinFolder("data/arsip", "backup/arsip")  // rekursif salin direktori
 
 // Modul Sistem & Lingkungan OS
+sistem.muatEnv(".env") // Muat berkas variabel lingkungan lokal
 var osName = sistem.os() // windows, linux, darwin
+var isWin = sistem.apakahWindows() // boolean helper
+var mode = sistem.bendera("mode", "standar") // Parser flag CLI: --mode=nilai
 sistem.aturLingkungan("APLIKASI_ENV", "produksi")
 var envVal = sistem.lingkungan("APLIKASI_ENV")
 var cwd = sistem.folderKerja() // current directory

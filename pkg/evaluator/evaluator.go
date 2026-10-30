@@ -1,6 +1,7 @@
 package evaluator
 
 import (
+	"archive/zip"
 	"bufio"
 	"bytes"
 	"compress/gzip"
@@ -762,6 +763,24 @@ func InitGlobalEnvironment() *Environment {
 			return &String{Value: fi.Mode().String()}
 		},
 	}
+	berkasMap.Pairs["bacaBaris"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &Array{Elements: []Object{}}
+			}
+			f, err := os.Open(args[0].Inspect())
+			if err != nil {
+				return &Array{Elements: []Object{}}
+			}
+			defer f.Close()
+			scanner := bufio.NewScanner(f)
+			res := []Object{}
+			for scanner.Scan() {
+				res = append(res, &String{Value: scanner.Text()})
+			}
+			return &Array{Elements: res}
+		},
+	}
 	env.Set("berkas", berkasMap)
 
 	// Modul jalur (Manipulasi Path Berkas ala filepath)
@@ -1011,6 +1030,36 @@ func InitGlobalEnvironment() *Environment {
 				}
 			}
 			return defaultVal
+		},
+	}
+	sistemMap.Pairs["muatEnv"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			envPath := ".env"
+			if len(args) > 0 {
+				envPath = args[0].Inspect()
+			}
+			data, err := os.ReadFile(envPath)
+			if err != nil {
+				return FALSE
+			}
+			lines := strings.Split(string(data), "\n")
+			for _, line := range lines {
+				line = strings.TrimSpace(line)
+				if line == "" || strings.HasPrefix(line, "#") {
+					continue
+				}
+				idx := strings.Index(line, "=")
+				if idx != -1 {
+					k := strings.TrimSpace(line[:idx])
+					v := strings.TrimSpace(line[idx+1:])
+					// Hapus kutip jika ada
+					if len(v) >= 2 && ((v[0] == '"' && v[len(v)-1] == '"') || (v[0] == '\'' && v[len(v)-1] == '\'')) {
+						v = v[1 : len(v)-1]
+					}
+					os.Setenv(k, v)
+				}
+			}
+			return TRUE
 		},
 	}
 	env.Set("sistem", sistemMap)
@@ -1356,6 +1405,85 @@ func InitGlobalEnvironment() *Environment {
 			mac := hmac.New(sha256.New, key)
 			mac.Write(pesan)
 			return &String{Value: hex.EncodeToString(mac.Sum(nil))}
+		},
+	}
+	kriptoMap.Pairs["buatJWT"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return &String{Value: ""}
+			}
+			secret := []byte(args[1].Inspect())
+			headerJSON := `{"alg":"HS256","typ":"JWT"}`
+			headerB64 := base64.RawURLEncoding.EncodeToString([]byte(headerJSON))
+
+			var payloadJSON string
+			if m, ok := args[0].(*Map); ok {
+				data := make(map[string]interface{})
+				for k, v := range m.Pairs {
+					data[k] = convertKuToGoObject(v)
+				}
+				if len(args) >= 3 {
+					if expSec, ok2 := args[2].(*Integer); ok2 && expSec.Value > 0 {
+						data["exp"] = time.Now().Unix() + expSec.Value
+					}
+				}
+				b, _ := json.Marshal(data)
+				payloadJSON = string(b)
+			} else {
+				payloadJSON = args[0].Inspect()
+			}
+			payloadB64 := base64.RawURLEncoding.EncodeToString([]byte(payloadJSON))
+			unsignedToken := headerB64 + "." + payloadB64
+
+			mac := hmac.New(sha256.New, secret)
+			mac.Write([]byte(unsignedToken))
+			signature := base64.RawURLEncoding.EncodeToString(mac.Sum(nil))
+
+			return &String{Value: unsignedToken + "." + signature}
+		},
+	}
+	kriptoMap.Pairs["verifikasiJWT"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return NIL
+			}
+			tokenStr := args[0].Inspect()
+			if sObj, ok := args[0].(*String); ok {
+				tokenStr = sObj.Value
+			}
+			secret := []byte(args[1].Inspect())
+			parts := strings.Split(tokenStr, ".")
+			if len(parts) != 3 {
+				return NIL
+			}
+			unsignedToken := parts[0] + "." + parts[1]
+			mac := hmac.New(sha256.New, secret)
+			mac.Write([]byte(unsignedToken))
+			expectedSig := base64.RawURLEncoding.EncodeToString(mac.Sum(nil))
+
+			if !hmac.Equal([]byte(parts[2]), []byte(expectedSig)) {
+				return NIL
+			}
+
+			payloadBytes, err := base64.RawURLEncoding.DecodeString(parts[1])
+			if err != nil {
+				return NIL
+			}
+			var parsed map[string]interface{}
+			if err := json.Unmarshal(payloadBytes, &parsed); err != nil {
+				return NIL
+			}
+
+			// Cek expiration jika ada
+			if expVal, hasExp := parsed["exp"]; hasExp {
+				if expFloat, ok := expVal.(float64); ok {
+					if int64(expFloat) < time.Now().Unix() {
+						return NIL // Token telah kedaluwarsa
+					}
+				}
+			}
+
+			return convertGoToKuObject(parsed)
 		},
 	}
 	env.Set("kripto", kriptoMap)
@@ -2501,6 +2629,119 @@ func InitGlobalEnvironment() *Environment {
 				return &String{Value: ""}
 			}
 			return &String{Value: string(res)}
+		},
+	}
+	kompresiMap.Pairs["buatZip"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return FALSE
+			}
+			sourcePath := args[0].Inspect()
+			zipFilePath := args[1].Inspect()
+
+			zipFile, err := os.Create(zipFilePath)
+			if err != nil {
+				return FALSE
+			}
+			defer zipFile.Close()
+
+			zw := zip.NewWriter(zipFile)
+			defer zw.Close()
+
+			info, err := os.Stat(sourcePath)
+			if err != nil {
+				return FALSE
+			}
+
+			if !info.IsDir() {
+				fileToZip, err := os.Open(sourcePath)
+				if err != nil {
+					return FALSE
+				}
+				defer fileToZip.Close()
+				w, err := zw.Create(filepath.Base(sourcePath))
+				if err != nil {
+					return FALSE
+				}
+				_, err = io.Copy(w, fileToZip)
+				return &Boolean{Value: err == nil}
+			}
+
+			err = filepath.Walk(sourcePath, func(path string, info os.FileInfo, err error) error {
+				if err != nil {
+					return err
+				}
+				if path == sourcePath {
+					return nil
+				}
+				relPath, err := filepath.Rel(sourcePath, path)
+				if err != nil {
+					return err
+				}
+				if info.IsDir() {
+					_, err := zw.Create(relPath + "/")
+					return err
+				}
+				w, err := zw.Create(relPath)
+				if err != nil {
+					return err
+				}
+				f, err := os.Open(path)
+				if err != nil {
+					return err
+				}
+				defer f.Close()
+				_, err = io.Copy(w, f)
+				return err
+			})
+			return &Boolean{Value: err == nil}
+		},
+	}
+	kompresiMap.Pairs["ekstrakZip"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return FALSE
+			}
+			zipFilePath := args[0].Inspect()
+			destDir := args[1].Inspect()
+
+			r, err := zip.OpenReader(zipFilePath)
+			if err != nil {
+				return FALSE
+			}
+			defer r.Close()
+
+			_ = os.MkdirAll(destDir, 0755)
+
+			for _, f := range r.File {
+				fpath := filepath.Join(destDir, f.Name)
+				if !strings.HasPrefix(fpath, filepath.Clean(destDir)+string(os.PathSeparator)) {
+					continue
+				}
+				if f.FileInfo().IsDir() {
+					_ = os.MkdirAll(fpath, os.ModePerm)
+					continue
+				}
+				if err = os.MkdirAll(filepath.Dir(fpath), os.ModePerm); err != nil {
+					return FALSE
+				}
+				outFile, err := os.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+				if err != nil {
+					return FALSE
+				}
+				rc, err := f.Open()
+				if err != nil {
+					outFile.Close()
+					return FALSE
+				}
+				_, err = io.Copy(outFile, rc)
+				outFile.Close()
+				rc.Close()
+				if err != nil {
+					return FALSE
+				}
+			}
+			return TRUE
 		},
 	}
 	env.Set("kompresi", kompresiMap)

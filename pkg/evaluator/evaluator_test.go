@@ -264,3 +264,55 @@ fungsi utama() {
 		t.Errorf("Diharapkan 300, didapat %d", intVal.Value)
 	}
 }
+
+func TestJWTDanMuatEnv(t *testing.T) {
+	input := `
+paket utama
+fungsi utama() {
+    // 1. Uji JWT
+    var payload = {"sub": "user123", "peran": "admin"}
+    var secret = "kunci_rahasia_super_aman"
+    var token = kripto.buatJWT(payload, secret, 3600)
+    jika token == "" {
+        kembalikan 1
+    }
+
+    var terverifikasi = kripto.verifikasiJWT(token, secret)
+    jika terverifikasi == kosong {
+        kembalikan 2
+    }
+    jika terverifikasi["sub"] != "user123" {
+        kembalikan 3
+    }
+
+    // Uji salah secret
+    var palsu = kripto.verifikasiJWT(token, "secret_salah")
+    jika palsu != kosong {
+        kembalikan 4
+    }
+
+    // 2. Uji muatEnv & bacaBaris
+    berkas.tulis("test_env.tmp", "APP_MODE=development\nAPP_PORT=3000\n")
+    sistem.muatEnv("test_env.tmp")
+    jika sistem.lingkungan("APP_MODE") != "development" {
+        kembalikan 5
+    }
+
+    var baris = berkas.bacaBaris("test_env.tmp")
+    jika panjang(baris) != 2 {
+        kembalikan 6
+    }
+    berkas.hapus("test_env.tmp")
+
+    kembalikan 400
+}
+`
+	val := runKuCode(input)
+	intVal, ok := val.(*evaluator.Integer)
+	if !ok {
+		t.Fatalf("Nilai bukan Integer: %v", val)
+	}
+	if intVal.Value != 400 {
+		t.Errorf("Diharapkan 400, didapat %d", intVal.Value)
+	}
+}
