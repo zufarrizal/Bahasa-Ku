@@ -50,16 +50,78 @@
       overflow-y: auto;
       flex-shrink: 0;
     }
-    .sidebar-group { margin-bottom: 24px; }
-    .sidebar-title { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); font-weight: 700; margin-bottom: 8px; padding-left: 10px; }
-    .sidebar-links { list-style: none; }
+    /* Sidebar Collapsible */
+    .sidebar-group { margin-bottom: 12px; }
+    .sidebar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 10px;
+      cursor: pointer;
+      border-radius: 6px;
+      user-select: none;
+      transition: background 0.2s;
+    }
+    .sidebar-header:hover { background: rgba(255, 255, 255, 0.04); }
+    .sidebar-title {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      font-weight: 700;
+      margin: 0;
+      padding: 0;
+    }
+    .chevron {
+      font-size: 0.75rem;
+      color: var(--muted);
+      transition: transform 0.25s ease;
+      display: inline-block;
+    }
+    .sidebar-group.closed > .sidebar-header .chevron {
+      transform: rotate(-90deg);
+    }
+    .sidebar-group.closed > .sidebar-links,
+    .sidebar-group.closed > .sidebar-subgroups {
+      display: none;
+    }
+
+    /* Sub-categories */
+    .sidebar-subgroup {
+      margin-left: 8px;
+      margin-top: 4px;
+      border-left: 1px solid rgba(255, 255, 255, 0.1);
+      padding-left: 4px;
+    }
+    .sidebar-sub-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 8px;
+      cursor: pointer;
+      border-radius: 4px;
+      user-select: none;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #94a3b8;
+      transition: color 0.2s, background 0.2s;
+    }
+    .sidebar-sub-header:hover { color: #f1f5f9; background: rgba(255, 255, 255, 0.03); }
+    .sidebar-subgroup.closed > .sidebar-sub-header .chevron {
+      transform: rotate(-90deg);
+    }
+    .sidebar-subgroup.closed > .sidebar-links {
+      display: none;
+    }
+
+    .sidebar-links { list-style: none; margin: 4px 0 8px 6px; }
     .sidebar-links li a {
       display: block;
-      padding: 6px 12px;
+      padding: 5px 10px;
       color: var(--muted);
       text-decoration: none;
-      font-size: 0.88rem;
-      border-radius: 6px;
+      font-size: 0.85rem;
+      border-radius: 5px;
       transition: all 0.2s;
     }
     .sidebar-links li a:hover { color: #fff; background: rgba(255, 255, 255, 0.05); }
@@ -149,8 +211,12 @@
   <div class="docs-layout">
     <!-- Sidebar Navigasi Dokumentasi -->
     <aside class="docs-sidebar">
+      <!-- Grup 1: Memulai -->
       <div class="sidebar-group">
-        <div class="sidebar-title">Memulai</div>
+        <div class="sidebar-header" onclick="toggleSidebarGroup(this)">
+          <span class="sidebar-title">Memulai</span>
+          <span class="chevron">▼</span>
+        </div>
         <ul class="sidebar-links">
           <li><a href="#pengantar">Pengantar & Filosofi</a></li>
           <li><a href="#instalasi">Instalasi & Toolchain CLI</a></li>
@@ -158,56 +224,111 @@
         </ul>
       </div>
 
+      <!-- Grup 2: Sintaksis & Fondasi -->
       <div class="sidebar-group">
-        <div class="sidebar-title">Sintaksis & Fondasi</div>
+        <div class="sidebar-header" onclick="toggleSidebarGroup(this)">
+          <span class="sidebar-title">Sintaksis & Fondasi</span>
+          <span class="chevron">▼</span>
+        </div>
         <ul class="sidebar-links">
           <li><a href="#variabel-tipe">Variabel & Tipe Data</a></li>
           <li><a href="#percabangan">Percabangan (jika, pilih)</a></li>
           <li><a href="#perulangan">Perulangan (untuk)</a></li>
           <li><a href="#fungsi-closure">Fungsi, Multi-Return & Closure</a></li>
           <li><a href="#struktur-method">Struktur (Struct) & Method</a></li>
-          <li><a href="#penanganan-error">Panik & Pulih (Panic/Recover)</a></li>
+          <li><a href="#penanganan-error">Penanganan Galat (coba, panik)</a></li>
         </ul>
       </div>
 
+      <!-- Grup 3: Konkurensi & Sinkronisasi -->
       <div class="sidebar-group">
-        <div class="sidebar-title">Konkurensi & Sinkronisasi</div>
+        <div class="sidebar-header" onclick="toggleSidebarGroup(this)">
+          <span class="sidebar-title">Konkurensi</span>
+          <span class="chevron">▼</span>
+        </div>
         <ul class="sidebar-links">
           <li><a href="#konkurensi">Ku-routine (`ku fn()`)</a></li>
           <li><a href="#kanal">Kanal (Channel)</a></li>
           <li><a href="#waitgroup">Sinkronisasi WaitGroup</a></li>
+          <li><a href="#waitgroup">Kunci Mutex (`sistem.kunci`)</a></li>
         </ul>
       </div>
 
+      <!-- Grup 4: Pustaka Standar Bawaan (Dipecah menjadi Sub-Kategori) -->
       <div class="sidebar-group">
-        <div class="sidebar-title">Pustaka Standar Bawaan</div>
-        <ul class="sidebar-links">
-          <li><a href="#modul-cetak">Modul `cetak`</a></li>
-          <li><a href="#modul-catatan">Modul `catatan` (Logging)</a></li>
-          <li><a href="#modul-waktu">Modul `waktu` & Stopwatch</a></li>
-          <li><a href="#modul-pola">Modul `pola` (Regex)</a></li>
-          <li><a href="#modul-larik">Modul `larik` & Himpunan</a></li>
-          <li><a href="#modul-peta">Modul `peta` (Kamus / Map)</a></li>
-          <li><a href="#modul-kompresi">Modul `kompresi` (Gzip)</a></li>
-          <li><a href="#modul-jalur">Modul `jalur` (Filepath)</a></li>
-          <li><a href="#modul-enkoding">Modul `enkoding` (CSV, URL, Heksa)</a></li>
-          <li><a href="#modul-bita">Modul `bita` (Byte Buffer)</a></li>
-          <li><a href="#modul-acak">Modul `acak`</a></li>
-          <li><a href="#modul-teks">Modul `teks`</a></li>
-          <li><a href="#modul-konversi">Modul `konversi`</a></li>
-          <li><a href="#modul-json">Modul `json`</a></li>
-          <li><a href="#modul-validasi">Modul `validasi`</a></li>
-          <li><a href="#modul-angka">Modul `angka` (Bitwise)</a></li>
-          <li><a href="#modul-terminal">Modul `terminal` (CLI Warna)</a></li>
-          <li><a href="#modul-struktur-data">Modul `strukturData` (Stack & Queue)</a></li>
-          <li><a href="#modul-soket">Modul `soket` (TCP Networking)</a></li>
-          <li><a href="#modul-matematika">Modul `matematika`</a></li>
-          <li><a href="#modul-kripto">Modul `kripto`</a></li>
-          <li><a href="#modul-berkas-sistem">Modul `berkas` & `sistem`</a></li>
-          <li><a href="#modul-web-desktop">Modul `web` & `jendela`</a></li>
-          <li><a href="#modul-basisdata">Modul `basisdata` (MySQL)</a></li>
-          <li><a href="#modul-uji">Modul `uji` (Unit Test)</a></li>
-        </ul>
+        <div class="sidebar-header" onclick="toggleSidebarGroup(this)">
+          <span class="sidebar-title">Pustaka Standar</span>
+          <span class="chevron">▼</span>
+        </div>
+        
+        <div class="sidebar-subgroups">
+          <!-- Sub-kategori A: Teks & Konversi -->
+          <div class="sidebar-subgroup">
+            <div class="sidebar-sub-header" onclick="toggleSubGroup(this)">
+              <span>Teks & Format</span>
+              <span class="chevron">▼</span>
+            </div>
+            <ul class="sidebar-links">
+              <li><a href="#modul-cetak">`cetak` (Output)</a></li>
+              <li><a href="#modul-teks">`teks` (String)</a></li>
+              <li><a href="#modul-pola">`pola` (Regex)</a></li>
+              <li><a href="#modul-konversi">`konversi` (Tipe Data)</a></li>
+              <li><a href="#modul-json">`json` (Format Objek)</a></li>
+              <li><a href="#modul-validasi">`validasi` (Format Data)</a></li>
+            </ul>
+          </div>
+
+          <!-- Sub-kategori B: Struktur Data & Logika -->
+          <div class="sidebar-subgroup">
+            <div class="sidebar-sub-header" onclick="toggleSubGroup(this)">
+              <span>Data & Algoritma</span>
+              <span class="chevron">▼</span>
+            </div>
+            <ul class="sidebar-links">
+              <li><a href="#modul-larik">`larik` (Array)</a></li>
+              <li><a href="#modul-peta">`peta` (Kamus / Map)</a></li>
+              <li><a href="#modul-struktur-data">`strukturData` (Stack & Queue)</a></li>
+              <li><a href="#modul-matematika">`matematika`</a></li>
+              <li><a href="#modul-angka">`angka` (Bitwise & Basis)</a></li>
+              <li><a href="#modul-acak">`acak` (Pengacakan)</a></li>
+            </ul>
+          </div>
+
+          <!-- Sub-kategori C: I/O Berkas & Sistem -->
+          <div class="sidebar-subgroup">
+            <div class="sidebar-sub-header" onclick="toggleSubGroup(this)">
+              <span>Sistem & File I/O</span>
+              <span class="chevron">▼</span>
+            </div>
+            <ul class="sidebar-links">
+              <li><a href="#modul-berkas-sistem">`berkas` (File I/O)</a></li>
+              <li><a href="#modul-jalur">`jalur` (Filepath)</a></li>
+              <li><a href="#modul-kompresi">`kompresi` (Gzip & Zip)</a></li>
+              <li><a href="#modul-berkas-sistem">`sistem` (OS & Lingkungan)</a></li>
+              <li><a href="#modul-waktu">`waktu` & Pewaktu</a></li>
+              <li><a href="#modul-catatan">`catatan` (Logging)</a></li>
+              <li><a href="#modul-terminal">`terminal` (CLI Warna)</a></li>
+            </ul>
+          </div>
+
+          <!-- Sub-kategori D: Keamanan & Jaringan -->
+          <div class="sidebar-subgroup">
+            <div class="sidebar-sub-header" onclick="toggleSubGroup(this)">
+              <span>Jaringan & Keamanan</span>
+              <span class="chevron">▼</span>
+            </div>
+            <ul class="sidebar-links">
+              <li><a href="#modul-kripto">`kripto` (Hash & JWT)</a></li>
+              <li><a href="#modul-bita">`bita` (Byte Buffer)</a></li>
+              <li><a href="#modul-enkoding">`enkoding` (CSV, URL, Hex)</a></li>
+              <li><a href="#modul-web-desktop">`web` (HTTP Server)</a></li>
+              <li><a href="#modul-soket">`soket` (TCP Network)</a></li>
+              <li><a href="#modul-basisdata">`basisdata` (MySQL)</a></li>
+              <li><a href="#modul-web-desktop">`jendela` (GUI Desktop)</a></li>
+              <li><a href="#modul-uji">`uji` (Unit Test)</a></li>
+            </ul>
+          </div>
+        </div>
       </div>
     </aside>
 
@@ -1121,5 +1242,45 @@ uji.benar(panjang([1, 2, 3]) == 3)</code></pre>
     <p style="margin-top: 6px; font-size: 0.85rem; color: var(--text-dim);">Proyek edukatif independen yang terinspirasi oleh filosofi dan kesederhanaan bahasa Go (The Go Authors / Google LLC).</p>
   </footer>
 
+  <script>
+    function toggleSidebarGroup(header) {
+      const group = header.parentElement;
+      group.classList.toggle('closed');
+    }
+
+    function toggleSubGroup(header) {
+      const sub = header.parentElement;
+      sub.classList.toggle('closed');
+    }
+
+    // Sorot tautan aktif saat discroll
+    const sections = document.querySelectorAll('.docs-section');
+    const navLinks = document.querySelectorAll('.sidebar-links a');
+
+    window.addEventListener('scroll', () => {
+      let current = '';
+      sections.forEach(section => {
+        const top = section.offsetTop;
+        if (pageYOffset >= top - 120) {
+          current = section.getAttribute('id');
+        }
+      });
+      navLinks.forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('href') === '#' + current) {
+          link.classList.add('active');
+          // Pastikan grup induknya terbuka
+          const group = link.closest('.sidebar-group');
+          if (group && group.classList.contains('closed')) {
+            group.classList.remove('closed');
+          }
+          const sub = link.closest('.sidebar-subgroup');
+          if (sub && sub.classList.contains('closed')) {
+            sub.classList.remove('closed');
+          }
+        }
+      });
+    });
+  </script>
 </body>
 </html>
