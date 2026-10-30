@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
   <rect width="64" height="64" rx="16" fill="#0A0E17" />
   <g stroke="#00F0FF" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round" fill="none">
-    <!-- Simbol < center -->
-    <path d="M 29,19 L 16,32 L 29,45" />
-    <!-- Huruf u murni tanpa ekor -->
-    <path d="M 35,22 L 35,38 A 6.5,6.5 0 0,0 48,38 L 48,22" />
+    <!-- Simbol < (tinggi sama persis dengan u: Y=21 s.d. Y=43) -->
+    <path d="M 28,21 L 17,32 L 28,43" />
+    <!-- Huruf u (tinggi sama persis: Y=21 s.d. Y=43) -->
+    <path d="M 36,21 L 36,37 A 6,6 0 0,0 48,37 L 48,21" />
   </g>
 </svg>
