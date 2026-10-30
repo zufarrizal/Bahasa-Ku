@@ -20,6 +20,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -655,6 +656,37 @@ func InitGlobalEnvironment() *Environment {
 			return NIL
 		},
 	}
+	sistemMap.Pairs["kelompokTunggu"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			var wg sync.WaitGroup
+			ktMap := &Map{Pairs: make(map[string]Object)}
+			ktMap.Pairs["tambah"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					delta := 1
+					if len(mArgs) > 0 {
+						if i, ok := mArgs[0].(*Integer); ok {
+							delta = int(i.Value)
+						}
+					}
+					wg.Add(delta)
+					return NIL
+				},
+			}
+			ktMap.Pairs["selesai"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					wg.Done()
+					return NIL
+				},
+			}
+			ktMap.Pairs["tunggu"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					wg.Wait()
+					return NIL
+				},
+			}
+			return ktMap
+		},
+	}
 	sistemMap.Pairs["argumen"] = &Builtin{
 		Fn: func(args ...Object) Object {
 			arr := &Array{Elements: []Object{}}
@@ -1003,6 +1035,46 @@ func InitGlobalEnvironment() *Environment {
 			return &String{Value: template}
 		},
 	}
+	teksMap.Pairs["ulang"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return &String{Value: ""}
+			}
+			s := args[0].Inspect()
+			count := int(0)
+			if i, ok := args[1].(*Integer); ok {
+				count = int(i.Value)
+			}
+			if count < 0 {
+				count = 0
+			}
+			return &String{Value: strings.Repeat(s, count)}
+		},
+	}
+	teksMap.Pairs["awalan"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return FALSE
+			}
+			return &Boolean{Value: strings.HasPrefix(args[0].Inspect(), args[1].Inspect())}
+		},
+	}
+	teksMap.Pairs["akhiran"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return FALSE
+			}
+			return &Boolean{Value: strings.HasSuffix(args[0].Inspect(), args[1].Inspect())}
+		},
+	}
+	teksMap.Pairs["indeks"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return &Integer{Value: -1}
+			}
+			return &Integer{Value: int64(strings.Index(args[0].Inspect(), args[1].Inspect()))}
+		},
+	}
 	env.Set("teks", teksMap)
 
 	// Modul konversi (Konversi Tipe Data)
@@ -1216,6 +1288,19 @@ func InitGlobalEnvironment() *Environment {
 						return val
 					case <-time.After(time.Duration(timeoutSec * float64(time.Second))):
 						return NIL
+					}
+				},
+			}
+			chInst.Pairs["cobaTerima"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					select {
+					case val := <-ch:
+						if val == nil {
+							val = NIL
+						}
+						return &ReturnValue{Value: val, Values: []Object{val, TRUE}}
+					default:
+						return &ReturnValue{Value: NIL, Values: []Object{NIL, FALSE}}
 					}
 				},
 			}

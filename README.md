@@ -458,6 +458,43 @@ fungsi utama() {
 }
 ```
 
+### 12. Sinkronisasi WaitGroup (`kelompokTunggu`) & Utilitas Teks Lanjutan (`contoh/dasar_waitgroup_teks.ku`)
+```ku
+paket utama
+
+pakai "cetak"
+pakai "sistem"
+pakai "teks"
+pakai "kanal"
+
+fungsi pekerja(id, kt) {
+    tunda kt.selesai()
+    cetak.tulis(teks.format("Pekerja #{0} selesai tugas!", id))
+}
+
+fungsi utama() {
+    // 1. Sinkronisasi paralel dengan WaitGroup
+    var kt = sistem.kelompokTunggu()
+    untuk i := 1; i <= 3; i++ {
+        kt.tambah(1)
+        ku pekerja(i, kt)
+    }
+    kt.tunggu() // Menunggu hingga ketiga pekerja selesai
+
+    // 2. Utilitas teks lengkap
+    cetak.tulis(teks.ulang("=", 20))
+    cetak.tulis("Awalan Bahasa:", teks.awalan("Bahasa Ku", "Bahasa"))
+    cetak.tulis("Indeks 'Ku':", teks.indeks("Bahasa Ku", "Ku"))
+
+    // 3. Kanal Non-blocking check
+    var pipa = kanal.buat(1)
+    var nilai, ada = pipa.cobaTerima()
+    jika !ada {
+        cetak.tulis("Kanal kosong tanpa blocking!")
+    }
+}
+```
+
 ---
 
 ## 📂 Struktur Proyek
