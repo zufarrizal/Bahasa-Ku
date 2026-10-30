@@ -95,6 +95,13 @@ func (f *Formatter) Format(node ast.Node) string {
 		return out
 
 	case *ast.ForStatement:
+		if n.IsRange {
+			if n.Key != nil && n.Value != nil {
+				return fmt.Sprintf("untuk %s, %s dalam %s %s", n.Key.Value, n.Value.Value, f.Format(n.Iterable), f.Format(n.Body))
+			} else if n.Value != nil {
+				return fmt.Sprintf("untuk %s dalam %s %s", n.Value.Value, f.Format(n.Iterable), f.Format(n.Body))
+			}
+		}
 		if n.Init == nil && n.Cond == nil && n.Post == nil {
 			return fmt.Sprintf("untuk %s", f.Format(n.Body))
 		}

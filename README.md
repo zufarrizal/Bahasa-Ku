@@ -26,6 +26,9 @@
 - **Dukungan Server Web HTTP & REST API (`web`):** Siap digunakan untuk membuat web server dan API JSON.
 - **Dukungan Klien Jaringan HTTP (`jaringan`):** Melakukan panggilan HTTP GET / POST JSON ke API eksternal secara native.
 - **Dukungan Aplikasi Desktop GUI (`jendela`):** Membuka dialog native dan jendela aplikasi desktop modern tanpa Electron.
+- **Perulangan Modern (`untuk ... dalam`):** Iterasi array dan map secara alami (ekivalen `for ... range` di Go).
+- **Dukungan Manipulasi Teks (`teks`):** Pemisahan (`pisah`), penggabungan (`gabung`), kapitalisasi, pemangkasan spasi (`pangkas`), dan pencarian string (`mengandung`).
+- **Dukungan Konversi Data (`konversi`):** Mengubah teks ke angka numerik (`keAngka`), pecahan (`kePecahan`), teks (`keTeks`), dan inspeksi tipe (`tipe`).
 - **Dukungan Keamanan & Enkripsi (`kripto`):** SHA-256, MD5, Base64 encode/decode, dan pembuatan token acak aman.
 - **Dukungan Kalkulasi Numerik (`matematika`):** Akar kuadrat, pemangkatan, pembulatan, angka acak, dan nilai PI.
 - **Dukungan I/O Berkas & Sistem (`berkas` & `sistem`):** Membaca/menulis file lokal dan mengakses environment OS.
@@ -129,7 +132,7 @@ Agar penulisan kode `.ku` memiliki warna sintaksis (*syntax highlighting*) dan i
 | `const PI = 3.14` | `tetap PI = 3.14` | Deklarasi konstanta |
 | `if` / `else` | `jika` / `lainnya` | Percabangan kondisi |
 | `switch` / `case` / `default` | `pilih` / `kasus` / `bawaan` | Percabangan seleksi |
-| `for i := 0; i < 5; i++` | `untuk i := 0; i < 5; i++` | Perulangan |
+| `for i, v := range arr` | `untuk i, v dalam arr` | Perulangan koleksi (range loop) |
 | `defer` | `tunda` | Eksekusi LIFO di akhir fungsi |
 | `return` | `kembalikan` | Mengembalikan nilai fungsi |
 | `len(arr)` | `panjang(arr)` | Menghitung panjang array/string/map |

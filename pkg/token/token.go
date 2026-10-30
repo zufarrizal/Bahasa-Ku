@@ -65,6 +65,8 @@ const (
 	LAINNYA    = "LAINNYA"
 	UNTUK      = "UNTUK"
 	SELAMA     = "SELAMA"
+	DALAM      = "DALAM"
+	RENTANG    = "RENTANG"
 	PILIH      = "PILIH"
 	KASUS      = "KASUS"
 	BAWAAN     = "BAWAAN"
@@ -90,6 +92,8 @@ var keywords = map[string]TokenType{
 	"lainnya":    LAINNYA,
 	"untuk":      UNTUK,
 	"selama":     SELAMA,
+	"dalam":      DALAM,
+	"rentang":    RENTANG,
 	"pilih":      PILIH,
 	"kasus":      KASUS,
 	"bawaan":     BAWAAN,

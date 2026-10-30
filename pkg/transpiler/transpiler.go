@@ -109,6 +109,17 @@ func (t *Transpiler) Transpile(node ast.Node) string {
 		return out
 
 	case *ast.ForStatement:
+		if n.IsRange {
+			key := "_"
+			if n.Key != nil {
+				key = n.Key.Value
+			}
+			val := "_"
+			if n.Value != nil {
+				val = n.Value.Value
+			}
+			return fmt.Sprintf("for %s, %s := range %s %s", key, val, t.Transpile(n.Iterable), t.Transpile(n.Body))
+		}
 		if n.Init == nil && n.Cond == nil && n.Post == nil {
 			return fmt.Sprintf("for %s", t.Transpile(n.Body))
 		}

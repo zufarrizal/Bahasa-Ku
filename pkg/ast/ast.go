@@ -65,8 +65,9 @@ func (bs *BlockStatement) statementNode()       {}
 func (bs *BlockStatement) TokenLiteral() string { return bs.Token.Literal }
 
 type ReturnStatement struct {
-	Token       token.Token // token.KEMBALIKAN
-	ReturnValue Expression
+	Token        token.Token // token.KEMBALIKAN
+	ReturnValue  Expression
+	ReturnValues []Expression // multi-value return khas Go
 }
 
 func (rs *ReturnStatement) statementNode()       {}
@@ -138,6 +139,12 @@ type ForStatement struct {
 	Cond  Expression
 	Post  Statement
 	Body  *BlockStatement
+
+	// Dukungan untuk .. dalam (for .. range)
+	IsRange bool
+	Key     *Identifier
+	Value   *Identifier
+	Iterable Expression
 }
 
 func (fs *ForStatement) statementNode()       {}

@@ -315,6 +315,45 @@ func (p *Parser) parseForStatement() ast.Statement {
 		return stmt
 	}
 
+	// Cek apakah pola for ... dalam koleksi:
+	// untuk item dalam list { ... } atau untuk i, item dalam list { ... }
+	if p.curTokenIs(token.IDENT) && (p.peekTokenIs(token.COMMA) || p.peekTokenIs(token.DALAM) || p.peekTokenIs(token.RENTANG)) {
+		firstIdent := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+
+		if p.peekTokenIs(token.COMMA) {
+			p.nextToken() // ,
+			p.nextToken() // second ident
+			secondIdent := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+
+			if p.peekTokenIs(token.DALAM) || p.peekTokenIs(token.RENTANG) {
+				p.nextToken() // dalam / rentang
+				p.nextToken() // koleksi
+				iter := p.parseExpression(LOWEST)
+				if !p.expectPeek(token.LBRACE) {
+					return nil
+				}
+				stmt.IsRange = true
+				stmt.Key = firstIdent
+				stmt.Value = secondIdent
+				stmt.Iterable = iter
+				stmt.Body = p.parseBlockStatement()
+				return stmt
+			}
+		} else if p.peekTokenIs(token.DALAM) || p.peekTokenIs(token.RENTANG) {
+			p.nextToken() // dalam / rentang
+			p.nextToken() // koleksi
+			iter := p.parseExpression(LOWEST)
+			if !p.expectPeek(token.LBRACE) {
+				return nil
+			}
+			stmt.IsRange = true
+			stmt.Value = firstIdent
+			stmt.Iterable = iter
+			stmt.Body = p.parseBlockStatement()
+			return stmt
+		}
+	}
+
 	firstExpr := p.parseExpression(LOWEST)
 
 	if p.peekTokenIs(token.SEMICOLON) {
@@ -555,10 +594,9 @@ func (p *Parser) parseCallExpression(fn ast.Expression) ast.Expression {
 
 func (p *Parser) parseDotExpression(left ast.Expression) ast.Expression {
 	tok := p.curToken
-	if !p.expectPeek(token.IDENT) {
-		return nil
-	}
-	return &ast.DotExpression{Token: tok, Left: left, Property: &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}}
+	p.nextToken()
+	propName := p.curToken.Literal
+	return &ast.DotExpression{Token: tok, Left: left, Property: &ast.Identifier{Token: p.curToken, Value: propName}}
 }
 
 func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {

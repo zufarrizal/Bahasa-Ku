@@ -23,7 +23,7 @@
       "patterns": [
         {
           "name": "keyword.control.ku",
-          "match": "\\b(jika|lainnya|untuk|selama|pilih|kasus|bawaan|kembalikan|tunda|henti|lanjut)\\b"
+          "match": "\\b(jika|lainnya|untuk|selama|dalam|rentang|pilih|kasus|bawaan|kembalikan|tunda|henti|lanjut)\\b"
         },
         {
           "name": "keyword.declaration.ku",
@@ -35,7 +35,7 @@
         },
         {
           "name": "support.class.ku",
-          "match": "\\b(cetak|web|jendela|basisdata|berkas|sistem|jaringan|kripto|matematika|panjang|tambah)\\b"
+          "match": "\\b(cetak|web|jendela|basisdata|berkas|sistem|jaringan|kripto|matematika|teks|konversi|panjang|tambah)\\b"
         }
       ]
     },

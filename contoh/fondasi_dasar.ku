@@ -1,0 +1,45 @@
+paket utama
+
+pakai "cetak"
+pakai "teks"
+pakai "konversi"
+
+fungsi utama() {
+    cetak.tulis("=== Uji Coba Fondasi Dasar Bahasa Ku ===")
+
+    // 1. Perulangan 'untuk ... dalam' pada Array
+    var buah = ["Mangga", "Alpukat", "Jeruk"]
+    cetak.tulis("--- Iterasi Array ---")
+    untuk i, nama dalam buah {
+        cetak.tulis("Indeks ke-", i, ":", nama)
+    }
+
+    // 2. Perulangan 'untuk ... dalam' pada Map
+    var ibukota = {
+        "Jawa Barat": "Bandung",
+        "Jawa Timur": "Surabaya"
+    }
+    cetak.tulis("\n--- Iterasi Map ---")
+    untuk prov, kota dalam ibukota {
+        cetak.tulis("Provinsi:", prov, "-> Ibukota:", kota)
+    }
+
+    // 3. Modul Teks (Strings)
+    cetak.tulis("\n--- Modul Teks ---")
+    var kalimat = "   pemrograman bahasa ku sangat menyenangkan   "
+    cetak.tulis("Pangkas spasi:", teks.pangkas(kalimat))
+    cetak.tulis("Huruf Kapital:", teks.kapital(teks.pangkas(kalimat)))
+    cetak.tulis("Apakah mengandung 'ku'?", teks.mengandung(kalimat, "ku"))
+
+    var daftarKata = teks.pisah("apel,jeruk,pisang", ",")
+    cetak.tulis("Hasil Pisah (Array):", daftarKata)
+    cetak.tulis("Hasil Gabung:", teks.gabung(daftarKata, " - "))
+
+    // 4. Modul Konversi (Strconv)
+    cetak.tulis("\n--- Modul Konversi ---")
+    var teksAngka = "150"
+    var angkaMurni = konversi.keAngka(teksAngka)
+    cetak.tulis("150 + 50 =", angkaMurni + 50)
+    cetak.tulis("Tipe data angkaMurni:", konversi.tipe(angkaMurni))
+    cetak.tulis("Tipe data daftarKata:", konversi.tipe(daftarKata))
+}

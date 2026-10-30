@@ -17,6 +17,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -785,6 +786,152 @@ func InitGlobalEnvironment() *Environment {
 	}
 	env.Set("matematika", matematikaMap)
 
+	// Modul teks (Manipulasi String)
+	teksMap := &Map{Pairs: make(map[string]Object)}
+	teksMap.Pairs["pisah"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return &Array{Elements: []Object{}}
+			}
+			s := args[0].Inspect()
+			sep := args[1].Inspect()
+			parts := strings.Split(s, sep)
+			arr := &Array{Elements: []Object{}}
+			for _, p := range parts {
+				arr.Elements = append(arr.Elements, &String{Value: p})
+			}
+			return arr
+		},
+	}
+	teksMap.Pairs["gabung"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return &String{Value: ""}
+			}
+			arr, ok := args[0].(*Array)
+			if !ok {
+				return &String{Value: ""}
+			}
+			sep := args[1].Inspect()
+			items := []string{}
+			for _, e := range arr.Elements {
+				items = append(items, e.Inspect())
+			}
+			return &String{Value: strings.Join(items, sep)}
+		},
+	}
+	teksMap.Pairs["kapital"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			return &String{Value: strings.ToUpper(args[0].Inspect())}
+		},
+	}
+	teksMap.Pairs["kecil"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			return &String{Value: strings.ToLower(args[0].Inspect())}
+		},
+	}
+	teksMap.Pairs["pangkas"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			return &String{Value: strings.TrimSpace(args[0].Inspect())}
+		},
+	}
+	teksMap.Pairs["mengandung"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return FALSE
+			}
+			return &Boolean{Value: strings.Contains(args[0].Inspect(), args[1].Inspect())}
+		},
+	}
+	teksMap.Pairs["ganti"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 3 {
+				return &String{Value: ""}
+			}
+			s := args[0].Inspect()
+			lama := args[1].Inspect()
+			baru := args[2].Inspect()
+			return &String{Value: strings.ReplaceAll(s, lama, baru)}
+		},
+	}
+	env.Set("teks", teksMap)
+
+	// Modul konversi (Konversi Tipe Data)
+	konversiMap := &Map{Pairs: make(map[string]Object)}
+	konversiMap.Pairs["keAngka"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &Integer{Value: 0}
+			}
+			if i, ok := args[0].(*Integer); ok {
+				return i
+			}
+			v, err := strconv.ParseInt(strings.TrimSpace(args[0].Inspect()), 10, 64)
+			if err != nil {
+				return &Integer{Value: 0}
+			}
+			return &Integer{Value: v}
+		},
+	}
+	konversiMap.Pairs["kePecahan"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &Float{Value: 0}
+			}
+			if f, ok := args[0].(*Float); ok {
+				return f
+			}
+			v, err := strconv.ParseFloat(strings.TrimSpace(args[0].Inspect()), 64)
+			if err != nil {
+				return &Float{Value: 0}
+			}
+			return &Float{Value: v}
+		},
+	}
+	konversiMap.Pairs["keTeks"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			return &String{Value: args[0].Inspect()}
+		},
+	}
+	konversiMap.Pairs["tipe"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: "kosong"}
+			}
+			switch args[0].Type() {
+			case INTEGER_OBJ:
+				return &String{Value: "angka"}
+			case FLOAT_OBJ:
+				return &String{Value: "pecahan"}
+			case STRING_OBJ:
+				return &String{Value: "teks"}
+			case BOOLEAN_OBJ:
+				return &String{Value: "boolean"}
+			case ARRAY_OBJ:
+				return &String{Value: "daftar"}
+			case MAP_OBJ:
+				return &String{Value: "peta"}
+			case STRUCT_INST_OBJ:
+				return &String{Value: "struktur"}
+			default:
+				return &String{Value: "objek"}
+			}
+		},
+	}
+	env.Set("konversi", konversiMap)
+
 	// Bawaan: panjang & tambah
 	env.Set("panjang", &Builtin{
 		Fn: func(args ...Object) Object {
@@ -950,6 +1097,40 @@ func Eval(node ast.Node, env *Environment) Object {
 
 	case *ast.ForStatement:
 		loopEnv := NewEnclosedEnvironment(env)
+		if n.IsRange {
+			iterObj := Eval(n.Iterable, env)
+			if arr, ok := iterObj.(*Array); ok {
+				for i, elem := range arr.Elements {
+					if n.Key != nil {
+						loopEnv.Set(n.Key.Value, &Integer{Value: int64(i)})
+					}
+					if n.Value != nil {
+						loopEnv.Set(n.Value.Value, elem)
+					}
+					res := Eval(n.Body, loopEnv)
+					if res != nil && res.Type() == RETURN_VALUE_OBJ {
+						return res
+					}
+				}
+				return NIL
+			} else if m, ok := iterObj.(*Map); ok {
+				for k, v := range m.Pairs {
+					if n.Key != nil {
+						loopEnv.Set(n.Key.Value, &String{Value: k})
+					}
+					if n.Value != nil {
+						loopEnv.Set(n.Value.Value, v)
+					}
+					res := Eval(n.Body, loopEnv)
+					if res != nil && res.Type() == RETURN_VALUE_OBJ {
+						return res
+					}
+				}
+				return NIL
+			}
+			return NIL
+		}
+
 		if n.Init != nil {
 			Eval(n.Init, loopEnv)
 		}
