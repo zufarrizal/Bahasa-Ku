@@ -544,7 +544,7 @@ replace github.com/zufarrizal/bahasa-ku => %q
 			}
 		}
 
-		buildCmd := exec.Command(goExe, "build", fmt.Sprintf("-ldflags=%s", ldFlags), "-o", absOutput, "main.go")
+		buildCmd := exec.Command(goExe, "build", fmt.Sprintf("-ldflags=%s", ldFlags), "-o", absOutput, ".")
 		buildCmd.Dir = tempDir
 		buildOutput, err := buildCmd.CombinedOutput()
 		if err == nil {
@@ -601,7 +601,7 @@ replace github.com/zufarrizal/bahasa-ku => %q
 		}
 	}
 
-	buildCmd := exec.Command(goExe, "build", fmt.Sprintf("-ldflags=%s", ldFlags), "-o", absOutput, "main.go")
+	buildCmd := exec.Command(goExe, "build", fmt.Sprintf("-ldflags=%s", ldFlags), "-o", absOutput, ".")
 	buildCmd.Dir = tempDir2
 	buildOutput, err := buildCmd.CombinedOutput()
 
