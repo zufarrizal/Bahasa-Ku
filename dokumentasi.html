@@ -126,6 +126,30 @@
     }
     .sidebar-links li a:hover { color: #fff; background: rgba(255, 255, 255, 0.05); }
 
+    /* Category Divider Banner */
+    .category-divider {
+      margin: 70px 0 35px 0;
+      padding: 18px 24px;
+      background: linear-gradient(90deg, rgba(0, 119, 255, 0.15) 0%, rgba(0, 240, 255, 0.05) 100%);
+      border-left: 4px solid var(--primary);
+      border-radius: 0 10px 10px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .category-divider h2 {
+      margin: 0 0 6px 0;
+      padding: 0;
+      font-size: 1.55rem;
+      font-weight: 800;
+      color: #fff;
+      border-bottom: none;
+      letter-spacing: -0.01em;
+    }
+    .category-divider p {
+      margin: 0;
+      font-size: 0.92rem;
+      color: #94a3b8;
+    }
+
     /* Main Content */
     .docs-content { flex: 1; padding: 40px 48px 80px; max-width: 950px; }
     
@@ -301,10 +325,10 @@
               <span class="chevron">▼</span>
             </div>
             <ul class="sidebar-links">
-              <li><a href="#modul-berkas-sistem">`berkas` (File I/O)</a></li>
+              <li><a href="#modul-berkas">`berkas` (File I/O)</a></li>
               <li><a href="#modul-jalur">`jalur` (Filepath)</a></li>
               <li><a href="#modul-kompresi">`kompresi` (Gzip & Zip)</a></li>
-              <li><a href="#modul-berkas-sistem">`sistem` (OS & Lingkungan)</a></li>
+              <li><a href="#modul-sistem">`sistem` (OS & Lingkungan)</a></li>
               <li><a href="#modul-waktu">`waktu` & Pewaktu</a></li>
               <li><a href="#modul-catatan">`catatan` (Logging)</a></li>
               <li><a href="#modul-terminal">`terminal` (CLI Warna)</a></li>
@@ -321,10 +345,10 @@
               <li><a href="#modul-kripto">`kripto` (Hash & JWT)</a></li>
               <li><a href="#modul-bita">`bita` (Byte Buffer)</a></li>
               <li><a href="#modul-enkoding">`enkoding` (CSV, URL, Hex)</a></li>
-              <li><a href="#modul-web-desktop">`web` (HTTP Server)</a></li>
+              <li><a href="#modul-web">`web` (HTTP Server)</a></li>
               <li><a href="#modul-soket">`soket` (TCP Network)</a></li>
               <li><a href="#modul-basisdata">`basisdata` (MySQL)</a></li>
-              <li><a href="#modul-web-desktop">`jendela` (GUI Desktop)</a></li>
+              <li><a href="#modul-jendela">`jendela` (GUI Desktop)</a></li>
               <li><a href="#modul-uji">`uji` (Unit Test)</a></li>
             </ul>
           </div>
@@ -402,6 +426,12 @@ fungsi utama() {
     cetak.tulis("Halo dari Bahasa Ku!")
 }</code></pre>
       </section>
+
+      <!-- PEMBATAS KATEGORI 2: SINTAKSIS & FONDASI -->
+      <div class="category-divider">
+        <h2>Bagian 2: Sintaksis & Fondasi Bahasa</h2>
+        <p>Aturan dasar penulisan kode, deklarasi variabel, percabangan, fungsi, dan penanganan galat.</p>
+      </div>
 
       <!-- Variabel & Tipe Data -->
       <section id="variabel-tipe" class="docs-section">
@@ -597,6 +627,12 @@ fungsi utama() {
 }</code></pre>
       </section>
 
+      <!-- PEMBATAS KATEGORI 3: KONKURENSI & SINKRONISASI -->
+      <div class="category-divider">
+        <h2>Bagian 3: Konkurensi & Sinkronisasi</h2>
+        <p>Manajemen proses paralel multi-threading ringan via Ku-routine, Kanal data, dan kunci Mutex.</p>
+      </div>
+
       <!-- Konkurensi & Kanal -->
       <section id="konkurensi" class="docs-section">
         <h2>Konkurensi (`ku`) & Kanal (`kanal`)</h2>
@@ -663,7 +699,21 @@ cetak.tulis("Hasil hitungan aman:", hitungan)</code></pre>
       </section>
 
       <!-- Modul Standar: Cetak -->
-      <section id="modul-cetak" class="docs-section">
+      
+      <!-- ========================================== -->
+      <!-- PEMBATAS KATEGORI 4: PUSTAKA STANDAR -->
+      <!-- ========================================== -->
+      <div class="category-divider" id="kategori-pustaka-standar">
+        <h2>Bagian 4: Pustaka Standar Bawaan</h2>
+        <p>Modul-modul bawaan resmi Bahasa Ku yang siap pakai tanpa instalasi dependensi luar.</p>
+      </div>
+
+      <!-- SUB-KATEGORI A: TEKS & FORMAT -->
+      <div class="category-divider" style="background: linear-gradient(90deg, rgba(56, 189, 248, 0.12) 0%, rgba(0, 240, 255, 0.03) 100%); border-left-color: #38bdf8; margin-top: 20px;">
+        <h2>Sub-Kategori A: Teks, Pola & Konversi Format</h2>
+        <p>Manipulasi string, pencocokan regex, serialisasi JSON, dan validasi data.</p>
+      </div>
+<section id="modul-cetak" class="docs-section">
         <h2>Modul `cetak`</h2>
         <table>
           <thead>
@@ -676,27 +726,357 @@ cetak.tulis("Hasil hitungan aman:", hitungan)</code></pre>
         </table>
       </section>
 
-      <!-- Modul Standar: Catatan (Logging) -->
-      <section id="modul-catatan" class="docs-section">
-        <h2>Modul `catatan` (Logging Terstruktur)</h2>
-        <p>Pencatatan aktivitas sistem dengan stempel waktu dan level log otomatis:</p>
+<section id="modul-teks" class="docs-section">
+        <h2>Modul `teks`</h2>
         <table>
           <thead>
             <tr><th>Fungsi</th><th>Deskripsi</th></tr>
           </thead>
           <tbody>
-            <tr><td><code>catatan.info(...pesan)</code></td><td>Mencetak log level INFO berformat <code>[INFO] YYYY-MM-DD HH:MM:SS: pesan...</code></td></tr>
-            <tr><td><code>catatan.peringatan(...pesan)</code></td><td>Mencetak log level PERINGATAN</td></tr>
-            <tr><td><code>catatan.galat(...pesan)</code></td><td>Mencetak log level GALAT</td></tr>
+            <tr><td><code>teks.kapital(str)</code></td><td>Mengubah teks menjadi HURUF BESAR</td></tr>
+            <tr><td><code>teks.kecil(str)</code></td><td>Mengubah teks menjadi huruf kecil</td></tr>
+            <tr><td><code>teks.pangkas(str)</code></td><td>Menghapus spasi di awal dan akhir string</td></tr>
+            <tr><td><code>teks.pisah(str, pemisah)</code></td><td>Memecah teks menjadi larik substring</td></tr>
+            <tr><td><code>teks.gabung(arr, pemisah)</code></td><td>Menggabungkan larik teks dengan pemisah</td></tr>
+            <tr><td><code>teks.mengandung(str, sub)</code></td><td>Memeriksa apakah substring ada dalam teks</td></tr>
+            <tr><td><code>teks.awalan(str, prefix)</code></td><td>Memeriksa apakah teks diawali substring tertentu</td></tr>
+            <tr><td><code>teks.akhiran(str, suffix)</code></td><td>Memeriksa apakah teks diakhiri substring tertentu</td></tr>
+            <tr><td><code>teks.indeks(str, sub)</code></td><td>Mengembalikan posisi indeks kemunculan pertama substring</td></tr>
+            <tr><td><code>teks.indeksTerakhir(str, sub)</code></td><td>Mencari posisi indeks kemunculan terakhir substring (dari kanan)</td></tr>
+            <tr><td><code>teks.pangkasKiri(str, [cutset])</code></td><td>Menghapus karakter di awal string yang ditentukan</td></tr>
+            <tr><td><code>teks.pangkasKanan(str, [cutset])</code></td><td>Menghapus karakter di akhir string yang ditentukan</td></tr>
+            <tr><td><code>teks.padKiri(str, panjang, pad)</code></td><td>Menambahkan karakter padding di sebelah kiri string (contoh: <code>00042</code>)</td></tr>
+            <tr><td><code>teks.padKanan(str, panjang, pad)</code></td><td>Menambahkan karakter padding di sebelah kanan string</td></tr>
+            <tr><td><code>teks.karakter(str, indeks)</code></td><td>Mengambil satu karakter pada indeks tertentu sebagai string</td></tr>
+            <tr><td><code>teks.apakahKosong(s)</code></td><td>Memeriksa apakah string kosong atau hanya berisi spasi (boolean)</td></tr>
+            <tr><td><code>teks.apakahHuruf(s)</code></td><td>Memeriksa apakah seluruh karakter berupa huruf alfabet (boolean)</td></tr>
+            <tr><td><code>teks.apakahAngka(s)</code></td><td>Memeriksa apakah seluruh karakter berupa angka numerik (boolean)</td></tr>
+            <tr><td><code>teks.ulang(str, n)</code></td><td>Mengulang teks sebanyak n kali</td></tr>
+            <tr><td><code>teks.format(str, ...args)</code></td><td>Format string dengan placeholder indeks {0}, {1}</td></tr>
           </tbody>
         </table>
-        <pre><code>catatan.info("Server web aktif di port 8080")
-catatan.peringatan("Koneksi lambat terdeteksi!")
-catatan.galat("Gagal memproses transaksi ID #102")</code></pre>
       </section>
 
-      <!-- Modul Standar: Waktu -->
-      <section id="modul-waktu" class="docs-section">
+<section id="modul-pola" class="docs-section">
+        <h2>Modul `pola` (Ekspresi Reguler / Regex)</h2>
+        <p>Pencarian, pencocokan, dan manipulasi teks berbasis Regular Expression:</p>
+        <table>
+          <thead>
+            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>pola.cocok(regex, teks)</code></td><td>Mengembalikan boolean <code>benar</code> jika pola cocok</td></tr>
+            <tr><td><code>pola.temukanSemua(regex, teks)</code></td><td>Mengembalikan larik dari seluruh substring yang cocok</td></tr>
+            <tr><td><code>pola.ganti(regex, teks, pengganti)</code></td><td>Mengganti bagian teks yang cocok dengan teks baru</td></tr>
+          </tbody>
+        </table>
+        <pre><code>// Validasi Email
+var valid = pola.cocok("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", "admin@ku.id")
+
+// Masking data sensitif
+var sensor = pola.ganti("[0-9]", "Kode PIN: 8492", "*") // Kode PIN: ****</code></pre>
+      </section>
+
+<section id="modul-konversi" class="docs-section">
+        <h2>Modul `konversi`</h2>
+        <table>
+          <thead>
+            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>konversi.keAngka(val)</code></td><td>Mengonversi nilai menjadi integer (angka bulat)</td></tr>
+            <tr><td><code>konversi.kePecahan(val)</code></td><td>Mengonversi nilai menjadi float (bilangan pecahan)</td></tr>
+            <tr><td><code>konversi.keTeks(val)</code></td><td>Mengonversi nilai menjadi string representasi teks</td></tr>
+            <tr><td><code>konversi.tipe(val)</code></td><td>Mengembalikan nama tipe data (angka, pecahan, teks, boolean, daftar, peta, dll)</td></tr>
+            <tr><td><code>konversi.rupiah(angka)</code></td><td>Format angka bilangan bulat menjadi format mata uang Rupiah (misal: <code>Rp 2.500.000</code>)</td></tr>
+            <tr><td><code>konversi.desimal(angka, presisi)</code></td><td>Format pecahan dengan jumlah digit desimal yang ditentukan (misal: <code>3.142</code>)</td></tr>
+            <tr><td><code>konversi.apakahAngka(val)</code></td><td>Memeriksa apakah bertipe integer atau float (boolean)</td></tr>
+            <tr><td><code>konversi.apakahTeks(val)</code></td><td>Memeriksa apakah bertipe string teks (boolean)</td></tr>
+            <tr><td><code>konversi.apakahLarik(val)</code></td><td>Memeriksa apakah bertipe larik array (boolean)</td></tr>
+            <tr><td><code>konversi.apakahPeta(val)</code></td><td>Memeriksa apakah bertipe peta map (boolean)</td></tr>
+            <tr><td><code>konversi.apakahKosong(val)</code></td><td>Memeriksa apakah bernilai kosong / nihil (boolean)</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+<section id="modul-json" class="docs-section">
+        <h2>Modul `json` (Format Objek & Serialisasi)</h2>
+        <table>
+          <thead>
+            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>json.urai(teksJSON)</code></td><td>Membaca string JSON menjadi objek Peta (`{}`) atau Larik (`[]`)</td></tr>
+            <tr><td><code>json.kodekan(data)</code></td><td>Mengonversi objek/larik Bahasa Ku menjadi string JSON kompak</td></tr>
+            <tr><td><code>json.format(data, [indent])</code></td><td>Mengonversi objek/larik menjadi string JSON dengan lekukan rapi (*pretty-print*)</td></tr>
+            <tr><td><code>json.valid(teks)</code></td><td>Memeriksa apakah string merupakan format JSON yang valid (boolean)</td></tr>
+          </tbody>
+        </table>
+        <pre><code>// Serialisasi
+var payload = {"status": "sukses", "kode": 200, "daftar": ["A", "B"]}
+var teksJSON = json.format(payload, 2)
+
+// Deserialisasi & Validasi
+jika json.valid(teksJSON) {
+    var data = json.urai(teksJSON)
+    cetak.tulis("Status:", data["status"])
+}</code></pre>
+      </section>
+
+<section id="modul-validasi" class="docs-section">
+        <h2>Modul `validasi` (Pemeriksaan Format Data)</h2>
+        <table>
+          <thead>
+            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>validasi.apakahEmail(teks)</code></td><td>Memeriksa format alamat email valid (boolean)</td></tr>
+            <tr><td><code>validasi.apakahURL(teks)</code></td><td>Memeriksa format URL web dengan skema protokol yang sah (boolean)</td></tr>
+            <tr><td><code>validasi.apakahIP(teks)</code></td><td>Memeriksa format alamat IPv4 atau IPv6 yang sah (boolean)</td></tr>
+            <tr><td><code>validasi.apakahAlfabet(teks)</code></td><td>Memeriksa apakah seluruh karakter hanya berisi huruf (boolean)</td></tr>
+            <tr><td><code>validasi.apakahNumerik(teks)</code></td><td>Memeriksa apakah seluruh karakter hanya berisi digit angka (boolean)</td></tr>
+            <tr><td><code>validasi.apakahAlfanumerik(teks)</code></td><td>Memeriksa apakah string hanya terdiri dari kombinasi huruf dan angka (boolean)</td></tr>
+          </tbody>
+        </table>
+        <pre><code>jika validasi.apakahEmail("pengguna@domain.id") {
+    cetak.tulis("Email pengguna valid!")
+}
+jika validasi.apakahIP("192.168.1.1") {
+    cetak.tulis("Alamat IP lokal valid.")
+}</code></pre>
+      </section>
+
+      <!-- SUB-KATEGORI B: STRUKTUR DATA & ALGORITMA -->
+      <div class="category-divider" style="background: linear-gradient(90deg, rgba(168, 85, 247, 0.12) 0%, rgba(0, 240, 255, 0.03) 100%); border-left-color: #a855f7;">
+        <h2>Sub-Kategori B: Struktur Data & Komputasi</h2>
+        <p>Pengolahan larik fungsional, kamus peta, tumpukan (stack), antrean (queue), matematika & bitwise.</p>
+      </div>
+<section id="modul-larik" class="docs-section">
+        <h2>Modul `larik` & Himpunan</h2>
+        <table>
+          <thead>
+            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>larik.urut(arr)</code></td><td>Mengurutkan larik secara ascending (angka maupun string)</td></tr>
+            <tr><td><code>larik.balik(arr)</code></td><td>Membalik susunan elemen larik</td></tr>
+            <tr><td><code>larik.acak(arr)</code></td><td>Mengocok urutan larik secara acak (shuffle)</td></tr>
+            <tr><td><code>larik.unik(arr)</code></td><td>Menghilangkan duplikat elemen larik (deduplikasi)</td></tr>
+            <tr><td><code>larik.irisan(arr1, arr2)</code></td><td>Mencari perpotongan elemen yang ada di kedua larik (intersection)</td></tr>
+            <tr><td><code>larik.gabungan(arr1, arr2)</code></td><td>Menggabungkan dua larik menjadi himpunan unik (union)</td></tr>
+            <tr><td><code>larik.iris(arr, mulai, selesai)</code></td><td>Memotong larik pada rentang indeks tertentu (slice)</td></tr>
+            <tr><td><code>larik.mengandung(arr, nilai)</code></td><td>Memeriksa apakah elemen ada di dalam larik (boolean)</td></tr>
+            <tr><td><code>larik.indeks(arr, nilai)</code></td><td>Mencari indeks posisi kemunculan pertama elemen (-1 jika nihil)</td></tr>
+            <tr><td><code>larik.ambilAcak(arr, n)</code></td><td>Mengambil n sampel acak dari elemen larik (random sampling)</td></tr>
+            <tr><td><code>larik.pecah(arr, ukuran)</code></td><td>Memecah larik menjadi kelompok-kelompok kecil berukuran n (chunking)</td></tr>
+            <tr><td><code>larik.rentang(akhir)</code> / <code>rentang(awal, akhir, [langkah])</code></td><td>Membangkitkan deret rentang bilangan berurutan (misal: <code>rentang(0, 10, 2)</code>)</td></tr>
+            <tr><td><code>larik.gabungSemua(...larik)</code></td><td>Menggabungkan banyak larik menjadi satu</td></tr>
+            <tr><td><code>larik.rata(larik2D)</code></td><td>Meratakan struktur larik bertingkat / bersarang 2D menjadi 1D (flatten)</td></tr>
+            <tr><td><code>larik.saring(arr, fn)</code></td><td>Menyaring elemen larik berdasarkan fungsi predikat (filter)</td></tr>
+            <tr><td><code>larik.petakan(arr, fn)</code></td><td>Mentransformasi setiap elemen larik menjadi nilai baru (map)</td></tr>
+            <tr><td><code>larik.reduksi(arr, fn, awal)</code></td><td>Merangkum larik menjadi satu nilai tunggal (reduce)</td></tr>
+            <tr><td><code>larik.temukan(arr, fn)</code></td><td>Menemukan elemen pertama yang memenuhi syarat predikat</td></tr>
+          </tbody>
+        </table>
+        <pre><code>var angka = [1, 2, 2, 3, 4, 4, 5]
+var unik = larik.unik(angka) // [1, 2, 3, 4, 5]
+var irisan = larik.irisan(unik, [4, 5, 6]) // [4, 5]</code></pre>
+      </section>
+
+<section id="modul-peta" class="docs-section">
+        <h2>Modul `peta` (Kamus / Map)</h2>
+        <p>Utilitas untuk manipulasi data asosiatif pasangan kunci dan nilai:</p>
+        <table>
+          <thead>
+            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>peta.kunci(map)</code></td><td>Mengembalikan larik dari seluruh kunci yang terdaftar</td></tr>
+            <tr><td><code>peta.nilai(map)</code></td><td>Mengembalikan larik dari seluruh nilai yang ada</td></tr>
+            <tr><td><code>peta.ada(map, kunci)</code></td><td>Memeriksa apakah sebuah kunci ada dalam peta (boolean)</td></tr>
+            <tr><td><code>peta.salin(map)</code></td><td>Menduplikasi / membuat salinan mandiri dari peta (clone)</td></tr>
+            <tr><td><code>peta.ambil(map, kunci, [bawaan])</code></td><td>Mengambil nilai kunci dengan opsi nilai bawaan (fallback) jika kunci nihil</td></tr>
+            <tr><td><code>peta.gabung(...peta)</code></td><td>Menggabungkan beberapa objek kamus/peta menjadi satu</td></tr>
+          </tbody>
+        </table>
+        <pre><code>var data = {"nama": "Ku", "status": "aktif"}
+var kunci = peta.kunci(data) // ["nama", "status"]
+jika peta.ada(data, "nama") {
+    cetak.tulis("Kunci nama terdaftar!")
+}</code></pre>
+      </section>
+
+<section id="modul-struktur-data" class="docs-section">
+        <h2>Modul `strukturData` (Tumpukan / Stack & Antrean / Queue)</h2>
+        <h3>1. Tumpukan (Stack - LIFO)</h3>
+        <p>Method: <code>dorong(item)</code>, <code>tarik()</code>, <code>intip()</code>, <code>panjang()</code>, <code>apakahKosong()</code>, <code>semua()</code>.</p>
+        <pre><code>var stack = strukturData.tumpukan()
+stack.dorong("halaman_1")
+stack.dorong("halaman_2")
+var aktif = stack.tarik() // "halaman_2"</code></pre>
+
+        <h3>2. Antrean (Queue - FIFO)</h3>
+        <p>Method: <code>masuk(item)</code>, <code>keluar()</code>, <code>depan()</code>, <code>panjang()</code>, <code>apakahKosong()</code>, <code>semua()</code>.</p>
+        <pre><code>var antre = strukturData.antrean()
+antre.masuk("tugas_A")
+antre.masuk("tugas_B")
+var tugasPertama = antre.keluar() // "tugas_A"</code></pre>
+      </section>
+
+<section id="modul-matematika" class="docs-section">
+        <h2>Modul `matematika`</h2>
+        <table>
+          <thead>
+            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>matematika.sin(x)</code>, <code>cos(x)</code>, <code>tan(x)</code></td><td>Fungsi trigonometri sudut radian</td></tr>
+            <tr><td><code>matematika.rataRata(arr)</code></td><td>Menghitung rata-rata nilai larik angka</td></tr>
+            <tr><td><code>matematika.akar(x)</code></td><td>Menghitung akar kuadrat</td></tr>
+            <tr><td><code>matematika.pangkat(x, y)</code></td><td>Menghitung pemangkatan angka x^y</td></tr>
+            <tr><td><code>matematika.bulat(x)</code></td><td>Membulatkan angka ke integer terdekat</td></tr>
+            <tr><td><code>matematika.lantai(x)</code></td><td>Pembulatan ke bawah (floor)</td></tr>
+            <tr><td><code>matematika.langit(x)</code></td><td>Pembulatan ke atas (ceil)</td></tr>
+            <tr><td><code>matematika.mutlak(x)</code></td><td>Menghitung nilai absolut |x|</td></tr>
+            <tr><td><code>matematika.log(x)</code></td><td>Logaritma natural Ln(x)</td></tr>
+            <tr><td><code>matematika.log10(x)</code></td><td>Logaritma basis 10</td></tr>
+            <tr><td><code>matematika.hipot(x, y)</code></td><td>Panjang hipotenusa garis miring Pythagoras</td></tr>
+            <tr><td><code>matematika.jepit(v, min, max)</code></td><td>Membatasi nilai agar selalu di antara batas bawah dan batas atas (clamp)</td></tr>
+            <tr><td><code>matematika.tanda(x)</code></td><td>Mengembalikan tanda bilangan (-1 jika negatif, 1 jika positif, 0 jika nol)</td></tr>
+            <tr><td><code>matematika.acak(min, max)</code></td><td>Menghasilkan bilangan acak rentang min..max</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+<section id="modul-angka" class="docs-section">
+        <h2>Modul `angka` (Bitwise & Representasi Basis)</h2>
+        <table>
+          <thead>
+            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>angka.biner(n)</code></td><td>Mengonversi angka integer ke string biner (contoh: <code>10 -> "1010"</code>)</td></tr>
+            <tr><td><code>angka.heksa(n)</code></td><td>Mengonversi angka integer ke string heksadesimal (contoh: <code>255 -> "ff"</code>)</td></tr>
+            <tr><td><code>angka.oktal(n)</code></td><td>Mengonversi angka integer ke string oktal</td></tr>
+            <tr><td><code>angka.geserKiri(n, bit)</code></td><td>Operasi pergeseran bitwise ke kiri (<code>n &lt;&lt; bit</code>)</td></tr>
+            <tr><td><code>angka.geserKanan(n, bit)</code></td><td>Operasi pergeseran bitwise ke kanan (<code>n &gt;&gt; bit</code>)</td></tr>
+            <tr><td><code>angka.dan(a, b)</code></td><td>Operasi logika bitwise AND (<code>a &amp; b</code>)</td></tr>
+            <tr><td><code>angka.atau(a, b)</code></td><td>Operasi logika bitwise OR (<code>a | b</code>)</td></tr>
+            <tr><td><code>angka.xor(a, b)</code></td><td>Operasi logika bitwise XOR (<code>a ^ b</code>)</td></tr>
+            <tr><td><code>angka.tidak(n)</code></td><td>Operasi logika bitwise NOT (<code>^n</code>)</td></tr>
+          </tbody>
+        </table>
+        <pre><code>var bin = angka.biner(42) // "101010"
+var hex = angka.heksa(255) // "ff"
+var geser = angka.geserKiri(1, 8) // 256</code></pre>
+      </section>
+
+<section id="modul-acak" class="docs-section">
+        <h2>Modul `acak` (Pengacakan & Pemilihan)</h2>
+        <table>
+          <thead>
+            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>acak.pilih(arr)</code></td><td>Mengambil satu elemen acak dari larik</td></tr>
+            <tr><td><code>acak.teks(n)</code></td><td>Menghasilkan string alfanumerik acak dengan panjang n digit</td></tr>
+            <tr><td><code>acak.pecahan()</code></td><td>Menghasilkan bilangan acak float antara 0.0 hingga 1.0</td></tr>
+          </tbody>
+        </table>
+        <pre><code>var opsi = ["A", "B", "C"]
+var pilih = acak.pilih(opsi)
+var token = acak.teks(16) // Token unik acak</code></pre>
+      </section>
+
+      <!-- SUB-KATEGORI C: SISTEM & FILE I/O -->
+      <div class="category-divider" style="background: linear-gradient(90deg, rgba(34, 197, 94, 0.12) 0%, rgba(0, 240, 255, 0.03) 100%); border-left-color: #22c55e;">
+        <h2>Sub-Kategori C: Sistem Operasi & File I/O</h2>
+        <p>Operasi berkas, direktori, kompresi ZIP/Gzip, stempel waktu, pewaktu asinkron, dan terminal konsol.</p>
+      </div>
+      <!-- Modul Standar: Berkas -->
+      <section id="modul-berkas" class="docs-section">
+        <h2>Modul `berkas` (Operasi File I/O)</h2>
+        <p>Pengelolaan pembacaan, penulisan, perizinan, dan pemindahan berkas serta direktori:</p>
+        <pre><code>// Modul Berkas (File I/O)
+berkas.tulis("catatan.txt", "Isi pesan penting\n")
+berkas.tambah("catatan.txt", "Baris tambahan\n")
+var isi = berkas.baca("catatan.txt")
+var barisSemua = berkas.bacaBaris("catatan.txt") // Larik baris teks tanpa \n
+var ada = berkas.ada("catatan.txt")
+berkas.salin("catatan.txt", "salinan.txt")
+berkas.pindah("salinan.txt", "arsip.txt")
+berkas.buatFolder("data/arsip")
+var daftarBerkas = berkas.daftar(".")
+var apakahDir = berkas.apakahFolder("data/arsip") // true
+var apakahFile = berkas.apakahBerkas("arsip.txt")  // true
+var izinBerkas = berkas.izin("arsip.txt")         // -rw-r--r--
+berkas.salinFolder("data/arsip", "backup/arsip")  // rekursif salin direktori</code></pre>
+      </section>
+
+<section id="modul-jalur" class="docs-section">
+        <h2>Modul `jalur` (Manipulasi Path Berkas ala filepath)</h2>
+        <p>Pengelolaan path dan lokasi berkas independen lintas sistem operasi:</p>
+        <table>
+          <thead>
+            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>jalur.gabung(...bagian)</code></td><td>Menggabungkan bagian-bagian direktori/path dengan separator OS yang tepat</td></tr>
+            <tr><td><code>jalur.nama(path)</code></td><td>Mengambil nama berkas saja dari sebuah path (Base)</td></tr>
+            <tr><td><code>jalur.induk(path)</code></td><td>Mengambil folder direktori induk (Dir)</td></tr>
+            <tr><td><code>jalur.ekstensi(path)</code></td><td>Mengambil ekstensi berkas (Ext, misal: <code>.ku</code>)</td></tr>
+          </tbody>
+        </table>
+        <pre><code>var lokasi = jalur.gabung("folder", "sub", "utama.ku")
+cetak.tulis("Nama berkas:", jalur.nama(lokasi)) // utama.ku
+cetak.tulis("Folder induk:", jalur.induk(lokasi)) // folder/sub
+cetak.tulis("Ekstensi:", jalur.ekstensi(lokasi)) // .ku</code></pre>
+      </section>
+
+<section id="modul-kompresi" class="docs-section">
+        <h2>Modul `kompresi` (Gzip & ZIP Archive)</h2>
+        <table>
+          <thead>
+            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>kompresi.gzip(teks)</code></td><td>Mengompresi data teks menjadi format Base64 Gzip</td></tr>
+            <tr><td><code>kompresi.ungzip(teksGz)</code></td><td>Mendekompresi data Base64 Gzip kembali ke teks asli</td></tr>
+            <tr><td><code>kompresi.buatZip(sumber, zipFile)</code></td><td>Mengompres berkas atau direktori folder menjadi file arsip <code>.zip</code></td></tr>
+            <tr><td><code>kompresi.ekstrakZip(zipFile, targetDir)</code></td><td>Mengekstrak seluruh isi file arsip <code>.zip</code> ke folder tujuan</td></tr>
+          </tbody>
+        </table>
+        <pre><code>// Kompresi Teks Ringan
+var gz = kompresi.gzip("Teks panjang yang ingin dikompresi...")
+var asli = kompresi.ungzip(gz)
+
+// Arsip Berkas / Folder
+kompresi.buatZip("proyek", "arsip-proyek.zip")
+kompresi.ekstrakZip("arsip-proyek.zip", "ekstraksi/")</code></pre>
+      </section>
+
+      <!-- Modul Standar: Sistem -->
+      <section id="modul-sistem" class="docs-section">
+        <h2>Modul `sistem` (OS, Argumen, Lingkungan & Memori)</h2>
+        <p>Interaksi langsung dengan lingkungan sistem operasi dan proses mesin:</p>
+        <pre><code>// Modul Sistem & Lingkungan OS
+sistem.muatEnv(".env") // Muat berkas variabel lingkungan lokal
+var osName = sistem.os() // windows, linux, darwin
+var isWin = sistem.apakahWindows() // boolean helper
+var mode = sistem.bendera("mode", "standar") // Parser flag CLI: --mode=nilai
+sistem.aturLingkungan("APLIKASI_ENV", "produksi")
+var envVal = sistem.lingkungan("APLIKASI_ENV")
+var cwd = sistem.folderKerja() // current directory
+var args = sistem.argumen() // argumen baris perintah CLI
+var info = sistem.perintah("git", "--version") // eksekusi subprocess shell
+cetak.tulis("Output:", info["keluaran"])
+var mem = sistem.memori() // monitoring alokasi RAM (alokasiMB, dll)
+var cpu = sistem.jumlahCPU() // total logical CPU cores
+sistem.tidur(1000)          // Sleep dalam milidetik
+sistem.keluar(0)            // Exit program</code></pre>
+      </section>
+
+<section id="modul-waktu" class="docs-section">
         <h2>Modul `waktu` & Stopwatch</h2>
         <p>Modul untuk pengelolaan stempel waktu, tanggal, kalkulasi durasi, dan pengukuran benchmark waktu:</p>
         <table>
@@ -729,315 +1109,25 @@ var pewaktu = waktu.setiap(1000, fungsi() {
 // Hentikan setelah beberapa saat: pewaktu.hentikan()</code></pre>
       </section>
 
-      <!-- Modul Standar: Pola (Regex) -->
-      <section id="modul-pola" class="docs-section">
-        <h2>Modul `pola` (Ekspresi Reguler / Regex)</h2>
-        <p>Pencarian, pencocokan, dan manipulasi teks berbasis Regular Expression:</p>
+<section id="modul-catatan" class="docs-section">
+        <h2>Modul `catatan` (Logging Terstruktur)</h2>
+        <p>Pencatatan aktivitas sistem dengan stempel waktu dan level log otomatis:</p>
         <table>
           <thead>
             <tr><th>Fungsi</th><th>Deskripsi</th></tr>
           </thead>
           <tbody>
-            <tr><td><code>pola.cocok(regex, teks)</code></td><td>Mengembalikan boolean <code>benar</code> jika pola cocok</td></tr>
-            <tr><td><code>pola.temukanSemua(regex, teks)</code></td><td>Mengembalikan larik dari seluruh substring yang cocok</td></tr>
-            <tr><td><code>pola.ganti(regex, teks, pengganti)</code></td><td>Mengganti bagian teks yang cocok dengan teks baru</td></tr>
+            <tr><td><code>catatan.info(...pesan)</code></td><td>Mencetak log level INFO berformat <code>[INFO] YYYY-MM-DD HH:MM:SS: pesan...</code></td></tr>
+            <tr><td><code>catatan.peringatan(...pesan)</code></td><td>Mencetak log level PERINGATAN</td></tr>
+            <tr><td><code>catatan.galat(...pesan)</code></td><td>Mencetak log level GALAT</td></tr>
           </tbody>
         </table>
-        <pre><code>// Validasi Email
-var valid = pola.cocok("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", "admin@ku.id")
-
-// Masking data sensitif
-var sensor = pola.ganti("[0-9]", "Kode PIN: 8492", "*") // Kode PIN: ****</code></pre>
+        <pre><code>catatan.info("Server web aktif di port 8080")
+catatan.peringatan("Koneksi lambat terdeteksi!")
+catatan.galat("Gagal memproses transaksi ID #102")</code></pre>
       </section>
 
-      <!-- Modul Standar: Larik -->
-      <section id="modul-larik" class="docs-section">
-        <h2>Modul `larik` & Himpunan</h2>
-        <table>
-          <thead>
-            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
-          </thead>
-          <tbody>
-            <tr><td><code>larik.urut(arr)</code></td><td>Mengurutkan larik secara ascending (angka maupun string)</td></tr>
-            <tr><td><code>larik.balik(arr)</code></td><td>Membalik susunan elemen larik</td></tr>
-            <tr><td><code>larik.acak(arr)</code></td><td>Mengocok urutan larik secara acak (shuffle)</td></tr>
-            <tr><td><code>larik.unik(arr)</code></td><td>Menghilangkan duplikat elemen larik (deduplikasi)</td></tr>
-            <tr><td><code>larik.irisan(arr1, arr2)</code></td><td>Mencari perpotongan elemen yang ada di kedua larik (intersection)</td></tr>
-            <tr><td><code>larik.gabungan(arr1, arr2)</code></td><td>Menggabungkan dua larik menjadi himpunan unik (union)</td></tr>
-            <tr><td><code>larik.iris(arr, mulai, selesai)</code></td><td>Memotong larik pada rentang indeks tertentu (slice)</td></tr>
-            <tr><td><code>larik.mengandung(arr, nilai)</code></td><td>Memeriksa apakah elemen ada di dalam larik (boolean)</td></tr>
-            <tr><td><code>larik.indeks(arr, nilai)</code></td><td>Mencari indeks posisi kemunculan pertama elemen (-1 jika nihil)</td></tr>
-            <tr><td><code>larik.ambilAcak(arr, n)</code></td><td>Mengambil n sampel acak dari elemen larik (random sampling)</td></tr>
-            <tr><td><code>larik.pecah(arr, ukuran)</code></td><td>Memecah larik menjadi kelompok-kelompok kecil berukuran n (chunking)</td></tr>
-            <tr><td><code>larik.rentang(akhir)</code> / <code>rentang(awal, akhir, [langkah])</code></td><td>Membangkitkan deret rentang bilangan berurutan (misal: <code>rentang(0, 10, 2)</code>)</td></tr>
-            <tr><td><code>larik.gabungSemua(...larik)</code></td><td>Menggabungkan banyak larik menjadi satu</td></tr>
-            <tr><td><code>larik.rata(larik2D)</code></td><td>Meratakan struktur larik bertingkat / bersarang 2D menjadi 1D (flatten)</td></tr>
-            <tr><td><code>larik.saring(arr, fn)</code></td><td>Menyaring elemen larik berdasarkan fungsi predikat (filter)</td></tr>
-            <tr><td><code>larik.petakan(arr, fn)</code></td><td>Mentransformasi setiap elemen larik menjadi nilai baru (map)</td></tr>
-            <tr><td><code>larik.reduksi(arr, fn, awal)</code></td><td>Merangkum larik menjadi satu nilai tunggal (reduce)</td></tr>
-            <tr><td><code>larik.temukan(arr, fn)</code></td><td>Menemukan elemen pertama yang memenuhi syarat predikat</td></tr>
-          </tbody>
-        </table>
-        <pre><code>var angka = [1, 2, 2, 3, 4, 4, 5]
-var unik = larik.unik(angka) // [1, 2, 3, 4, 5]
-var irisan = larik.irisan(unik, [4, 5, 6]) // [4, 5]</code></pre>
-      </section>
-
-      <!-- Modul Standar: Peta -->
-      <section id="modul-peta" class="docs-section">
-        <h2>Modul `peta` (Kamus / Map)</h2>
-        <p>Utilitas untuk manipulasi data asosiatif pasangan kunci dan nilai:</p>
-        <table>
-          <thead>
-            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
-          </thead>
-          <tbody>
-            <tr><td><code>peta.kunci(map)</code></td><td>Mengembalikan larik dari seluruh kunci yang terdaftar</td></tr>
-            <tr><td><code>peta.nilai(map)</code></td><td>Mengembalikan larik dari seluruh nilai yang ada</td></tr>
-            <tr><td><code>peta.ada(map, kunci)</code></td><td>Memeriksa apakah sebuah kunci ada dalam peta (boolean)</td></tr>
-            <tr><td><code>peta.salin(map)</code></td><td>Menduplikasi / membuat salinan mandiri dari peta (clone)</td></tr>
-            <tr><td><code>peta.ambil(map, kunci, [bawaan])</code></td><td>Mengambil nilai kunci dengan opsi nilai bawaan (fallback) jika kunci nihil</td></tr>
-            <tr><td><code>peta.gabung(...peta)</code></td><td>Menggabungkan beberapa objek kamus/peta menjadi satu</td></tr>
-          </tbody>
-        </table>
-        <pre><code>var data = {"nama": "Ku", "status": "aktif"}
-var kunci = peta.kunci(data) // ["nama", "status"]
-jika peta.ada(data, "nama") {
-    cetak.tulis("Kunci nama terdaftar!")
-}</code></pre>
-      </section>
-
-      <!-- Modul Standar: Kompresi -->
-      <section id="modul-kompresi" class="docs-section">
-        <h2>Modul `kompresi` (Gzip & ZIP Archive)</h2>
-        <table>
-          <thead>
-            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
-          </thead>
-          <tbody>
-            <tr><td><code>kompresi.gzip(teks)</code></td><td>Mengompresi data teks menjadi format Base64 Gzip</td></tr>
-            <tr><td><code>kompresi.ungzip(teksGz)</code></td><td>Mendekompresi data Base64 Gzip kembali ke teks asli</td></tr>
-            <tr><td><code>kompresi.buatZip(sumber, zipFile)</code></td><td>Mengompres berkas atau direktori folder menjadi file arsip <code>.zip</code></td></tr>
-            <tr><td><code>kompresi.ekstrakZip(zipFile, targetDir)</code></td><td>Mengekstrak seluruh isi file arsip <code>.zip</code> ke folder tujuan</td></tr>
-          </tbody>
-        </table>
-        <pre><code>// Kompresi Teks Ringan
-var gz = kompresi.gzip("Teks panjang yang ingin dikompresi...")
-var asli = kompresi.ungzip(gz)
-
-// Arsip Berkas / Folder
-kompresi.buatZip("proyek", "arsip-proyek.zip")
-kompresi.ekstrakZip("arsip-proyek.zip", "ekstraksi/")</code></pre>
-      </section>
-
-      <!-- Modul Standar: Jalur -->
-      <section id="modul-jalur" class="docs-section">
-        <h2>Modul `jalur` (Manipulasi Path Berkas ala filepath)</h2>
-        <p>Pengelolaan path dan lokasi berkas independen lintas sistem operasi:</p>
-        <table>
-          <thead>
-            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
-          </thead>
-          <tbody>
-            <tr><td><code>jalur.gabung(...bagian)</code></td><td>Menggabungkan bagian-bagian direktori/path dengan separator OS yang tepat</td></tr>
-            <tr><td><code>jalur.nama(path)</code></td><td>Mengambil nama berkas saja dari sebuah path (Base)</td></tr>
-            <tr><td><code>jalur.induk(path)</code></td><td>Mengambil folder direktori induk (Dir)</td></tr>
-            <tr><td><code>jalur.ekstensi(path)</code></td><td>Mengambil ekstensi berkas (Ext, misal: <code>.ku</code>)</td></tr>
-          </tbody>
-        </table>
-        <pre><code>var lokasi = jalur.gabung("folder", "sub", "utama.ku")
-cetak.tulis("Nama berkas:", jalur.nama(lokasi)) // utama.ku
-cetak.tulis("Folder induk:", jalur.induk(lokasi)) // folder/sub
-cetak.tulis("Ekstensi:", jalur.ekstensi(lokasi)) // .ku</code></pre>
-      </section>
-
-      <!-- Modul Standar: Enkoding -->
-      <section id="modul-enkoding" class="docs-section">
-        <h2>Modul `enkoding` (CSV, URL Query & Heksadesimal)</h2>
-        <table>
-          <thead>
-            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
-          </thead>
-          <tbody>
-            <tr><td><code>enkoding.uraiCSV(teks)</code></td><td>Mem-parse string CSV menjadi larik 2-dimensi</td></tr>
-            <tr><td><code>enkoding.kodekanCSV(larik2D)</code></td><td>Mengonversi larik 2-dimensi menjadi teks string CSV</td></tr>
-            <tr><td><code>enkoding.kodekanURL(teks)</code></td><td>Meng-encode teks menjadi format URL Query Escape</td></tr>
-            <tr><td><code>enkoding.dekodekanURL(teks)</code></td><td>Men-decode format URL kembali ke teks asli</td></tr>
-            <tr><td><code>enkoding.kodekanHeksa(teks)</code></td><td>Mengonversi teks string ke string heksadesimal biner</td></tr>
-            <tr><td><code>enkoding.dekodekanHeksa(heksaStr)</code></td><td>Mendekode string heksadesimal biner ke teks asli</td></tr>
-            <tr><td><code>enkoding.bangunQuery(peta)</code></td><td>Mengubah objek kamus parameter menjadi URL Query String otomatis ter-escape</td></tr>
-          </tbody>
-        </table>
-        <pre><code>var csvData = "nama,skor\nBudi,95"
-var tabel = enkoding.uraiCSV(csvData)
-var hex = enkoding.kodekanHeksa("Ku") // 4b75</code></pre>
-      </section>
-
-      <!-- Modul Standar: Bita (Byte Array) -->
-      <section id="modul-bita" class="docs-section">
-        <h2>Modul `bita` (Buffer Byte Array)</h2>
-        <table>
-          <thead>
-            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
-          </thead>
-          <tbody>
-            <tr><td><code>bita.dariTeks(str)</code></td><td>Mengubah string menjadi larik angka byte (0..255)</td></tr>
-            <tr><td><code>bita.keTeks(arr)</code></td><td>Mengubah larik angka byte kembali ke string teks</td></tr>
-            <tr><td><code>bita.panjang(str)</code></td><td>Menghitung total panjang byte data</td></tr>
-          </tbody>
-        </table>
-        <pre><code>var bs = bita.dariTeks("Ku") // [75, 117]
-var teks = bita.keTeks(bs)   // "Ku"</code></pre>
-      </section>
-
-      <!-- Modul Standar: Acak -->
-      <section id="modul-acak" class="docs-section">
-        <h2>Modul `acak` (Pengacakan & Pemilihan)</h2>
-        <table>
-          <thead>
-            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
-          </thead>
-          <tbody>
-            <tr><td><code>acak.pilih(arr)</code></td><td>Mengambil satu elemen acak dari larik</td></tr>
-            <tr><td><code>acak.teks(n)</code></td><td>Menghasilkan string alfanumerik acak dengan panjang n digit</td></tr>
-            <tr><td><code>acak.pecahan()</code></td><td>Menghasilkan bilangan acak float antara 0.0 hingga 1.0</td></tr>
-          </tbody>
-        </table>
-        <pre><code>var opsi = ["A", "B", "C"]
-var pilih = acak.pilih(opsi)
-var token = acak.teks(16) // Token unik acak</code></pre>
-      </section>
-
-      <!-- Modul Standar: Teks -->
-      <section id="modul-teks" class="docs-section">
-        <h2>Modul `teks`</h2>
-        <table>
-          <thead>
-            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
-          </thead>
-          <tbody>
-            <tr><td><code>teks.kapital(str)</code></td><td>Mengubah teks menjadi HURUF BESAR</td></tr>
-            <tr><td><code>teks.kecil(str)</code></td><td>Mengubah teks menjadi huruf kecil</td></tr>
-            <tr><td><code>teks.pangkas(str)</code></td><td>Menghapus spasi di awal dan akhir string</td></tr>
-            <tr><td><code>teks.pisah(str, pemisah)</code></td><td>Memecah teks menjadi larik substring</td></tr>
-            <tr><td><code>teks.gabung(arr, pemisah)</code></td><td>Menggabungkan larik teks dengan pemisah</td></tr>
-            <tr><td><code>teks.mengandung(str, sub)</code></td><td>Memeriksa apakah substring ada dalam teks</td></tr>
-            <tr><td><code>teks.awalan(str, prefix)</code></td><td>Memeriksa apakah teks diawali substring tertentu</td></tr>
-            <tr><td><code>teks.akhiran(str, suffix)</code></td><td>Memeriksa apakah teks diakhiri substring tertentu</td></tr>
-            <tr><td><code>teks.indeks(str, sub)</code></td><td>Mengembalikan posisi indeks kemunculan pertama substring</td></tr>
-            <tr><td><code>teks.indeksTerakhir(str, sub)</code></td><td>Mencari posisi indeks kemunculan terakhir substring (dari kanan)</td></tr>
-            <tr><td><code>teks.pangkasKiri(str, [cutset])</code></td><td>Menghapus karakter di awal string yang ditentukan</td></tr>
-            <tr><td><code>teks.pangkasKanan(str, [cutset])</code></td><td>Menghapus karakter di akhir string yang ditentukan</td></tr>
-            <tr><td><code>teks.padKiri(str, panjang, pad)</code></td><td>Menambahkan karakter padding di sebelah kiri string (contoh: <code>00042</code>)</td></tr>
-            <tr><td><code>teks.padKanan(str, panjang, pad)</code></td><td>Menambahkan karakter padding di sebelah kanan string</td></tr>
-            <tr><td><code>teks.karakter(str, indeks)</code></td><td>Mengambil satu karakter pada indeks tertentu sebagai string</td></tr>
-            <tr><td><code>teks.apakahKosong(s)</code></td><td>Memeriksa apakah string kosong atau hanya berisi spasi (boolean)</td></tr>
-            <tr><td><code>teks.apakahHuruf(s)</code></td><td>Memeriksa apakah seluruh karakter berupa huruf alfabet (boolean)</td></tr>
-            <tr><td><code>teks.apakahAngka(s)</code></td><td>Memeriksa apakah seluruh karakter berupa angka numerik (boolean)</td></tr>
-            <tr><td><code>teks.ulang(str, n)</code></td><td>Mengulang teks sebanyak n kali</td></tr>
-            <tr><td><code>teks.format(str, ...args)</code></td><td>Format string dengan placeholder indeks {0}, {1}</td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <!-- Modul Standar: Konversi -->
-      <section id="modul-konversi" class="docs-section">
-        <h2>Modul `konversi`</h2>
-        <table>
-          <thead>
-            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
-          </thead>
-          <tbody>
-            <tr><td><code>konversi.keAngka(val)</code></td><td>Mengonversi nilai menjadi integer (angka bulat)</td></tr>
-            <tr><td><code>konversi.kePecahan(val)</code></td><td>Mengonversi nilai menjadi float (bilangan pecahan)</td></tr>
-            <tr><td><code>konversi.keTeks(val)</code></td><td>Mengonversi nilai menjadi string representasi teks</td></tr>
-            <tr><td><code>konversi.tipe(val)</code></td><td>Mengembalikan nama tipe data (angka, pecahan, teks, boolean, daftar, peta, dll)</td></tr>
-            <tr><td><code>konversi.rupiah(angka)</code></td><td>Format angka bilangan bulat menjadi format mata uang Rupiah (misal: <code>Rp 2.500.000</code>)</td></tr>
-            <tr><td><code>konversi.desimal(angka, presisi)</code></td><td>Format pecahan dengan jumlah digit desimal yang ditentukan (misal: <code>3.142</code>)</td></tr>
-            <tr><td><code>konversi.apakahAngka(val)</code></td><td>Memeriksa apakah bertipe integer atau float (boolean)</td></tr>
-            <tr><td><code>konversi.apakahTeks(val)</code></td><td>Memeriksa apakah bertipe string teks (boolean)</td></tr>
-            <tr><td><code>konversi.apakahLarik(val)</code></td><td>Memeriksa apakah bertipe larik array (boolean)</td></tr>
-            <tr><td><code>konversi.apakahPeta(val)</code></td><td>Memeriksa apakah bertipe peta map (boolean)</td></tr>
-            <tr><td><code>konversi.apakahKosong(val)</code></td><td>Memeriksa apakah bernilai kosong / nihil (boolean)</td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <!-- Modul Standar: JSON -->
-      <section id="modul-json" class="docs-section">
-        <h2>Modul `json` (Format Objek & Serialisasi)</h2>
-        <table>
-          <thead>
-            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
-          </thead>
-          <tbody>
-            <tr><td><code>json.urai(teksJSON)</code></td><td>Membaca string JSON menjadi objek Peta (`{}`) atau Larik (`[]`)</td></tr>
-            <tr><td><code>json.kodekan(data)</code></td><td>Mengonversi objek/larik Bahasa Ku menjadi string JSON kompak</td></tr>
-            <tr><td><code>json.format(data, [indent])</code></td><td>Mengonversi objek/larik menjadi string JSON dengan lekukan rapi (*pretty-print*)</td></tr>
-            <tr><td><code>json.valid(teks)</code></td><td>Memeriksa apakah string merupakan format JSON yang valid (boolean)</td></tr>
-          </tbody>
-        </table>
-        <pre><code>// Serialisasi
-var payload = {"status": "sukses", "kode": 200, "daftar": ["A", "B"]}
-var teksJSON = json.format(payload, 2)
-
-// Deserialisasi & Validasi
-jika json.valid(teksJSON) {
-    var data = json.urai(teksJSON)
-    cetak.tulis("Status:", data["status"])
-}</code></pre>
-      </section>
-
-      <!-- Modul Standar: Validasi -->
-      <section id="modul-validasi" class="docs-section">
-        <h2>Modul `validasi` (Pemeriksaan Format Data)</h2>
-        <table>
-          <thead>
-            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
-          </thead>
-          <tbody>
-            <tr><td><code>validasi.apakahEmail(teks)</code></td><td>Memeriksa format alamat email valid (boolean)</td></tr>
-            <tr><td><code>validasi.apakahURL(teks)</code></td><td>Memeriksa format URL web dengan skema protokol yang sah (boolean)</td></tr>
-            <tr><td><code>validasi.apakahIP(teks)</code></td><td>Memeriksa format alamat IPv4 atau IPv6 yang sah (boolean)</td></tr>
-            <tr><td><code>validasi.apakahAlfabet(teks)</code></td><td>Memeriksa apakah seluruh karakter hanya berisi huruf (boolean)</td></tr>
-            <tr><td><code>validasi.apakahNumerik(teks)</code></td><td>Memeriksa apakah seluruh karakter hanya berisi digit angka (boolean)</td></tr>
-            <tr><td><code>validasi.apakahAlfanumerik(teks)</code></td><td>Memeriksa apakah string hanya terdiri dari kombinasi huruf dan angka (boolean)</td></tr>
-          </tbody>
-        </table>
-        <pre><code>jika validasi.apakahEmail("pengguna@domain.id") {
-    cetak.tulis("Email pengguna valid!")
-}
-jika validasi.apakahIP("192.168.1.1") {
-    cetak.tulis("Alamat IP lokal valid.")
-}</code></pre>
-      </section>
-
-      <!-- Modul Standar: Angka (Bitwise & Basis) -->
-      <section id="modul-angka" class="docs-section">
-        <h2>Modul `angka` (Bitwise & Representasi Basis)</h2>
-        <table>
-          <thead>
-            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
-          </thead>
-          <tbody>
-            <tr><td><code>angka.biner(n)</code></td><td>Mengonversi angka integer ke string biner (contoh: <code>10 -> "1010"</code>)</td></tr>
-            <tr><td><code>angka.heksa(n)</code></td><td>Mengonversi angka integer ke string heksadesimal (contoh: <code>255 -> "ff"</code>)</td></tr>
-            <tr><td><code>angka.oktal(n)</code></td><td>Mengonversi angka integer ke string oktal</td></tr>
-            <tr><td><code>angka.geserKiri(n, bit)</code></td><td>Operasi pergeseran bitwise ke kiri (<code>n &lt;&lt; bit</code>)</td></tr>
-            <tr><td><code>angka.geserKanan(n, bit)</code></td><td>Operasi pergeseran bitwise ke kanan (<code>n &gt;&gt; bit</code>)</td></tr>
-            <tr><td><code>angka.dan(a, b)</code></td><td>Operasi logika bitwise AND (<code>a &amp; b</code>)</td></tr>
-            <tr><td><code>angka.atau(a, b)</code></td><td>Operasi logika bitwise OR (<code>a | b</code>)</td></tr>
-            <tr><td><code>angka.xor(a, b)</code></td><td>Operasi logika bitwise XOR (<code>a ^ b</code>)</td></tr>
-            <tr><td><code>angka.tidak(n)</code></td><td>Operasi logika bitwise NOT (<code>^n</code>)</td></tr>
-          </tbody>
-        </table>
-        <pre><code>var bin = angka.biner(42) // "101010"
-var hex = angka.heksa(255) // "ff"
-var geser = angka.geserKiri(1, 8) // 256</code></pre>
-      </section>
-
-      <!-- Modul Standar: Terminal -->
-      <section id="modul-terminal" class="docs-section">
+<section id="modul-terminal" class="docs-section">
         <h2>Modul `terminal` (Warna ANSI & Kontrol CLI)</h2>
         <table>
           <thead>
@@ -1062,73 +1152,12 @@ cetak.tulis(terminal.merah("✖ Terjadi Kesalahan Kritis!"))
 cetak.tulis(terminal.tebal(terminal.kuning("Peringatan: Kapasitas RAM menipis")))</code></pre>
       </section>
 
-      <!-- Modul Standar: Struktur Data -->
-      <section id="modul-struktur-data" class="docs-section">
-        <h2>Modul `strukturData` (Tumpukan / Stack & Antrean / Queue)</h2>
-        <h3>1. Tumpukan (Stack - LIFO)</h3>
-        <p>Method: <code>dorong(item)</code>, <code>tarik()</code>, <code>intip()</code>, <code>panjang()</code>, <code>apakahKosong()</code>, <code>semua()</code>.</p>
-        <pre><code>var stack = strukturData.tumpukan()
-stack.dorong("halaman_1")
-stack.dorong("halaman_2")
-var aktif = stack.tarik() // "halaman_2"</code></pre>
-
-        <h3>2. Antrean (Queue - FIFO)</h3>
-        <p>Method: <code>masuk(item)</code>, <code>keluar()</code>, <code>depan()</code>, <code>panjang()</code>, <code>apakahKosong()</code>, <code>semua()</code>.</p>
-        <pre><code>var antre = strukturData.antrean()
-antre.masuk("tugas_A")
-antre.masuk("tugas_B")
-var tugasPertama = antre.keluar() // "tugas_A"</code></pre>
-      </section>
-
-      <!-- Modul Standar: Soket Jaringan -->
-      <section id="modul-soket" class="docs-section">
-        <h2>Modul `soket` (Koneksi TCP Networking)</h2>
-        <p>Mendukung koneksi jaringan soket murni tingkat rendah (TCP Client & Server):</p>
-        <pre><code>// 1. TCP Server Sederhana
-var server = soket.dengar("tcp", ":9000")
-ku fungsi() {
-    var klien = server.terima()
-    klien.tulis("Halo dari Server Bahasa Ku!\n")
-    klien.tutup()
-}()
-
-// 2. TCP Client
-var klien = soket.hubungkan("tcp", "127.0.0.1:9000")
-jika klien != kosong {
-    var balasan = klien.baca()
-    cetak.tulis("Balasan server:", balasan)
-    klien.tutup()
-}</code></pre>
-      </section>
-
-      <!-- Modul Standar: Matematika -->
-      <section id="modul-matematika" class="docs-section">
-        <h2>Modul `matematika`</h2>
-        <table>
-          <thead>
-            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
-          </thead>
-          <tbody>
-            <tr><td><code>matematika.sin(x)</code>, <code>cos(x)</code>, <code>tan(x)</code></td><td>Fungsi trigonometri sudut radian</td></tr>
-            <tr><td><code>matematika.rataRata(arr)</code></td><td>Menghitung rata-rata nilai larik angka</td></tr>
-            <tr><td><code>matematika.akar(x)</code></td><td>Menghitung akar kuadrat</td></tr>
-            <tr><td><code>matematika.pangkat(x, y)</code></td><td>Menghitung pemangkatan angka x^y</td></tr>
-            <tr><td><code>matematika.bulat(x)</code></td><td>Membulatkan angka ke integer terdekat</td></tr>
-            <tr><td><code>matematika.lantai(x)</code></td><td>Pembulatan ke bawah (floor)</td></tr>
-            <tr><td><code>matematika.langit(x)</code></td><td>Pembulatan ke atas (ceil)</td></tr>
-            <tr><td><code>matematika.mutlak(x)</code></td><td>Menghitung nilai absolut |x|</td></tr>
-            <tr><td><code>matematika.log(x)</code></td><td>Logaritma natural Ln(x)</td></tr>
-            <tr><td><code>matematika.log10(x)</code></td><td>Logaritma basis 10</td></tr>
-            <tr><td><code>matematika.hipot(x, y)</code></td><td>Panjang hipotenusa garis miring Pythagoras</td></tr>
-            <tr><td><code>matematika.jepit(v, min, max)</code></td><td>Membatasi nilai agar selalu di antara batas bawah dan batas atas (clamp)</td></tr>
-            <tr><td><code>matematika.tanda(x)</code></td><td>Mengembalikan tanda bilangan (-1 jika negatif, 1 jika positif, 0 jika nol)</td></tr>
-            <tr><td><code>matematika.acak(min, max)</code></td><td>Menghasilkan bilangan acak rentang min..max</td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <!-- Modul Standar: Kriptografi -->
-      <section id="modul-kripto" class="docs-section">
+      <!-- SUB-KATEGORI D: JARINGAN & KEAMANAN -->
+      <div class="category-divider" style="background: linear-gradient(90deg, rgba(239, 68, 68, 0.12) 0%, rgba(0, 240, 255, 0.03) 100%); border-left-color: #ef4444;">
+        <h2>Sub-Kategori D: Jaringan, Keamanan & Ekosistem</h2>
+        <p>Kriptografi (SHA, HMAC, JWT), buffer biner, HTTP Client/Server, soket TCP, database MySQL, GUI desktop & pengujian.</p>
+      </div>
+<section id="modul-kripto" class="docs-section">
         <h2>Modul `kripto`</h2>
         <table>
           <thead>
@@ -1157,62 +1186,74 @@ jika dataPengguna != kosong {
 }</code></pre>
       </section>
 
-      <!-- Modul Standar: Berkas & Sistem -->
-      <section id="modul-berkas-sistem" class="docs-section">
-        <h2>Modul `berkas` & `sistem`</h2>
-        <pre><code>// Modul Berkas (File I/O)
-berkas.tulis("catatan.txt", "Isi pesan penting\n")
-berkas.tambah("catatan.txt", "Baris tambahan\n")
-var isi = berkas.baca("catatan.txt")
-var barisSemua = berkas.bacaBaris("catatan.txt") // Larik baris teks tanpa \n
-var ada = berkas.ada("catatan.txt")
-berkas.salin("catatan.txt", "salinan.txt")
-berkas.pindah("salinan.txt", "arsip.txt")
-berkas.buatFolder("data/arsip")
-var daftarBerkas = berkas.daftar(".")
-var apakahDir = berkas.apakahFolder("data/arsip") // true
-var apakahFile = berkas.apakahBerkas("arsip.txt")  // true
-var izinBerkas = berkas.izin("arsip.txt")         // -rw-r--r--
-berkas.salinFolder("data/arsip", "backup/arsip")  // rekursif salin direktori
-
-// Modul Sistem & Lingkungan OS
-sistem.muatEnv(".env") // Muat berkas variabel lingkungan lokal
-var osName = sistem.os() // windows, linux, darwin
-var isWin = sistem.apakahWindows() // boolean helper
-var mode = sistem.bendera("mode", "standar") // Parser flag CLI: --mode=nilai
-sistem.aturLingkungan("APLIKASI_ENV", "produksi")
-var envVal = sistem.lingkungan("APLIKASI_ENV")
-var cwd = sistem.folderKerja() // current directory
-var args = sistem.argumen() // argumen baris perintah CLI
-var info = sistem.perintah("git", "--version") // eksekusi subprocess shell
-cetak.tulis("Output:", info["keluaran"])
-var mem = sistem.memori() // monitoring alokasi RAM (alokasiMB, dll)
-var cpu = sistem.jumlahCPU() // total logical CPU cores
-sistem.tidur(1000)          // Sleep dalam milidetik
-sistem.keluar(0)            // Exit program</code></pre>
+<section id="modul-bita" class="docs-section">
+        <h2>Modul `bita` (Buffer Byte Array)</h2>
+        <table>
+          <thead>
+            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>bita.dariTeks(str)</code></td><td>Mengubah string menjadi larik angka byte (0..255)</td></tr>
+            <tr><td><code>bita.keTeks(arr)</code></td><td>Mengubah larik angka byte kembali ke string teks</td></tr>
+            <tr><td><code>bita.panjang(str)</code></td><td>Menghitung total panjang byte data</td></tr>
+          </tbody>
+        </table>
+        <pre><code>var bs = bita.dariTeks("Ku") // [75, 117]
+var teks = bita.keTeks(bs)   // "Ku"</code></pre>
       </section>
 
-      <!-- Modul Standar: Web & Desktop -->
-      <section id="modul-web-desktop" class="docs-section">
-        <h2>Modul `web` & `jendela`</h2>
-        <h3>1. HTTP Server API</h3>
+<section id="modul-enkoding" class="docs-section">
+        <h2>Modul `enkoding` (CSV, URL Query & Heksadesimal)</h2>
+        <table>
+          <thead>
+            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>enkoding.uraiCSV(teks)</code></td><td>Mem-parse string CSV menjadi larik 2-dimensi</td></tr>
+            <tr><td><code>enkoding.kodekanCSV(larik2D)</code></td><td>Mengonversi larik 2-dimensi menjadi teks string CSV</td></tr>
+            <tr><td><code>enkoding.kodekanURL(teks)</code></td><td>Meng-encode teks menjadi format URL Query Escape</td></tr>
+            <tr><td><code>enkoding.dekodekanURL(teks)</code></td><td>Men-decode format URL kembali ke teks asli</td></tr>
+            <tr><td><code>enkoding.kodekanHeksa(teks)</code></td><td>Mengonversi teks string ke string heksadesimal biner</td></tr>
+            <tr><td><code>enkoding.dekodekanHeksa(heksaStr)</code></td><td>Mendekode string heksadesimal biner ke teks asli</td></tr>
+            <tr><td><code>enkoding.bangunQuery(peta)</code></td><td>Mengubah objek kamus parameter menjadi URL Query String otomatis ter-escape</td></tr>
+          </tbody>
+        </table>
+        <pre><code>var csvData = "nama,skor\nBudi,95"
+var tabel = enkoding.uraiCSV(csvData)
+var hex = enkoding.kodekanHeksa("Ku") // 4b75</code></pre>
+      </section>
+
+      <!-- Modul Standar: Web -->
+      <section id="modul-web" class="docs-section">
+        <h2>Modul `web` (HTTP Web Server REST API)</h2>
+        <p>Membangun server web mikro dan perutean endpoint JSON dengan cepat:</p>
         <pre><code>web.rute("/", fungsi(permintaan, respons) {
     respons.json({"pesan": "Selamat datang di API Bahasa Ku!"})
 })
 web.jalankan(8080)</code></pre>
+      </section>
 
-        <h3>2. Aplikasi Desktop GUI Native</h3>
-        <pre><code>// Menampilkan kotak pesan dialog native OS
-jendela.pesan("Halo", "Aplikasi Desktop Bahasa Ku Native!")
+<section id="modul-soket" class="docs-section">
+        <h2>Modul `soket` (Koneksi TCP Networking)</h2>
+        <p>Mendukung koneksi jaringan soket murni tingkat rendah (TCP Client & Server):</p>
+        <pre><code>// 1. TCP Server Sederhana
+var server = soket.dengar("tcp", ":9000")
+ku fungsi() {
+    var klien = server.terima()
+    klien.tulis("Halo dari Server Bahasa Ku!\n")
+    klien.tutup()
+}()
 
-// Menampilkan kotak tanya konfirmasi
-jika jendela.konfirmasi("Konfirmasi", "Apakah Anda yakin ingin lanjut?") {
-    cetak.tulis("Pengguna menyetujui.")
+// 2. TCP Client
+var klien = soket.hubungkan("tcp", "127.0.0.1:9000")
+jika klien != kosong {
+    var balasan = klien.baca()
+    cetak.tulis("Balasan server:", balasan)
+    klien.tutup()
 }</code></pre>
       </section>
 
-      <!-- Modul Standar: Basis Data -->
-      <section id="modul-basisdata" class="docs-section">
+<section id="modul-basisdata" class="docs-section">
         <h2>Modul `basisdata` (MySQL)</h2>
         <pre><code>// Sambungkan ke server MySQL
 basisdata.buka("mysql", "root:kata_sandi@tcp(127.0.0.1:3306)/db_ku")
@@ -1225,8 +1266,20 @@ var hasil = basisdata.kueri("SELECT id, nama, email FROM pengguna")
 cetak.tulis("Data pengguna:", hasil)</code></pre>
       </section>
 
-      <!-- Modul Standar: Uji (Testing) -->
-      <section id="modul-uji" class="docs-section">
+      <!-- Modul Standar: Jendela -->
+      <section id="modul-jendela" class="docs-section">
+        <h2>Modul `jendela` (Aplikasi Desktop GUI Native)</h2>
+        <p>Menampilkan kotak dialog GUI asli sistem operasi tanpa pustaka pihak ketiga:</p>
+        <pre><code>// Menampilkan kotak pesan dialog native OS
+jendela.pesan("Halo", "Aplikasi Desktop Bahasa Ku Native!")
+
+// Menampilkan kotak tanya konfirmasi
+jika jendela.konfirmasi("Konfirmasi", "Apakah Anda yakin ingin lanjut?") {
+    cetak.tulis("Pengguna menyetujui.")
+}</code></pre>
+      </section>
+
+<section id="modul-uji" class="docs-section">
         <h2>Modul `uji` (Unit Test Internal)</h2>
         <p>Jalankan tes unit melalui perintah CLI <code>ku uji berkas_uji.ku</code>:</p>
         <pre><code>uji.sama(hitungFaktorial(3), 6)
