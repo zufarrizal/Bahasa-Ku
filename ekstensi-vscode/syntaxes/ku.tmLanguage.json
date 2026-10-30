@@ -35,7 +35,7 @@
         },
         {
           "name": "support.class.ku",
-          "match": "\\b(cetak|web|jendela|basisdata|berkas|sistem|jaringan|kripto|matematika|teks|konversi|masukan|panjang|tambah|hapus|panik|pulih|uji|kanal|json|larik)\\b"
+          "match": "\\b(cetak|web|jendela|basisdata|berkas|sistem|jaringan|kripto|matematika|teks|konversi|masukan|panjang|tambah|hapus|panik|pulih|uji|kanal|json|larik|waktu|pola|kelompokTunggu)\\b"
         }
       ]
     },

@@ -495,6 +495,39 @@ fungsi utama() {
 }
 ```
 
+### 13. Waktu, Ekspresi Reguler (Regex), Pengurutan Larik & Trigonometri (`contoh/dasar_waktu_pola.ku`)
+```ku
+paket utama
+
+pakai "cetak"
+
+fungsi utama() {
+    // 1. Modul Waktu & Durasi
+    var sekarang = waktu.sekarang()
+    cetak.tulis("Waktu saat ini:", sekarang["teks"])
+    cetak.tulis("Unix timestamp:", waktu.detikUnix())
+    cetak.tulis("Waktu 1 jam ke depan:", waktu.tambahDetik(sekarang["detikUnix"], 3600))
+
+    // 2. Modul Pola (Ekspresi Reguler / Regex)
+    var email = "pengguna@bahasaku.id"
+    jika pola.cocok("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", email) {
+        cetak.tulis("Surel valid!")
+    }
+    var daftarID = pola.temukanSemua("ID-[0-9]+", "ID-100, ID-250, ID-999")
+    var sensor = pola.ganti("[0-9]", "Pin: 1234", "*") // Pin: ****
+
+    // 3. Pengurutan & Manipulasi Koleksi
+    var angka = [45, 12, 89, 3, 27]
+    var terurut = larik.urut(angka)   // [3, 12, 27, 45, 89]
+    var terbalik = larik.balik(terurut) // [89, 45, 27, 12, 3]
+
+    // 4. Statistik & Trigonometri
+    cetak.tulis("Rata-rata:", matematika.rataRata(angka)) // 35.2
+    cetak.tulis("Sin(0):", matematika.sin(0))
+    cetak.tulis("Cos(0):", matematika.cos(0))
+}
+```
+
 ---
 
 ## 📂 Struktur Proyek

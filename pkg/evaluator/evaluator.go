@@ -17,7 +17,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -943,6 +945,68 @@ func InitGlobalEnvironment() *Environment {
 			return args[0]
 		},
 	}
+	matematikaMap.Pairs["sin"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &Float{Value: 0}
+			}
+			var val float64
+			if i, ok := args[0].(*Integer); ok {
+				val = float64(i.Value)
+			} else if f, ok := args[0].(*Float); ok {
+				val = f.Value
+			}
+			return &Float{Value: math.Sin(val)}
+		},
+	}
+	matematikaMap.Pairs["cos"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &Float{Value: 0}
+			}
+			var val float64
+			if i, ok := args[0].(*Integer); ok {
+				val = float64(i.Value)
+			} else if f, ok := args[0].(*Float); ok {
+				val = f.Value
+			}
+			return &Float{Value: math.Cos(val)}
+		},
+	}
+	matematikaMap.Pairs["tan"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &Float{Value: 0}
+			}
+			var val float64
+			if i, ok := args[0].(*Integer); ok {
+				val = float64(i.Value)
+			} else if f, ok := args[0].(*Float); ok {
+				val = f.Value
+			}
+			return &Float{Value: math.Tan(val)}
+		},
+	}
+	matematikaMap.Pairs["rataRata"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &Float{Value: 0}
+			}
+			arr, isArr := args[0].(*Array)
+			if !isArr || len(arr.Elements) == 0 {
+				return &Float{Value: 0}
+			}
+			total := float64(0)
+			for _, e := range arr.Elements {
+				if i, ok := e.(*Integer); ok {
+					total += float64(i.Value)
+				} else if f, ok := e.(*Float); ok {
+					total += f.Value
+				}
+			}
+			return &Float{Value: total / float64(len(arr.Elements))}
+		},
+	}
 	env.Set("matematika", matematikaMap)
 
 	// Modul teks (Manipulasi String)
@@ -1439,6 +1503,64 @@ func InitGlobalEnvironment() *Environment {
 			return NIL
 		},
 	}
+	larikMap.Pairs["urut"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &Array{Elements: []Object{}}
+			}
+			arr, isArr := args[0].(*Array)
+			if !isArr {
+				return args[0]
+			}
+			res := append([]Object{}, arr.Elements...)
+			sort.Slice(res, func(i, j int) bool {
+				if i1, ok1 := res[i].(*Integer); ok1 {
+					if i2, ok2 := res[j].(*Integer); ok2 {
+						return i1.Value < i2.Value
+					}
+				}
+				if f1, ok1 := res[i].(*Float); ok1 {
+					if f2, ok2 := res[j].(*Float); ok2 {
+						return f1.Value < f2.Value
+					}
+				}
+				return res[i].Inspect() < res[j].Inspect()
+			})
+			return &Array{Elements: res}
+		},
+	}
+	larikMap.Pairs["balik"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &Array{Elements: []Object{}}
+			}
+			arr, isArr := args[0].(*Array)
+			if !isArr {
+				return args[0]
+			}
+			res := make([]Object, len(arr.Elements))
+			for i, e := range arr.Elements {
+				res[len(arr.Elements)-1-i] = e
+			}
+			return &Array{Elements: res}
+		},
+	}
+	larikMap.Pairs["acak"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &Array{Elements: []Object{}}
+			}
+			arr, isArr := args[0].(*Array)
+			if !isArr {
+				return args[0]
+			}
+			res := append([]Object{}, arr.Elements...)
+			mrand.Shuffle(len(res), func(i, j int) {
+				res[i], res[j] = res[j], res[i]
+			})
+			return &Array{Elements: res}
+		},
+	}
 	env.Set("larik", larikMap)
 
 	// Modul uji (Unit Testing Internal)
@@ -1478,6 +1600,133 @@ func InitGlobalEnvironment() *Environment {
 		},
 	}
 	env.Set("uji", ujiMap)
+
+	// Modul waktu (Pengelolaan Tanggal dan Durasi Waktu)
+	waktuMap := &Map{Pairs: make(map[string]Object)}
+	waktuMap.Pairs["sekarang"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			now := time.Now()
+			res := &Map{Pairs: make(map[string]Object)}
+			res.Pairs["tahun"] = &Integer{Value: int64(now.Year())}
+			res.Pairs["bulan"] = &Integer{Value: int64(now.Month())}
+			res.Pairs["hari"] = &Integer{Value: int64(now.Day())}
+			res.Pairs["jam"] = &Integer{Value: int64(now.Hour())}
+			res.Pairs["menit"] = &Integer{Value: int64(now.Minute())}
+			res.Pairs["detik"] = &Integer{Value: int64(now.Second())}
+			res.Pairs["teks"] = &String{Value: now.Format("2006-01-02 15:04:05")}
+			res.Pairs["detikUnix"] = &Integer{Value: now.Unix()}
+			return res
+		},
+	}
+	waktuMap.Pairs["detikUnix"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			return &Integer{Value: time.Now().Unix()}
+		},
+	}
+	waktuMap.Pairs["miliDetikUnix"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			return &Integer{Value: time.Now().UnixMilli()}
+		},
+	}
+	waktuMap.Pairs["format"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			// waktu.format(formatStr) atau waktu.format(detikUnix, formatStr)
+			layout := "2006-01-02 15:04:05"
+			t := time.Now()
+			if len(args) == 1 {
+				if s, ok := args[0].(*String); ok {
+					layout = s.Value
+				}
+			} else if len(args) >= 2 {
+				if sec, ok := args[0].(*Integer); ok {
+					t = time.Unix(sec.Value, 0)
+				}
+				if s, ok := args[1].(*String); ok {
+					layout = s.Value
+				}
+			}
+			return &String{Value: t.Format(layout)}
+		},
+	}
+	waktuMap.Pairs["tambahDetik"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return NIL
+			}
+			var secVal int64
+			var tambah int64
+			if s, ok := args[0].(*Integer); ok {
+				secVal = s.Value
+			}
+			if t, ok := args[1].(*Integer); ok {
+				tambah = t.Value
+			}
+			return &Integer{Value: secVal + tambah}
+		},
+	}
+	env.Set("waktu", waktuMap)
+
+	// Modul pola (Ekspresi Reguler / Regex)
+	polaMap := &Map{Pairs: make(map[string]Object)}
+	polaMap.Pairs["cocok"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return FALSE
+			}
+			polaStr, ok1 := args[0].(*String)
+			teksStr, ok2 := args[1].(*String)
+			if !ok1 || !ok2 {
+				return FALSE
+			}
+			matched, err := regexp.MatchString(polaStr.Value, teksStr.Value)
+			if err != nil || !matched {
+				return FALSE
+			}
+			return TRUE
+		},
+	}
+	polaMap.Pairs["temukanSemua"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return &Array{Elements: []Object{}}
+			}
+			polaStr, ok1 := args[0].(*String)
+			teksStr, ok2 := args[1].(*String)
+			if !ok1 || !ok2 {
+				return &Array{Elements: []Object{}}
+			}
+			re, err := regexp.Compile(polaStr.Value)
+			if err != nil {
+				return &Array{Elements: []Object{}}
+			}
+			matches := re.FindAllString(teksStr.Value, -1)
+			res := make([]Object, len(matches))
+			for i, m := range matches {
+				res[i] = &String{Value: m}
+			}
+			return &Array{Elements: res}
+		},
+	}
+	polaMap.Pairs["ganti"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 3 {
+				return NIL
+			}
+			polaStr, ok1 := args[0].(*String)
+			teksStr, ok2 := args[1].(*String)
+			penggantiStr, ok3 := args[2].(*String)
+			if !ok1 || !ok2 || !ok3 {
+				return NIL
+			}
+			re, err := regexp.Compile(polaStr.Value)
+			if err != nil {
+				return args[1]
+			}
+			res := re.ReplaceAllString(teksStr.Value, penggantiStr.Value)
+			return &String{Value: res}
+		},
+	}
+	env.Set("pola", polaMap)
 
 	return env
 }

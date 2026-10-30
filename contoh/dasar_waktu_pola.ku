@@ -1,0 +1,48 @@
+paket utama
+
+pakai "cetak"
+
+fungsi utama() {
+    cetak.tulis("=== 1. MODUL WAKTU ===")
+    var sekarang = waktu.sekarang()
+    cetak.tulis("Waktu saat ini:", sekarang["teks"])
+    cetak.tulis("Tahun:", sekarang["tahun"])
+    cetak.tulis("Unix timestamp:", waktu.detikUnix())
+
+    var waktuDepan = waktu.tambahDetik(sekarang["detikUnix"], 3600)
+    cetak.tulis("Timestamp 1 jam ke depan:", waktuDepan)
+
+    cetak.tulis("\n=== 2. MODUL POLA (REGEX) ===")
+    var surel = "pengguna@bahasaku.id"
+    var polaSurel = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+    jika pola.cocok(polaSurel, surel) {
+        cetak.tulis("Format email valid:", surel)
+    }
+
+    var teksContoh = "ID-100, ID-250, ID-999"
+    var temuan = pola.temukanSemua("ID-[0-9]+", teksContoh)
+    cetak.tulis("Nomor ID yang ditemukan:")
+    untuk _, item dalam temuan {
+        cetak.tulis("-", item)
+    }
+
+    var teksSensitif = "Nomor rahasia: 1234-5678"
+    var disensor = pola.ganti("[0-9]", teksSensitif, "*")
+    cetak.tulis("Hasil sensor teks:", disensor)
+
+    cetak.tulis("\n=== 3. MANIPULASI & PENGURUTAN LARIK ===")
+    var angkaAcak = [45, 12, 89, 3, 27]
+    cetak.tulis("Larik asal:", angkaAcak)
+
+    var terurut = larik.urut(angkaAcak)
+    cetak.tulis("Larik terurut:", terurut)
+
+    var terbalik = larik.balik(terurut)
+    cetak.tulis("Larik terbalik:", terbalik)
+
+    cetak.tulis("\n=== 4. OPERASI STATISTIK & TRIGONOMETRI ===")
+    var rerata = matematika.rataRata(angkaAcak)
+    cetak.tulis("Nilai rata-rata larik:", rerata)
+    cetak.tulis("Sin(0):", matematika.sin(0))
+    cetak.tulis("Cos(0):", matematika.cos(0))
+}
