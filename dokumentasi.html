@@ -227,7 +227,7 @@
         <a href="index.html#fitur">Fitur</a>
         <a href="dokumentasi.html" class="active">Dokumentasi</a>
         <a href="https://github.com/zufarrizal/Bahasa-Ku" target="_blank">GitHub</a>
-        <a href="https://github.com/zufarrizal/Bahasa-Ku/releases" target="_blank" class="nav-btn">Unduh v0.3.1</a>
+        <a href="https://github.com/zufarrizal/Bahasa-Ku/releases" target="_blank" class="nav-btn">Unduh v0.3.4</a>
       </nav>
     </div>
   </header>
@@ -1662,8 +1662,8 @@ jika mysqlDb["terhubung"] {
 
       <!-- Modul Standar: Jendela -->
       <section id="modul-jendela" class="docs-section">
-        <h2>Modul `desktop` / `jendela` (GUI Desktop & Dialog Native)</h2>
-        <p>Pengembangan aplikasi GUI desktop mandiri tanpa CGO dan kotak dialog sistem operasi asli:</p>
+        <h2>Modul `desktop` / `jendela` (GUI Desktop Native Wails-Style & Dialog OS)</h2>
+        <p>Pengembangan aplikasi GUI desktop mandiri tanpa CGO menggunakan Microsoft Edge WebView2 native (identik dengan arsitektur Wails di Windows) serta dialog sistem operasi asli:</p>
         <table>
           <thead>
             <tr><th>Fungsi</th><th>Deskripsi</th></tr>
@@ -1675,7 +1675,7 @@ jika mysqlDb["terhubung"] {
             <tr><td><code>desktop.salinTeks(teks)</code></td><td>Menyalin teks string langsung ke Papan Klip (Clipboard) sistem operasi</td></tr>
             <tr><td><code>desktop.bacaKlip()</code></td><td>Membaca teks yang sedang tersimpan di Papan Klip (Clipboard) sistem operasi</td></tr>
             <tr><td><code>desktop.daftarkanFungsi(nama, fn)</code> / <code>jendela.ikat(nama, fn)</code></td><td>Mendaftarkan fungsi Bahasa Ku agar dapat dipanggil langsung dari JavaScript webview melalui <code>window.ku.panggil(nama, ...args)</code> (IPC Native Binding)</td></tr>
-            <tr><td><code>desktop.buka(opsi)</code></td><td>Membuka jendela GUI webview desktop independen (mendukung <code>judul</code>, <code>url</code>, <code>konten</code> HTML, <code>lebar</code>, <code>tinggi</code>)</td></tr>
+            <tr><td><code>desktop.buka(opsi)</code></td><td>Membuka jendela GUI webview desktop native tanpa toolbar browser (mendukung <code>judul</code>, <code>url</code>, <code>konten</code> HTML, <code>lebar</code>, <code>tinggi</code>)</td></tr>
           </tbody>
         </table>
         <pre><code>// 1. Kotak Dialog Native

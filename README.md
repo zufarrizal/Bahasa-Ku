@@ -12,7 +12,7 @@
 <p align="center">
   <a href="https://zufarrizal.github.io/Bahasa-Ku/" target="_blank">🌐 <b>Situs Resmi & Playground</b></a> &nbsp;|&nbsp;
   <a href="https://zufarrizal.github.io/Bahasa-Ku/dokumentasi.html" target="_blank">📖 <b>Dokumentasi Lengkap</b></a> &nbsp;|&nbsp;
-  <a href="https://github.com/zufarrizal/Bahasa-Ku/releases/tag/v0.3.1">📦 <b>Unduh Biner v0.3.1</b></a>
+  <a href="https://github.com/zufarrizal/Bahasa-Ku/releases/tag/v0.3.4">📦 <b>Unduh Biner v0.3.4</b></a>
 </p>
 
 ---
@@ -50,7 +50,7 @@ curl -fsSL https://raw.githubusercontent.com/zufarrizal/Bahasa-Ku/main/pasang.sh
 ```
 
 ### Alternatif Unduh Manual:
-- Biner siap pakai tersedia di halaman **[Rilis Resmi GitHub](https://github.com/zufarrizal/Bahasa-Ku/releases/tag/v0.3.1)** (`ku-windows-amd64.exe`, `ku-linux-amd64`, `ku-darwin-arm64`).
+- Biner siap pakai tersedia di halaman **[Rilis Resmi GitHub](https://github.com/zufarrizal/Bahasa-Ku/releases/tag/v0.3.4)** (`ku-windows-amd64.exe`, `ku-linux-amd64`, `ku-darwin-arm64`).
 - Atau pasang via Go: `go install github.com/zufarrizal/bahasa-ku/cmd/ku@latest`.
 
 ---
@@ -87,7 +87,7 @@ ku versi
 ## 🎨 Dukungan Visual Studio Code
 
 Ekstensi resmi Visual Studio Code menyediakan pewarnaan sintaks (*syntax highlighting*) dan ikon berkas `.ku`.
-- Unduh paket **`bahasa-ku-vscode-0.2.0.vsix`** dari [Rilis GitHub](https://github.com/zufarrizal/Bahasa-Ku/releases/tag/v0.3.1).
+- Unduh paket **`bahasa-ku-vscode-0.2.0.vsix`** dari [Rilis GitHub](https://github.com/zufarrizal/Bahasa-Ku/releases/tag/v0.3.4).
 - Buka VS Code > Menu Extensions (`Ctrl+Shift+X`) > Klik `...` > **Install from VSIX...**.
 - Panduan lengkap ekstensi tersedia di [ekstensi-vscode/README.md](ekstensi-vscode/README.md).
 

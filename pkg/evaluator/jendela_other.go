@@ -2,7 +2,10 @@
 
 package evaluator
 
-import "fmt"
+import (
+	"fmt"
+	"os/exec"
+)
 
 func tampilkanPesanNative(judul, isi, tipe string) {
 	fmt.Printf("[%s][%s] %s\n", tipe, judul, isi)
@@ -22,4 +25,15 @@ func salinPapanKlipNative(teks string) bool {
 
 func bacaPapanKlipNative() string {
 	return ""
+}
+
+func bukaJendelaNative(judul, konten, targetUrl string, lebar, tinggi int, startIPC func() int, invokeIPC func(fungsi string, argumen []interface{}) (interface{}, error)) {
+	// Fallback untuk non-windows (Linux / macOS)
+	// Buka URL via browser default atau server IPC
+	url := targetUrl
+	if url == "" {
+		port := startIPC()
+		url = fmt.Sprintf("http://127.0.0.1:%d", port)
+	}
+	_ = exec.Command("xdg-open", url).Start()
 }

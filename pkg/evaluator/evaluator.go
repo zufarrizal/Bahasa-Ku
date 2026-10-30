@@ -833,6 +833,23 @@ func InitGlobalEnvironment() *Environment {
 
 	// IPC Registry untuk jembatan native JS di WebView -> runtime Bahasa Ku
 	ipcHandlers := make(map[string]Object)
+	invokeIPC := func(fungsi string, argumen []interface{}) (interface{}, error) {
+		fnObj, exists := ipcHandlers[fungsi]
+		if !exists {
+			return nil, fmt.Errorf("Fungsi handler IPC '%s' tidak ditemukan", fungsi)
+		}
+		callArgs := []Object{}
+		for _, a := range argumen {
+			callArgs = append(callArgs, convertGoToKuObject(a))
+		}
+		var res Object = NIL
+		if b, ok := fnObj.(*Builtin); ok {
+			res = b.Fn(callArgs...)
+		} else if f, ok := fnObj.(*Function); ok {
+			res = applyFunction(f, callArgs, env)
+		}
+		return convertKuToGoObject(res), nil
+	}
 	var ipcServerPort int = 0
 	var ipcServerOnce sync.Once
 
@@ -1023,101 +1040,7 @@ func InitGlobalEnvironment() *Environment {
 				}
 			}
 
-			if url == "" {
-				tempDir := os.TempDir()
-				htmlFile := filepath.Join(tempDir, "ku_app.html")
-
-				port := startIPCServer()
-				ipcBridgeScript := fmt.Sprintf(`<script>
-window.ku = {
-  panggil: async function(fungsi, ...argumen) {
-    const res = await fetch("http://127.0.0.1:%d/ku_ipc", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ fungsi: fungsi, argumen: argumen })
-    });
-    const data = await res.json();
-    if (data.galat) throw new Error(data.galat);
-    return data.hasil;
-  },
-  tutup: function() {
-    try {
-      navigator.sendBeacon("http://127.0.0.1:%d/ku_tutup");
-    } catch (e) {
-      fetch("http://127.0.0.1:%d/ku_tutup", { method: "POST", mode: "no-cors" });
-    }
-  }
-};
-window.addEventListener("beforeunload", function() {
-  window.ku.tutup();
-});
-</script>`, port, port, port)
-
-				htmlContent := fmt.Sprintf(`<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<title>%s</title>
-<style>
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 24px; background: #f8fafc; color: #1e293b; margin: 0; }
-  h1 { color: #0284c7; }
-</style>
-%s
-</head>
-<body>
-%s
-</body>
-</html>`, judul, ipcBridgeScript, konten)
-				_ = os.WriteFile(htmlFile, []byte(htmlContent), 0644)
-				url = htmlFile
-			}
-
-			if runtime.GOOS == "windows" {
-				// Membuka jendela webview mandiri menggunakan browser app mode
-				// Gunakan user-data-dir terisolasi agar Edge/Chrome membuka instance window terpisah
-				userDataDir := filepath.Join(os.TempDir(), "ku_webview_profile")
-
-				browserCandidates := []string{
-					filepath.Join(os.Getenv("ProgramFiles(x86)"), "Microsoft", "Edge", "Application", "msedge.exe"),
-					filepath.Join(os.Getenv("ProgramFiles"), "Microsoft", "Edge", "Application", "msedge.exe"),
-					filepath.Join(os.Getenv("LocalAppData"), "Microsoft", "Edge", "Application", "msedge.exe"),
-					filepath.Join(os.Getenv("ProgramFiles"), "Google", "Chrome", "Application", "chrome.exe"),
-					filepath.Join(os.Getenv("ProgramFiles(x86)"), "Google", "Chrome", "Application", "chrome.exe"),
-					filepath.Join(os.Getenv("LocalAppData"), "Google", "Chrome", "Application", "chrome.exe"),
-				}
-
-				launched := false
-				for _, bPath := range browserCandidates {
-					if _, err := os.Stat(bPath); err == nil {
-						args := []string{
-							fmt.Sprintf("--app=%s", url),
-							fmt.Sprintf("--window-size=%d,%d", lebar, tinggi),
-							fmt.Sprintf("--user-data-dir=%s", userDataDir),
-							"--no-first-run",
-							"--no-default-browser-check",
-						}
-						cmd := exec.Command(bPath, args...)
-						if err := cmd.Start(); err == nil {
-							launched = true
-							// Pantau penutupan proses jendela di latar belakang
-							go func() {
-								_ = cmd.Wait()
-								time.Sleep(100 * time.Millisecond)
-								os.Exit(0)
-							}()
-							break
-						}
-					}
-				}
-
-				if !launched {
-					// Fallback standar default browser jika app mode tidak tersedia
-					_ = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
-				}
-			} else {
-				_ = exec.Command("xdg-open", url).Start()
-			}
-
+			bukaJendelaNative(judul, konten, url, lebar, tinggi, startIPCServer, invokeIPC)
 			return NIL
 		},
 	}
@@ -1139,7 +1062,7 @@ window.addEventListener("beforeunload", function() {
 
 			if err != nil {
 				connMap.Pairs["terhubung"] = FALSE
-				connMap.Pairs["pesan"] = &String{Value: err.Error()}
+				connMap.Pairs["pesan"] = &String{Value: TerjemahkanGalat(err)}
 				return connMap
 			}
 
@@ -1147,7 +1070,7 @@ window.addEventListener("beforeunload", function() {
 			pingErr := db.Ping()
 			if pingErr != nil {
 				connMap.Pairs["terhubung"] = FALSE
-				connMap.Pairs["pesan"] = &String{Value: pingErr.Error()}
+				connMap.Pairs["pesan"] = &String{Value: TerjemahkanGalat(pingErr)}
 			} else {
 				connMap.Pairs["terhubung"] = TRUE
 				connMap.Pairs["pesan"] = &String{Value: "Koneksi berhasil"}
@@ -1187,7 +1110,7 @@ window.addEventListener("beforeunload", function() {
 						rows, qErr = db.Query(queryStr)
 					}
 					if qErr != nil {
-						fmt.Printf("Galat kueri: %v\n", qErr)
+						fmt.Printf("Galat kueri: %s\n", TerjemahkanGalat(qErr))
 						return &Array{Elements: []Object{}}
 					}
 					defer rows.Close()
@@ -1254,7 +1177,7 @@ window.addEventListener("beforeunload", function() {
 						_, exErr = db.Exec(sqlStr)
 					}
 					if exErr != nil {
-						fmt.Printf("Galat eksekusi: %v\n", exErr)
+						fmt.Printf("Galat eksekusi: %s\n", TerjemahkanGalat(exErr))
 						return FALSE
 					}
 					return TRUE
