@@ -1,46 +1,45 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
-  <defs>
-    <!-- Background Dark Premium -->
-    <rect id="bg" width="512" height="512" rx="128" fill="#0A0E17" />
+  <!-- Background Dark Squircle -->
+  <rect width="512" height="512" rx="128" fill="#0A0E17" />
 
-    <!-- Gradient Cyan ke Electric Blue khas Go Modern -->
-    <linearGradient id="kuGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#00E5FF" />
-      <stop offset="50%" stop-color="#00A3FF" />
+  <defs>
+    <!-- Gradient Biru Cyan Modern Khas Go -->
+    <linearGradient id="kuStrokeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00F0FF" />
+      <stop offset="60%" stop-color="#00A3FF" />
       <stop offset="100%" stop-color="#0066FF" />
     </linearGradient>
 
-    <!-- Subtle Glow Shadow -->
-    <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#00A3FF" flood-opacity="0.3" />
+    <!-- Halus Bayangan Cahaya -->
+    <filter id="kuGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#00A3FF" flood-opacity="0.35" />
     </filter>
   </defs>
 
-  <!-- Base Canvas Squircle -->
-  <use href="#bg" />
+  <!-- Sketsa Bentuk Persis Gambar Pengguna: Huruf k kecil dengan kaki kanan melengkung ke bawah dan naik jadi 'u' -->
+  <g filter="url(#kuGlow)">
+    <!-- 1. Batang Kiri Huruf k (Tinggi, Vertikal Lembut) -->
+    <path d="M 124,84 L 124,420" 
+          stroke="url(#kuStrokeGrad)" 
+          stroke-width="56" 
+          stroke-linecap="round" />
 
-  <!-- Monogram Huruf K Sempurna dengan Kaki Kanan Melengkung Membentuk Huruf 'u' -->
-  <g filter="url(#softGlow)">
-    <!-- 1. Batang Vertikal K Sempurna -->
-    <rect x="110" y="100" width="56" height="312" rx="28" fill="url(#kuGrad)" />
+    <!-- 2. Lengan Atas k (Diagonal ke Kanan Atas) -->
+    <path d="M 148,220 L 296,88" 
+          stroke="url(#kuStrokeGrad)" 
+          stroke-width="54" 
+          stroke-linecap="round" />
 
-    <!-- 2. Kaki Kiri-Atas K Sempurna (Lurus, Presisi 45 Derajat) -->
-    <path d="M 152,242 L 298,110 C 308,100 324,100 334,110 L 348,124 C 358,134 358,150 348,160 L 222,274 Z" fill="url(#kuGrad)" />
-
-    <!-- 3. Kaki Kanan K yang Melengkung Anggun Menjadi Ekor Huruf 'u' -->
-    <!-- Garis turun miring dari tengah K, lalu melengkung di bawah dan naik membentuk mangkuk 'u' -->
-    <path d="M 198,252 
-             L 286,340 
-             C 304,358 328,368 354,368 
-             C 394,368 426,336 426,296 
-             L 426,220 
-             C 426,206 438,194 452,194 
-             C 466,194 478,206 478,220 
-             L 478,296 
-             C 478,364 422,420 354,420 
-             C 314,420 278,402 250,374 
-             L 162,286 
-             Z" 
-          fill="url(#kuGrad)" />
+    <!-- 3. Kaki Kanan k yang Mengalir Melengkung Membentuk Huruf u -->
+    <!-- Dimulai dari sambungan tengah, turun meliuk ke bawah lalu melengkung naik membentuk huruf 'u' persis sketsa -->
+    <path d="M 174,236 
+             C 240,240 270,280 276,330 
+             C 284,395 330,446 388,432 
+             C 434,420 448,356 440,270" 
+          stroke="url(#kuStrokeGrad)" 
+          stroke-width="54" 
+          stroke-linecap="round" 
+          stroke-linejoin="round"
+          fill="none" />
   </g>
 </svg>
