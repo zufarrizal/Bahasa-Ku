@@ -69,6 +69,16 @@ func (t *Transpiler) Transpile(node ast.Node) string {
 		out += "}\n"
 		return out
 
+	case *ast.TypeInterfaceStatement:
+		out := fmt.Sprintf("type %s interface {\n", n.Name.Value)
+		t.indent++
+		for _, m := range n.Methods {
+			out += fmt.Sprintf("%s%s()\n", t.spasi(), m.Name)
+		}
+		t.indent--
+		out += "}\n"
+		return out
+
 	case *ast.FunctionStatement:
 		name := n.Name.Value
 		if name == "utama" {
@@ -261,6 +271,9 @@ func (t *Transpiler) Transpile(node ast.Node) string {
 
 	case *ast.KuStatement:
 		return fmt.Sprintf("go %s", t.Transpile(n.Expression))
+
+	case *ast.ChannelSendStatement:
+		return fmt.Sprintf("%s <- %s", t.Transpile(n.Channel), t.Transpile(n.Value))
 
 	case *ast.ExpressionStatement:
 		return t.Transpile(n.Expression)

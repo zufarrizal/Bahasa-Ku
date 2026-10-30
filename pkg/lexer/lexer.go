@@ -168,6 +168,10 @@ func (l *Lexer) NextToken() token.Token {
 			ch := l.ch
 			l.readChar()
 			tok = token.Token{Type: token.SHL, Literal: string(ch) + string(l.ch), Line: curLine, Column: curCol}
+		} else if l.peekChar() == '-' {
+			ch := l.ch
+			l.readChar()
+			tok = token.Token{Type: token.ARROW, Literal: string(ch) + string(l.ch), Line: curLine, Column: curCol}
 		} else {
 			tok = token.Token{Type: token.LT, Literal: string(l.ch), Line: curLine, Column: curCol}
 		}

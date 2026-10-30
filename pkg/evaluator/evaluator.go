@@ -59,6 +59,7 @@ const (
 	FALLTHROUGH_OBJ  = "FALLTHROUGH"
 	PANIC_OBJ        = "PANIC"
 	CHANNEL_OBJ      = "CHANNEL"
+	INTERFACE_DEF_OBJ = "INTERFACE_DEF"
 )
 
 type ChannelObject struct {
@@ -291,6 +292,26 @@ func (si *StructInstance) Inspect() string {
 		fields = append(fields, fmt.Sprintf("%s: %s", k, v.Inspect()))
 	}
 	return si.Def.Name + "{" + strings.Join(fields, ", ") + "}"
+}
+
+type InterfaceDef struct {
+	Name    string
+	Methods []string
+}
+
+func (id *InterfaceDef) Type() ObjectType { return INTERFACE_DEF_OBJ }
+func (id *InterfaceDef) Inspect() string  { return "definisi antarmuka " + id.Name }
+
+func (id *InterfaceDef) ImplementedBy(obj Object) bool {
+	if si, ok := obj.(*StructInstance); ok && si.Def != nil {
+		for _, m := range id.Methods {
+			if _, has := si.Def.Methods[m]; !has {
+				return false
+			}
+		}
+		return true
+	}
+	return false
 }
 
 var (
@@ -6333,6 +6354,15 @@ func Eval(node ast.Node, env *Environment) Object {
 		env.Set(n.Name.Value, def)
 		return def
 
+	case *ast.TypeInterfaceStatement:
+		methodNames := []string{}
+		for _, m := range n.Methods {
+			methodNames = append(methodNames, m.Name)
+		}
+		intf := &InterfaceDef{Name: n.Name.Value, Methods: methodNames}
+		env.Set(n.Name.Value, intf)
+		return intf
+
 	case *ast.VarStatement:
 		// Jika deklarasi banyak variabel: var a, b = fn() atau var a, b = 1, 2
 		if len(n.Names) > 1 {
@@ -6457,6 +6487,22 @@ func Eval(node ast.Node, env *Environment) Object {
 				m.Pairs[dotExpr.Property.Value] = val
 			}
 			return val
+		}
+		return NIL
+
+	case *ast.ChannelSendStatement:
+		chObj := Eval(n.Channel, env)
+		val := Eval(n.Value, env)
+		if ret, ok := val.(*ReturnValue); ok {
+			val = ret.Value
+		}
+		if c, ok := chObj.(*ChannelObject); ok {
+			c.Ch <- val
+			return TRUE
+		} else if m, ok := chObj.(*Map); ok {
+			if kirimFn, ok := m.Pairs["kirim"].(*Builtin); ok {
+				return kirimFn.Fn(val)
+			}
 		}
 		return NIL
 
@@ -6760,6 +6806,97 @@ func Eval(node ast.Node, env *Environment) Object {
 		return NIL
 
 	case *ast.SwitchStatement:
+		// Cek apakah ini native channel select: pilih { kasus msg := <-ch: ... kasus ch <- val: ... }
+		isChannelSelect := false
+		if n.Value == nil && n.Init == nil {
+			for _, c := range n.Cases {
+				if c.Send != nil || c.Assign != nil {
+					isChannelSelect = true
+					break
+				}
+				if c.Value != nil {
+					if pref, isPref := c.Value.(*ast.PrefixExpression); isPref && pref.Operator == "<-" {
+						isChannelSelect = true
+						break
+					}
+				}
+			}
+		}
+
+		if isChannelSelect {
+			// Evaluasi native channel select
+			// 1. Jika ada default block, lakukan non-blocking check
+			if n.Default != nil {
+				for _, c := range n.Cases {
+					if c.Assign != nil {
+						// kasus msg := <-ch:
+						if pref, isPref := c.Assign.Value.(*ast.PrefixExpression); isPref && pref.Operator == "<-" {
+							chObj := Eval(pref.Right, env)
+							val, ok := tryReceiveChannel(chObj)
+							if ok {
+								caseEnv := NewEnclosedEnvironment(env)
+								if targetIdent, isId := c.Assign.Target.(*ast.Identifier); isId {
+									caseEnv.Set(targetIdent.Value, val)
+								}
+								return Eval(c.Body, caseEnv)
+							}
+						}
+					} else if c.Send != nil {
+						// kasus ch <- val:
+						chObj := Eval(c.Send.Channel, env)
+						valObj := Eval(c.Send.Value, env)
+						if trySendChannel(chObj, valObj) {
+							return Eval(c.Body, env)
+						}
+					} else if c.Value != nil {
+						if pref, isPref := c.Value.(*ast.PrefixExpression); isPref && pref.Operator == "<-" {
+							chObj := Eval(pref.Right, env)
+							_, ok := tryReceiveChannel(chObj)
+							if ok {
+								return Eval(c.Body, env)
+							}
+						}
+					}
+				}
+				// Tidak ada kanal yang siap, jalankan default
+				return Eval(n.Default, env)
+			}
+
+			// Blocking multiplexing polling
+			for {
+				for _, c := range n.Cases {
+					if c.Assign != nil {
+						if pref, isPref := c.Assign.Value.(*ast.PrefixExpression); isPref && pref.Operator == "<-" {
+							chObj := Eval(pref.Right, env)
+							val, ok := tryReceiveChannel(chObj)
+							if ok {
+								caseEnv := NewEnclosedEnvironment(env)
+								if targetIdent, isId := c.Assign.Target.(*ast.Identifier); isId {
+									caseEnv.Set(targetIdent.Value, val)
+								}
+								return Eval(c.Body, caseEnv)
+							}
+						}
+					} else if c.Send != nil {
+						chObj := Eval(c.Send.Channel, env)
+						valObj := Eval(c.Send.Value, env)
+						if trySendChannel(chObj, valObj) {
+							return Eval(c.Body, env)
+						}
+					} else if c.Value != nil {
+						if pref, isPref := c.Value.(*ast.PrefixExpression); isPref && pref.Operator == "<-" {
+							chObj := Eval(pref.Right, env)
+							_, ok := tryReceiveChannel(chObj)
+							if ok {
+								return Eval(c.Body, env)
+							}
+						}
+					}
+				}
+				time.Sleep(2 * time.Millisecond)
+			}
+		}
+
 		switchEnv := env
 		var rawSubject Object = nil
 		isTypeSwitch := false
@@ -6813,6 +6950,17 @@ func Eval(node ast.Node, env *Environment) Object {
 							(subjectType == "boolean" && (typeStr == "bool" || typeStr == "boolean")) {
 							matched = true
 							break
+						}
+						// Cek apakah typeStr adalah nama interface yang diimplementasikan oleh rawSubject
+						if origIdent, isID := vExpr.(*ast.Identifier); isID {
+							if typeObj, hasType := env.Get(origIdent.Value); hasType {
+								if intfDef, isIntf := typeObj.(*InterfaceDef); isIntf {
+									if intfDef.ImplementedBy(rawSubject) {
+										matched = true
+										break
+									}
+								}
+							}
 						}
 					}
 				} else {
@@ -7005,6 +7153,15 @@ func Eval(node ast.Node, env *Environment) Object {
 		if strings.EqualFold(targetType, actualType) || (actualType == "angka" && targetType == "int") || (actualType == "teks" && targetType == "string") {
 			return val
 		}
+		// Cek apakah targetType adalah definisi Antarmuka (Interface)
+		if typeObj, hasType := env.Get(n.Type); hasType {
+			if intfDef, isIntf := typeObj.(*InterfaceDef); isIntf {
+				if intfDef.ImplementedBy(val) {
+					return val
+				}
+				return NIL
+			}
+		}
 		// Jika tipe struct custom:
 		if si, ok := val.(*StructInstance); ok && si.Def != nil {
 			if strings.EqualFold(si.Def.Name, n.Type) {
@@ -7069,7 +7226,21 @@ func Eval(node ast.Node, env *Environment) Object {
 
 	case *ast.PrefixExpression:
 		right := Eval(n.Right, env)
-		if n.Operator == "!" {
+		if n.Operator == "<-" {
+			// Operasi terima kanal: <-ch
+			if chObj, ok := right.(*ChannelObject); ok {
+				val := <-chObj.Ch
+				if val == nil {
+					return NIL
+				}
+				return val
+			} else if m, ok := right.(*Map); ok {
+				if terimaFn, ok := m.Pairs["terima"].(*Builtin); ok {
+					return terimaFn.Fn()
+				}
+			}
+			return NIL
+		} else if n.Operator == "!" {
 			if isTruthy(right) {
 				return FALSE
 			}
@@ -7098,6 +7269,47 @@ func Eval(node ast.Node, env *Environment) Object {
 	}
 
 	return NIL
+}
+
+func tryReceiveChannel(chObj Object) (Object, bool) {
+	if c, ok := chObj.(*ChannelObject); ok {
+		select {
+		case v := <-c.Ch:
+			if v == nil {
+				v = NIL
+			}
+			return v, true
+		default:
+			return NIL, false
+		}
+	} else if m, ok := chObj.(*Map); ok {
+		if cobaTerimaFn, ok := m.Pairs["cobaTerima"].(*Builtin); ok {
+			res := cobaTerimaFn.Fn()
+			if ret, ok := res.(*ReturnValue); ok && len(ret.Values) > 1 {
+				if ret.Values[1] == TRUE {
+					return ret.Values[0], true
+				}
+			}
+		}
+	}
+	return NIL, false
+}
+
+func trySendChannel(chObj Object, val Object) bool {
+	if c, ok := chObj.(*ChannelObject); ok {
+		select {
+		case c.Ch <- val:
+			return true
+		default:
+			return false
+		}
+	} else if m, ok := chObj.(*Map); ok {
+		if kirimFn, ok := m.Pairs["kirim"].(*Builtin); ok {
+			kirimFn.Fn(val)
+			return true
+		}
+	}
+	return false
 }
 
 func applyFunction(fn Object, args []Object, outerEnv *Environment) Object {

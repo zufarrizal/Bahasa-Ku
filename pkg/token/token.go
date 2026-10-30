@@ -54,6 +54,7 @@ const (
 	BIT_XOR = "^"
 	SHL     = "<<"
 	SHR     = ">>"
+	ARROW   = "<-"
 
 	// Delimiters
 	COMMA     = ","
@@ -77,6 +78,7 @@ const (
 	TETAP      = "TETAP"
 	TIPE       = "TIPE"
 	STRUKTUR   = "STRUKTUR"
+	ANTARMUKA  = "ANTARMUKA"
 	JIKA       = "JIKA"
 	LAINNYA    = "LAINNYA"
 	UNTUK      = "UNTUK"
@@ -115,6 +117,8 @@ var keywords = map[string]TokenType{
 	"iota":       CACAH,
 	"tipe":       TIPE,
 	"struktur":   STRUKTUR,
+	"antarmuka":  ANTARMUKA,
+	"interface":  ANTARMUKA,
 	"jika":       JIKA,
 	"lainnya":    LAINNYA,
 	"untuk":      UNTUK,

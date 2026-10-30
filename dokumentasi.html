@@ -651,14 +651,15 @@ cetak.tulis("Luas:", l, "Keliling:", k) // Luas: 25 Keliling: 20</code></pre>
 
       <!-- Struktur & Method -->
       <section id="struktur-method" class="docs-section">
-        <h2>Struktur (Struct), Method Receivers & Komposisi Embedding</h2>
+        <h2>Struktur (Struct), Method Receivers, Komposisi Embedding & Antarmuka (Interface)</h2>
+        <h3>1. Definisi Struct, Method Receiver & Embedding</h3>
         <pre><code>tipe Persegi struktur {
     panjang,
     lebar
 }
 
 // Method receiver untuk struct Persegi
-fungsi (p Persegi) luas() {
+fungsi (p Persegi) Luas() {
     kembalikan p.panjang * p.lebar
 }
 
@@ -677,8 +678,27 @@ fungsi utama() {
     // Field dan method Persegi otomatis dipromosikan langsung ke objek k:
     cetak.tulis("Warna:", k.warna)
     cetak.tulis("Panjang (promosi):", k.panjang)
-    cetak.tulis("Luas (promosi method):", k.luas())
+    cetak.tulis("Luas (promosi method):", k.Luas())
 }</code></pre>
+
+        <h3>2. Definisi Antarmuka (`tipe ... antarmuka`) & Polimorfisme Implisit</h3>
+        <p>Bahasa Ku mengadopsi konsep antarmuka (interface) khas Go di mana struktur memenuhi kontrak secara otomatis tanpa perlu deklarasi <code>implements</code>:</p>
+        <pre><code>tipe Geometri antarmuka {
+    Luas()
+}
+
+fungsi cetakLuas(g) {
+    pilih v := g.(tipe) {
+    kasus Geometri:
+        cetak.tulis("Objek memenuhi antarmuka Geometri, luas:", v.Luas())
+    bawaan:
+        cetak.tulis("Bukan implementasi Geometri")
+    }
+}
+
+// Type Assertion langsung terhadap antarmuka:
+var bangun = Persegi({"panjang": 6, "lebar": 4})
+var geo = bangun.(Geometri) // Mengembalikan objek jika memenuhi method Luas()</code></pre>
       </section>
 
       <!-- Penanganan Error -->
@@ -723,8 +743,45 @@ fungsi utama() {
 
       <!-- Konkurensi & Kanal -->
       <section id="konkurensi" class="docs-section">
-        <h2>Konkurensi (`ku`) & Kanal (`kanal`)</h2>
-        <p>Jalankan pekerjaan paralel ringan menggunakan kata kunci <code>ku</code> dan komunikasikan data dengan aman menggunakan <code>kanal</code>:</p>
+        <h2>Konkurensi (`ku`), Kanal (`kanal`), Operator `<-` & Multiplexing `pilih` (`select`)</h2>
+        <p>Jalankan pekerjaan paralel ringan menggunakan kata kunci <code>ku</code> dan komunikasikan data antar-goroutine secara aman menggunakan operator kanal asli <code>&lt;-</code> dan statement <code>pilih</code>:</p>
+
+        <h3>1. Operator Kanal Asli `&lt;-` (Kirim & Terima)</h3>
+        <p>Selain metode <code>pipa.kirim()</code> dan <code>pipa.terima()</code>, Bahasa Ku mendukung operator asli <code>&lt;-</code> ala Go untuk pengiriman dan penerimaan kanal:</p>
+        <pre><code>// Membuat kanal biner/buffer
+var ch = kanal.buat(2)
+
+// Kirim data ke kanal (channel send)
+ch &lt;- "Halo Dunia"
+ch &lt;- 42
+
+// Terima data dari kanal (channel receive)
+var msg = &lt;-ch
+var angka = &lt;-ch
+cetak.tulis(msg, angka) // "Halo Dunia 42"</code></pre>
+
+        <h3>2. Kanal Multiplexing (`pilih` / `select`)</h3>
+        <p>Blok <code>pilih</code> tanpa ekspresi subjek berfungsi sebagai channel <code>select</code> di Go, memungkinkan menunggu beberapa kanal secara bersamaan atau non-blocking dengan <code>bawaan:</code>:</p>
+        <pre><code>var ch1 = kanal.buat(1)
+var ch2 = kanal.buat(1)
+
+ku fungsi() {
+    ch1 &lt;- "Data dari Ku-routine 1"
+}()
+
+// Multiplexing kanal:
+pilih {
+kasus pesan := &lt;-ch1:
+    cetak.tulis("Menerima dari ch1:", pesan)
+kasus pesan := &lt;-ch2:
+    cetak.tulis("Menerima dari ch2:", pesan)
+kasus ch1 &lt;- "Kirim data":
+    cetak.tulis("Berhasil mengirim data ke ch1")
+bawaan:
+    cetak.tulis("Tidak ada kanal yang siap (non-blocking)")
+}</code></pre>
+
+        <h3>3. Contoh Pola Pekerja (Worker Pool)</h3>
         <pre><code>paket utama
 
 pakai "cetak"
@@ -732,22 +789,16 @@ pakai "kanal"
 pakai "sistem"
 
 fungsi pekerja(pipa) {
-    sistem.tidur(500) // Istirahat 500 milidetik
-    pipa.kirim("Laporan Selesai")
+    sistem.tidur(100)
+    pipa &lt;- "Laporan Selesai" // Kirim via operator <-
 }
 
 fungsi utama() {
-    // Membuat kanal berkapasitas 1
     var pipa = kanal.buat(1)
-
-    // Luncurkan Ku-routine
     ku pekerja(pipa)
 
-    // Menerima data secara non-blocking
-    var pesan, berhasil = pipa.terimaDenganWaktu(1000)
-    jika berhasil {
-        cetak.tulis("Pesan diterima:", pesan)
-    }
+    var hasil = &lt;-pipa // Tunggu dan terima pesan
+    cetak.tulis("Pesan diterima:", hasil)
 }</code></pre>
       </section>
 

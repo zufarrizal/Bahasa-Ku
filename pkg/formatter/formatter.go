@@ -51,6 +51,16 @@ func (f *Formatter) Format(node ast.Node) string {
 		out += f.spasi() + "}\n"
 		return out
 
+	case *ast.TypeInterfaceStatement:
+		out := fmt.Sprintf("tipe %s antarmuka {\n", n.Name.Value)
+		f.indent++
+		for _, m := range n.Methods {
+			out += fmt.Sprintf("%s%s()\n", f.spasi(), m.Name)
+		}
+		f.indent--
+		out += f.spasi() + "}\n"
+		return out
+
 	case *ast.FunctionStatement:
 		params := []string{}
 		for i, p := range n.Parameters {
@@ -182,7 +192,21 @@ func (f *Formatter) Format(node ast.Node) string {
 		out := fmt.Sprintf("pilih%s {\n", valStr)
 		f.indent++
 		for _, c := range n.Cases {
-			out += fmt.Sprintf("%skasus %s:\n", f.spasi(), f.Format(c.Value))
+			caseHeader := ""
+			if c.Send != nil {
+				caseHeader = fmt.Sprintf("%skasus %s:\n", f.spasi(), f.Format(c.Send))
+			} else if c.Assign != nil {
+				caseHeader = fmt.Sprintf("%skasus %s:\n", f.spasi(), f.Format(c.Assign))
+			} else if len(c.Values) > 1 {
+				vStrs := []string{}
+				for _, v := range c.Values {
+					vStrs = append(vStrs, f.Format(v))
+				}
+				caseHeader = fmt.Sprintf("%skasus %s:\n", f.spasi(), strings.Join(vStrs, ", "))
+			} else if c.Value != nil {
+				caseHeader = fmt.Sprintf("%skasus %s:\n", f.spasi(), f.Format(c.Value))
+			}
+			out += caseHeader
 			f.indent++
 			for _, s := range c.Body.Statements {
 				out += fmt.Sprintf("%s%s\n", f.spasi(), f.Format(s))
@@ -248,6 +272,9 @@ func (f *Formatter) Format(node ast.Node) string {
 
 	case *ast.KuStatement:
 		return fmt.Sprintf("ku %s", f.Format(n.Expression))
+
+	case *ast.ChannelSendStatement:
+		return fmt.Sprintf("%s <- %s", f.Format(n.Channel), f.Format(n.Value))
 
 	case *ast.ExpressionStatement:
 		return f.Format(n.Expression)

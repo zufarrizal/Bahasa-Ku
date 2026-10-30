@@ -159,6 +159,28 @@ type TypeStructStatement struct {
 func (ts *TypeStructStatement) statementNode()       {}
 func (ts *TypeStructStatement) TokenLiteral() string { return ts.Token.Literal }
 
+type InterfaceMethod struct {
+	Name string
+}
+
+type TypeInterfaceStatement struct {
+	Token   token.Token // token.TIPE
+	Name    *Identifier
+	Methods []InterfaceMethod
+}
+
+func (ti *TypeInterfaceStatement) statementNode()       {}
+func (ti *TypeInterfaceStatement) TokenLiteral() string { return ti.Token.Literal }
+
+type ChannelSendStatement struct {
+	Token   token.Token // token.ARROW
+	Channel Expression
+	Value   Expression
+}
+
+func (cs *ChannelSendStatement) statementNode()       {}
+func (cs *ChannelSendStatement) TokenLiteral() string { return cs.Token.Literal }
+
 type FunctionReceiver struct {
 	Name string // nama variabel receiver, misal 'l'
 	Type string // nama tipe struct, misal 'Lingkaran'
@@ -228,6 +250,8 @@ func (ls *LabeledStatement) TokenLiteral() string { return ls.Token.Literal }
 type SwitchCase struct {
 	Value  Expression   // Nilai tunggal utama (backward-compatible)
 	Values []Expression // Multi-nilai: kasus "a", "b", "c":
+	Send   *ChannelSendStatement // Dukungan channel select send: kasus ch <- data:
+	Assign *AssignStatement      // Dukungan channel select receive: kasus msg := <-ch:
 	Body   *BlockStatement
 }
 

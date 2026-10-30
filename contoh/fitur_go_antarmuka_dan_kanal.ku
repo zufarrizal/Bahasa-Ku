@@ -1,0 +1,93 @@
+paket utama
+
+// 1. Definisi Antarmuka (Interface)
+tipe Bentuk antarmuka {
+    Luas()
+    Info()
+}
+
+// Struct Persegi yang mengimplementasikan Bentuk secara implisit
+tipe Persegi struktur {
+    sisi angka
+}
+
+fungsi (p Persegi) Luas() {
+    kembalikan p.sisi * p.sisi
+}
+
+fungsi (p Persegi) Info() {
+    kembalikan "Persegi sisi " + konversi.keTeks(p.sisi)
+}
+
+// Fungsi pembantu pengecekan antarmuka
+fungsi cetakBentuk(b) {
+    pilih v := b.(tipe) {
+    kasus Bentuk:
+        cetak.tulisBaris("   [Antarmuka Bentuk] " + v.Info() + " | Luas: " + konversi.keTeks(v.Luas()))
+    bawaan:
+        cetak.tulisBaris("   Bukan implementasi Bentuk")
+    }
+}
+
+fungsi pekerja(id, kanalTugas, kanalHasil) {
+    untuk {
+        pilih {
+        kasus tugas := <-kanalTugas:
+            cetak.tulisBaris("   Pekerja " + konversi.keTeks(id) + " memproses tugas: " + tugas)
+            kanalHasil <- "Selesai: " + tugas
+        bawaan:
+            // Non-blocking fallback jika belum ada tugas
+            waktu.tidur(10)
+        }
+    }
+}
+
+fungsi utama() {
+    cetak.tulisBaris("=== DEMO ANTARMUKA, OPERATOR KANAL <-, DAN NATIVE PILIH/SELECT ===")
+
+    // 1. Pengujian Antarmuka & Type Assertion / Type Switch Antarmuka
+    cetak.tulisBaris("\n1. Antarmuka (Interface) & Polimorfisme:")
+    var kotak = Persegi({"sisi": 8})
+    cetakBentuk(kotak)
+
+    var asersiBentuk = kotak.(Bentuk)
+    cetak.tulisBaris("   Asersi langsung kotak.(Bentuk): " + asersiBentuk.Info())
+
+    // 2. Pengujian Operator Kanal Native (ch <- data dan <-ch)
+    cetak.tulisBaris("\n2. Operator Kanal Asli (ch <- data dan <-ch):")
+    var ch = kanal.buat(2)
+
+    // Kirim pesan ke kanal menggunakan operator <-
+    ch <- "Halo dari goroutine"
+    ch <- "Pesan kedua"
+
+    // Terima pesan dari kanal menggunakan operator <-
+    var pesan1 = <-ch
+    var pesan2 = <-ch
+    cetak.tulisBaris("   Pesan 1 diterima: " + pesan1)
+    cetak.tulisBaris("   Pesan 2 diterima: " + pesan2)
+
+    // 3. Pengujian Native Select (pilih { kasus ...: bawaan: })
+    cetak.tulisBaris("\n3. Native Select Statement:")
+    var chTugas = kanal.buat(1)
+    var chHasil = kanal.buat(1)
+
+    // Kirim satu tugas
+    chTugas <- "Kalkulasi Data Laporan"
+
+    // Multiplexing select
+    pilih {
+    kasus t := <-chTugas:
+        cetak.tulisBaris("   Berhasil menerima dari chTugas via select: " + t)
+        chHasil <- "Sukses diproses"
+    kasus h := <-chHasil:
+        cetak.tulisBaris("   Menerima hasil: " + h)
+    bawaan:
+        cetak.tulisBaris("   Tidak ada kanal yang siap (Non-blocking default)")
+    }
+
+    var hasilAkhir = <-chHasil
+    cetak.tulisBaris("   Hasil akhir terkonfirmasi: " + hasilAkhir)
+
+    cetak.tulisBaris("\nSemua fitur fundamental Go berhasil diadopsi dan dijalankan dengan sempurna! ✨")
+}

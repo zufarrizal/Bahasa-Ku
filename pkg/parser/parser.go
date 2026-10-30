@@ -143,7 +143,7 @@ func (p *Parser) parseStatement() ast.Statement {
 	case token.PAKAI:
 		return p.parsePakaiStatement()
 	case token.TIPE:
-		return p.parseTypeStructStatement()
+		return p.parseTypeDeclarationStatement()
 	case token.VAR, token.TETAP:
 		return p.parseVarStatement()
 	case token.FUNGSI:
@@ -211,12 +211,42 @@ func (p *Parser) parsePakaiStatement() ast.Statement {
 	return stmt
 }
 
-func (p *Parser) parseTypeStructStatement() ast.Statement {
-	stmt := &ast.TypeStructStatement{Token: p.curToken}
+func (p *Parser) parseTypeDeclarationStatement() ast.Statement {
+	tok := p.curToken
 	if !p.expectPeek(token.IDENT) {
 		return nil
 	}
-	stmt.Name = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+	nameIdent := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+
+	if p.peekTokenIs(token.ANTARMUKA) {
+		p.nextToken() // ke 'antarmuka'
+		if !p.expectPeek(token.LBRACE) {
+			return nil
+		}
+		stmt := &ast.TypeInterfaceStatement{Token: tok, Name: nameIdent, Methods: []ast.InterfaceMethod{}}
+		for !p.peekTokenIs(token.RBRACE) && !p.peekTokenIs(token.EOF) {
+			p.nextToken()
+			if p.curTokenIs(token.IDENT) {
+				methodName := p.curToken.Literal
+				// Opsional parameter signature: Luas() atau Luas
+				if p.peekTokenIs(token.LPAREN) {
+					p.nextToken() // ke '('
+					for !p.curTokenIs(token.RPAREN) && !p.curTokenIs(token.EOF) {
+						p.nextToken()
+					}
+				}
+				// Opsional return type
+				if p.peekTokenIs(token.IDENT) {
+					p.nextToken()
+				}
+				stmt.Methods = append(stmt.Methods, ast.InterfaceMethod{Name: methodName})
+			}
+		}
+		if !p.expectPeek(token.RBRACE) {
+			return nil
+		}
+		return stmt
+	}
 
 	if !p.expectPeek(token.STRUKTUR) {
 		return nil
@@ -224,6 +254,7 @@ func (p *Parser) parseTypeStructStatement() ast.Statement {
 	if !p.expectPeek(token.LBRACE) {
 		return nil
 	}
+	stmt := &ast.TypeStructStatement{Token: tok, Name: nameIdent}
 
 	for !p.peekTokenIs(token.RBRACE) && !p.peekTokenIs(token.EOF) {
 		p.nextToken()
@@ -560,14 +591,45 @@ func (p *Parser) parseSwitchStatement() ast.Statement {
 		p.nextToken()
 		if p.curTokenIs(token.KASUS) {
 			p.nextToken()
-			val := p.parseExpression(LOWEST)
-			vals := []ast.Expression{val}
-			// Dukung multi-value per kasus: kasus "a", "b", "c":
-			for p.peekTokenIs(token.COMMA) {
-				p.nextToken() // ke ','
-				p.nextToken() // ke nilai ekspresi berikutnya
-				vals = append(vals, p.parseExpression(LOWEST))
+			// Jika native channel send: kasus ch <- val:
+			// Kita cek apakah ekspresi ini adalah send atau assign atau multi-value expression
+			firstExpr := p.parseExpression(LOWEST)
+			vals := []ast.Expression{firstExpr}
+			var sendStmt *ast.ChannelSendStatement
+			var assignStmt *ast.AssignStatement
+
+			if p.peekTokenIs(token.ARROW) {
+				p.nextToken() // ke '<-'
+				arrowTok := p.curToken
+				p.nextToken() // ke nilai
+				sendVal := p.parseExpression(LOWEST)
+				sendStmt = &ast.ChannelSendStatement{
+					Token:   arrowTok,
+					Channel: firstExpr,
+					Value:   sendVal,
+				}
+			} else if p.peekTokenIs(token.DEFINE) || p.peekTokenIs(token.ASSIGN) {
+				op := p.peekToken
+				p.nextToken() // := atau =
+				p.nextToken() // value
+				valExpr := p.parseExpression(LOWEST)
+				assignStmt = &ast.AssignStatement{
+					Token:    op,
+					Target:   firstExpr,
+					Targets:  []ast.Expression{firstExpr},
+					Value:    valExpr,
+					Values:   []ast.Expression{valExpr},
+					IsDefine: op.Type == token.DEFINE,
+				}
+			} else {
+				// Multi-value switch cases: kasus "a", "b", "c":
+				for p.peekTokenIs(token.COMMA) {
+					p.nextToken() // ke ','
+					p.nextToken() // ke nilai ekspresi berikutnya
+					vals = append(vals, p.parseExpression(LOWEST))
+				}
 			}
+
 			p.expectPeek(token.COLON)
 			caseBody := &ast.BlockStatement{Token: p.curToken, Statements: []ast.Statement{}}
 			for !p.peekTokenIs(token.KASUS) && !p.peekTokenIs(token.BAWAAN) && !p.peekTokenIs(token.RBRACE) && !p.peekTokenIs(token.EOF) {
@@ -577,7 +639,7 @@ func (p *Parser) parseSwitchStatement() ast.Statement {
 					caseBody.Statements = append(caseBody.Statements, s)
 				}
 			}
-			stmt.Cases = append(stmt.Cases, ast.SwitchCase{Value: val, Values: vals, Body: caseBody})
+			stmt.Cases = append(stmt.Cases, ast.SwitchCase{Value: firstExpr, Values: vals, Send: sendStmt, Assign: assignStmt, Body: caseBody})
 		} else if p.curTokenIs(token.BAWAAN) {
 			p.expectPeek(token.COLON)
 			defBody := &ast.BlockStatement{Token: p.curToken, Statements: []ast.Statement{}}
@@ -731,6 +793,21 @@ func (p *Parser) parseExpressionOrAssignStatement() ast.Statement {
 		}
 	}
 
+	if p.peekTokenIs(token.ARROW) {
+		p.nextToken() // ke '<-'
+		arrowTok := p.curToken
+		p.nextToken() // ke nilai ekspresi yang akan dikirim
+		val := p.parseExpression(LOWEST)
+		if p.peekTokenIs(token.SEMICOLON) {
+			p.nextToken()
+		}
+		return &ast.ChannelSendStatement{
+			Token:   arrowTok,
+			Channel: expr,
+			Value:   val,
+		}
+	}
+
 	if p.peekTokenIs(token.DEFINE) || p.peekTokenIs(token.ASSIGN) {
 		op := p.peekToken
 		p.nextToken()
@@ -840,7 +917,7 @@ func (p *Parser) parsePrefix() ast.Expression {
 		return &ast.CacahLiteral{Token: p.curToken}
 	case token.FUNGSI:
 		return p.parseFunctionLiteral()
-	case token.BANG, token.MINUS:
+	case token.BANG, token.MINUS, token.ARROW:
 		tok := p.curToken
 		p.nextToken()
 		right := p.parseExpression(PREFIX)
