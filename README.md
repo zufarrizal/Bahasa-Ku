@@ -668,6 +668,39 @@ fungsi utama() {
 }
 ```
 
+### 18. Deret Bilangan (`rentang`), Validasi Teks, Monitoring Memori & Waktu Lanjutan (`contoh/dasar_rentang_memori.ku`)
+```ku
+paket utama
+
+pakai "cetak"
+pakai "larik"
+pakai "teks"
+pakai "sistem"
+pakai "waktu"
+
+fungsi utama() {
+    // 1. Pembangkit Deret Rentang Bilangan
+    var deret = larik.rentang(5)            // [0, 1, 2, 3, 4]
+    var deretGenap = larik.rentang(0, 10, 2) // [0, 2, 4, 6, 8]
+    var rataLarik = larik.rata([[1, 2], [3, 4]]) // [1, 2, 3, 4]
+
+    // 2. Pemeriksaan String Karakter
+    cetak.tulis("Apakah kosong?", teks.apakahKosong("   ")) // benar
+    cetak.tulis("Apakah huruf?", teks.apakahHuruf("BahasaKu")) // benar
+    cetak.tulis("Apakah angka?", teks.apakahAngka("2026"))     // benar
+
+    // 3. Monitoring Runtime & CPU
+    var mem = sistem.memori()
+    cetak.tulis("Alokasi memori aktif (MB):", mem["alokasiMB"])
+    cetak.tulis("Jumlah CPU:", sistem.jumlahCPU())
+
+    // 4. Durasi & Kalkulasi Waktu
+    var skr = waktu.detikUnix()
+    var jamLagi = waktu.tambahJam(skr, 2)
+    cetak.tulis("Selisih detik:", waktu.selisihDetik(skr, jamLagi)) // 7200
+}
+```
+
 ---
 
 ## 📂 Struktur Proyek

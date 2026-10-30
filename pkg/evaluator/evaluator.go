@@ -849,6 +849,23 @@ func InitGlobalEnvironment() *Environment {
 			return resMap
 		},
 	}
+	sistemMap.Pairs["memori"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			var m runtime.MemStats
+			runtime.ReadMemStats(&m)
+			res := &Map{Pairs: make(map[string]Object)}
+			res.Pairs["alokasiMB"] = &Float{Value: float64(m.Alloc) / 1024 / 1024}
+			res.Pairs["totalAlokasiMB"] = &Float{Value: float64(m.TotalAlloc) / 1024 / 1024}
+			res.Pairs["sistemMB"] = &Float{Value: float64(m.Sys) / 1024 / 1024}
+			res.Pairs["jumlahGC"] = &Integer{Value: int64(m.NumGC)}
+			return res
+		},
+	}
+	sistemMap.Pairs["jumlahCPU"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			return &Integer{Value: int64(runtime.NumCPU())}
+		},
+	}
 	env.Set("sistem", sistemMap)
 
 	// Modul jaringan (HTTP Client / Fetch API)
@@ -1433,6 +1450,48 @@ func InitGlobalEnvironment() *Environment {
 				return &String{Value: ""}
 			}
 			return &String{Value: string(runes[idx])}
+		},
+	}
+	teksMap.Pairs["apakahKosong"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return TRUE
+			}
+			return &Boolean{Value: len(strings.TrimSpace(args[0].Inspect())) == 0}
+		},
+	}
+	teksMap.Pairs["apakahHuruf"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return FALSE
+			}
+			s := args[0].Inspect()
+			if len(s) == 0 {
+				return FALSE
+			}
+			for _, r := range s {
+				if !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z') {
+					return FALSE
+				}
+			}
+			return TRUE
+		},
+	}
+	teksMap.Pairs["apakahAngka"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return FALSE
+			}
+			s := strings.TrimSpace(args[0].Inspect())
+			if len(s) == 0 {
+				return FALSE
+			}
+			for _, r := range s {
+				if !(r >= '0' && r <= '9') {
+					return FALSE
+				}
+			}
+			return TRUE
 		},
 	}
 	env.Set("teks", teksMap)
@@ -2421,6 +2480,72 @@ func InitGlobalEnvironment() *Environment {
 			return &Integer{Value: -1}
 		},
 	}
+	larikMap.Pairs["rentang"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			start := int64(0)
+			end := int64(0)
+			step := int64(1)
+			if len(args) == 1 {
+				if i, ok := args[0].(*Integer); ok {
+					end = i.Value
+				}
+			} else if len(args) >= 2 {
+				if i, ok := args[0].(*Integer); ok {
+					start = i.Value
+				}
+				if i, ok := args[1].(*Integer); ok {
+					end = i.Value
+				}
+				if len(args) >= 3 {
+					if i, ok := args[2].(*Integer); ok && i.Value != 0 {
+						step = i.Value
+					}
+				}
+			}
+			res := []Object{}
+			if step > 0 {
+				for v := start; v < end; v += step {
+					res = append(res, &Integer{Value: v})
+				}
+			} else {
+				for v := start; v > end; v += step {
+					res = append(res, &Integer{Value: v})
+				}
+			}
+			return &Array{Elements: res}
+		},
+	}
+	larikMap.Pairs["gabungSemua"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			res := []Object{}
+			for _, a := range args {
+				if arr, ok := a.(*Array); ok {
+					res = append(res, arr.Elements...)
+				}
+			}
+			return &Array{Elements: res}
+		},
+	}
+	larikMap.Pairs["rata"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &Array{Elements: []Object{}}
+			}
+			arr, ok := args[0].(*Array)
+			if !ok {
+				return args[0]
+			}
+			res := []Object{}
+			for _, item := range arr.Elements {
+				if subArr, isSub := item.(*Array); isSub {
+					res = append(res, subArr.Elements...)
+				} else {
+					res = append(res, item)
+				}
+			}
+			return &Array{Elements: res}
+		},
+	}
 	env.Set("larik", larikMap)
 
 	// Modul uji (Unit Testing Internal)
@@ -2522,6 +2647,57 @@ func InitGlobalEnvironment() *Environment {
 				tambah = t.Value
 			}
 			return &Integer{Value: secVal + tambah}
+		},
+	}
+	waktuMap.Pairs["tambahMenit"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return NIL
+			}
+			var secVal int64
+			var menit int64
+			if s, ok := args[0].(*Integer); ok {
+				secVal = s.Value
+			}
+			if m, ok := args[1].(*Integer); ok {
+				menit = m.Value
+			}
+			return &Integer{Value: secVal + menit*60}
+		},
+	}
+	waktuMap.Pairs["tambahJam"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return NIL
+			}
+			var secVal int64
+			var jam int64
+			if s, ok := args[0].(*Integer); ok {
+				secVal = s.Value
+			}
+			if j, ok := args[1].(*Integer); ok {
+				jam = j.Value
+			}
+			return &Integer{Value: secVal + jam*3600}
+		},
+	}
+	waktuMap.Pairs["selisihDetik"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return &Integer{Value: 0}
+			}
+			var s1, s2 int64
+			if i1, ok := args[0].(*Integer); ok {
+				s1 = i1.Value
+			}
+			if i2, ok := args[1].(*Integer); ok {
+				s2 = i2.Value
+			}
+			diff := s1 - s2
+			if diff < 0 {
+				diff = -diff
+			}
+			return &Integer{Value: diff}
 		},
 	}
 	waktuMap.Pairs["mulai"] = &Builtin{
