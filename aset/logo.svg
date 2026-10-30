@@ -1,49 +1,40 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
-  <!-- Background Dark Squircle 1:1 -->
+  <!-- Background Dark Squircle 512x512 -->
   <rect width="512" height="512" rx="128" fill="#0A0E17" />
 
   <defs>
     <!-- Gradient Cyan ke Electric Blue khas Go -->
     <linearGradient id="kuGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#00F0FF" />
-      <stop offset="60%" stop-color="#00A3FF" />
       <stop offset="100%" stop-color="#0066FF" />
     </linearGradient>
 
     <!-- Halus Bayangan Cahaya -->
     <filter id="kuGlow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#00A3FF" flood-opacity="0.35" />
+      <feDropShadow dx="0" dy="8" stdDeviation="14" flood-color="#00A3FF" flood-opacity="0.3" />
     </filter>
   </defs>
 
-  <!-- Komposisi Simbol < dan Huruf u Sempurna -->
+  <!-- Konten Presisi Center 1:1 (Rentang X: 116 s.d. 396 = 280, Rentang Y: 146 s.d. 366 = 220) -->
   <g filter="url(#kuGlow)">
-    <!-- 1. Simbol '<' Sempurna (Karakter Kode Khas Programmer, Membentuk Sisi Kiri) -->
-    <path d="M 226,140 L 118,256 L 226,372" 
+    <!-- 1. Simbol '<' Sempurna (Y: 156 ke 256 ke 356, Simetris Sumbu Y=256) -->
+    <path d="M 230,156 L 130,256 L 230,356" 
           stroke="url(#kuGrad)" 
-          stroke-width="54" 
+          stroke-width="50" 
           stroke-linecap="round" 
           stroke-linejoin="round" 
           fill="none" />
 
-    <!-- 2. Huruf 'u' Sempurna (Mangkuk Geometris Presisi, Melambangkan 'u') -->
-    <!-- Garis turun kiri -> kurva dasar U -> garis naik kanan -> tiang vertikal kanan u -->
-    <path d="M 280,210 
-             L 280,314 
-             C 280,378 334,394 372,394 
-             C 410,394 440,366 440,314 
-             L 440,210" 
+    <!-- 2. Huruf 'u' Murni Tanpa Ekor (Melengkung U Sempurna / Pure U-Bowl, Simetris Sumbu Y=256) -->
+    <!-- Turun dari X=282, Y=176 -> lengkung sempurna R=50 di Y=306 -> naik ke X=382, Y=176 -->
+    <path d="M 282,176 
+             L 282,306 
+             A 50,50 0 0,0 382,306 
+             L 382,176" 
           stroke="url(#kuGrad)" 
-          stroke-width="54" 
+          stroke-width="50" 
           stroke-linecap="round" 
           stroke-linejoin="round" 
-          fill="none" />
-
-    <!-- Batang Penutup Kanan Huruf 'u' Sempurna -->
-    <path d="M 440,240 L 440,388" 
-          stroke="url(#kuGrad)" 
-          stroke-width="54" 
-          stroke-linecap="round" 
           fill="none" />
   </g>
 </svg>
