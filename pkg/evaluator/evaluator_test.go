@@ -210,3 +210,57 @@ fungsi utama() {
 		t.Errorf("Diharapkan 200, didapat %d", intVal.Value)
 	}
 }
+
+func TestStrukturDataDanSoket(t *testing.T) {
+	input := `
+paket utama
+fungsi utama() {
+    // 1. Uji Tumpukan (Stack)
+    var s = strukturData.tumpukan()
+    s.dorong("A")
+    s.dorong("B")
+    s.dorong("C")
+    jika s.panjang() != 3 {
+        kembalikan 1
+    }
+    var atas = s.tarik() // "C"
+    jika atas != "C" {
+        kembalikan 2
+    }
+    jika s.intip() != "B" {
+        kembalikan 3
+    }
+
+    // 2. Uji Antrean (Queue)
+    var q = strukturData.antrean()
+    q.masuk(10)
+    q.masuk(20)
+    q.masuk(30)
+    jika q.depan() != 10 {
+        kembalikan 4
+    }
+    var keluar = q.keluar() // 10
+    jika keluar != 10 {
+        kembalikan 5
+    }
+    jika q.panjang() != 2 {
+        kembalikan 6
+    }
+
+    // 3. Uji Sistem Flags / OS Helper
+    jika sistem.apakahWindows() != benar && sistem.apakahWindows() != salah {
+        kembalikan 7
+    }
+
+    kembalikan 300
+}
+`
+	val := runKuCode(input)
+	intVal, ok := val.(*evaluator.Integer)
+	if !ok {
+		t.Fatalf("Nilai bukan Integer: %v", val)
+	}
+	if intVal.Value != 300 {
+		t.Errorf("Diharapkan 300, didapat %d", intVal.Value)
+	}
+}

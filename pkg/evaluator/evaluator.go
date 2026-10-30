@@ -969,6 +969,50 @@ func InitGlobalEnvironment() *Environment {
 			return kunciMap
 		},
 	}
+	sistemMap.Pairs["apakahWindows"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			return &Boolean{Value: runtime.GOOS == "windows"}
+		},
+	}
+	sistemMap.Pairs["apakahLinux"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			return &Boolean{Value: runtime.GOOS == "linux"}
+		},
+	}
+	sistemMap.Pairs["apakahMac"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			return &Boolean{Value: runtime.GOOS == "darwin"}
+		},
+	}
+	sistemMap.Pairs["bendera"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return NIL
+			}
+			flagName := args[0].Inspect()
+			var defaultVal Object = NIL
+			if len(args) > 1 {
+				defaultVal = args[1]
+			}
+			prefix1 := "--" + flagName + "="
+			prefix2 := "-" + flagName + "="
+			for i, a := range os.Args {
+				if strings.HasPrefix(a, prefix1) {
+					return &String{Value: strings.TrimPrefix(a, prefix1)}
+				}
+				if strings.HasPrefix(a, prefix2) {
+					return &String{Value: strings.TrimPrefix(a, prefix2)}
+				}
+				if a == "--"+flagName || a == "-"+flagName {
+					if i+1 < len(os.Args) && !strings.HasPrefix(os.Args[i+1], "-") {
+						return &String{Value: os.Args[i+1]}
+					}
+					return TRUE
+				}
+			}
+			return defaultVal
+		},
+	}
 	env.Set("sistem", sistemMap)
 
 	// Modul jaringan (HTTP Client / Fetch API)
@@ -1055,6 +1099,185 @@ func InitGlobalEnvironment() *Environment {
 				resMap.Pairs["json"] = NIL
 			}
 
+			return resMap
+		},
+	}
+	jaringanMap.Pairs["letak"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return NIL
+			}
+			urlStr := args[0].Inspect()
+			var reqBody io.Reader
+			if m, ok := args[1].(*Map); ok {
+				data := make(map[string]interface{})
+				for k, v := range m.Pairs {
+					data[k] = v.Inspect()
+				}
+				jsonBytes, _ := json.Marshal(data)
+				reqBody = strings.NewReader(string(jsonBytes))
+			} else {
+				reqBody = strings.NewReader(args[1].Inspect())
+			}
+			req, err := http.NewRequest(http.MethodPut, urlStr, reqBody)
+			if err != nil {
+				resMap := &Map{Pairs: make(map[string]Object)}
+				resMap.Pairs["sukses"] = FALSE
+				resMap.Pairs["status"] = &Integer{Value: 0}
+				resMap.Pairs["badan"] = &String{Value: err.Error()}
+				return resMap
+			}
+			req.Header.Set("Content-Type", "application/json")
+			client := &http.Client{Timeout: 15 * time.Second}
+			resp, err := client.Do(req)
+			if err != nil {
+				resMap := &Map{Pairs: make(map[string]Object)}
+				resMap.Pairs["sukses"] = FALSE
+				resMap.Pairs["status"] = &Integer{Value: 0}
+				resMap.Pairs["badan"] = &String{Value: err.Error()}
+				return resMap
+			}
+			defer resp.Body.Close()
+			bodyBytes, _ := io.ReadAll(resp.Body)
+			resMap := &Map{Pairs: make(map[string]Object)}
+			resMap.Pairs["sukses"] = &Boolean{Value: resp.StatusCode >= 200 && resp.StatusCode < 300}
+			resMap.Pairs["status"] = &Integer{Value: int64(resp.StatusCode)}
+			resMap.Pairs["badan"] = &String{Value: string(bodyBytes)}
+			var jsonObj interface{}
+			if err := json.Unmarshal(bodyBytes, &jsonObj); err == nil {
+				resMap.Pairs["json"] = convertGoToKuObject(jsonObj)
+			} else {
+				resMap.Pairs["json"] = NIL
+			}
+			return resMap
+		},
+	}
+	jaringanMap.Pairs["hapus"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return NIL
+			}
+			urlStr := args[0].Inspect()
+			req, err := http.NewRequest(http.MethodDelete, urlStr, nil)
+			if err != nil {
+				resMap := &Map{Pairs: make(map[string]Object)}
+				resMap.Pairs["sukses"] = FALSE
+				resMap.Pairs["status"] = &Integer{Value: 0}
+				resMap.Pairs["badan"] = &String{Value: err.Error()}
+				return resMap
+			}
+			client := &http.Client{Timeout: 15 * time.Second}
+			resp, err := client.Do(req)
+			if err != nil {
+				resMap := &Map{Pairs: make(map[string]Object)}
+				resMap.Pairs["sukses"] = FALSE
+				resMap.Pairs["status"] = &Integer{Value: 0}
+				resMap.Pairs["badan"] = &String{Value: err.Error()}
+				return resMap
+			}
+			defer resp.Body.Close()
+			bodyBytes, _ := io.ReadAll(resp.Body)
+			resMap := &Map{Pairs: make(map[string]Object)}
+			resMap.Pairs["sukses"] = &Boolean{Value: resp.StatusCode >= 200 && resp.StatusCode < 300}
+			resMap.Pairs["status"] = &Integer{Value: int64(resp.StatusCode)}
+			resMap.Pairs["badan"] = &String{Value: string(bodyBytes)}
+			var jsonObj interface{}
+			if err := json.Unmarshal(bodyBytes, &jsonObj); err == nil {
+				resMap.Pairs["json"] = convertGoToKuObject(jsonObj)
+			} else {
+				resMap.Pairs["json"] = NIL
+			}
+			return resMap
+		},
+	}
+	jaringanMap.Pairs["permintaan"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return NIL
+			}
+			cfg, isMap := args[0].(*Map)
+			if !isMap {
+				return NIL
+			}
+			urlStr := ""
+			method := http.MethodGet
+			timeoutSec := 15
+			var reqBody io.Reader
+
+			if u, ok := cfg.Pairs["url"]; ok {
+				urlStr = u.Inspect()
+				if strObj, ok2 := u.(*String); ok2 {
+					urlStr = strObj.Value
+				}
+			}
+			if m, ok := cfg.Pairs["metode"]; ok {
+				method = strings.ToUpper(m.Inspect())
+				if strObj, ok2 := m.(*String); ok2 {
+					method = strings.ToUpper(strObj.Value)
+				}
+			}
+			if t, ok := cfg.Pairs["waktuTunggu"]; ok {
+				if i, ok2 := t.(*Integer); ok2 {
+					timeoutSec = int(i.Value)
+				}
+			}
+			if b, ok := cfg.Pairs["badan"]; ok {
+				if m, ok2 := b.(*Map); ok2 {
+					data := make(map[string]interface{})
+					for k, v := range m.Pairs {
+						data[k] = v.Inspect()
+					}
+					jsonBytes, _ := json.Marshal(data)
+					reqBody = strings.NewReader(string(jsonBytes))
+				} else {
+					reqBody = strings.NewReader(b.Inspect())
+				}
+			}
+
+			req, err := http.NewRequest(method, urlStr, reqBody)
+			if err != nil {
+				resMap := &Map{Pairs: make(map[string]Object)}
+				resMap.Pairs["sukses"] = FALSE
+				resMap.Pairs["status"] = &Integer{Value: 0}
+				resMap.Pairs["badan"] = &String{Value: err.Error()}
+				return resMap
+			}
+
+			if h, ok := cfg.Pairs["tajuk"]; ok {
+				if hMap, ok2 := h.(*Map); ok2 {
+					for hk, hv := range hMap.Pairs {
+						val := hv.Inspect()
+						if strObj, ok3 := hv.(*String); ok3 {
+							val = strObj.Value
+						}
+						req.Header.Set(hk, val)
+					}
+				}
+			}
+
+			client := &http.Client{Timeout: time.Duration(timeoutSec) * time.Second}
+			resp, err := client.Do(req)
+			if err != nil {
+				resMap := &Map{Pairs: make(map[string]Object)}
+				resMap.Pairs["sukses"] = FALSE
+				resMap.Pairs["status"] = &Integer{Value: 0}
+				resMap.Pairs["badan"] = &String{Value: err.Error()}
+				return resMap
+			}
+			defer resp.Body.Close()
+
+			bodyBytes, _ := io.ReadAll(resp.Body)
+			resMap := &Map{Pairs: make(map[string]Object)}
+			resMap.Pairs["sukses"] = &Boolean{Value: resp.StatusCode >= 200 && resp.StatusCode < 300}
+			resMap.Pairs["status"] = &Integer{Value: int64(resp.StatusCode)}
+			resMap.Pairs["badan"] = &String{Value: string(bodyBytes)}
+
+			var jsonObj interface{}
+			if err := json.Unmarshal(bodyBytes, &jsonObj); err == nil {
+				resMap.Pairs["json"] = convertGoToKuObject(jsonObj)
+			} else {
+				resMap.Pairs["json"] = NIL
+			}
 			return resMap
 		},
 	}
@@ -3375,6 +3598,252 @@ func InitGlobalEnvironment() *Environment {
 		},
 	}
 	env.Set("angka", angkaMap)
+
+	// Modul strukturData (Tumpukan / Stack & Antrean / Queue)
+	strukturDataMap := &Map{Pairs: make(map[string]Object)}
+	strukturDataMap.Pairs["tumpukan"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			var stackItems []Object
+			var mu sync.Mutex
+			sInst := &Map{Pairs: make(map[string]Object)}
+			sInst.Pairs["dorong"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					mu.Lock()
+					defer mu.Unlock()
+					for _, item := range mArgs {
+						stackItems = append(stackItems, item)
+					}
+					return &Integer{Value: int64(len(stackItems))}
+				},
+			}
+			sInst.Pairs["tarik"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					mu.Lock()
+					defer mu.Unlock()
+					if len(stackItems) == 0 {
+						return NIL
+					}
+					top := stackItems[len(stackItems)-1]
+					stackItems = stackItems[:len(stackItems)-1]
+					return top
+				},
+			}
+			sInst.Pairs["intip"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					mu.Lock()
+					defer mu.Unlock()
+					if len(stackItems) == 0 {
+						return NIL
+					}
+					return stackItems[len(stackItems)-1]
+				},
+			}
+			sInst.Pairs["panjang"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					mu.Lock()
+					defer mu.Unlock()
+					return &Integer{Value: int64(len(stackItems))}
+				},
+			}
+			sInst.Pairs["apakahKosong"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					mu.Lock()
+					defer mu.Unlock()
+					return &Boolean{Value: len(stackItems) == 0}
+				},
+			}
+			sInst.Pairs["semua"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					mu.Lock()
+					defer mu.Unlock()
+					res := append([]Object{}, stackItems...)
+					return &Array{Elements: res}
+				},
+			}
+			return sInst
+		},
+	}
+	strukturDataMap.Pairs["antrean"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			var queueItems []Object
+			var mu sync.Mutex
+			qInst := &Map{Pairs: make(map[string]Object)}
+			qInst.Pairs["masuk"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					mu.Lock()
+					defer mu.Unlock()
+					for _, item := range mArgs {
+						queueItems = append(queueItems, item)
+					}
+					return &Integer{Value: int64(len(queueItems))}
+				},
+			}
+			qInst.Pairs["keluar"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					mu.Lock()
+					defer mu.Unlock()
+					if len(queueItems) == 0 {
+						return NIL
+					}
+					front := queueItems[0]
+					queueItems = queueItems[1:]
+					return front
+				},
+			}
+			qInst.Pairs["depan"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					mu.Lock()
+					defer mu.Unlock()
+					if len(queueItems) == 0 {
+						return NIL
+					}
+					return queueItems[0]
+				},
+			}
+			qInst.Pairs["panjang"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					mu.Lock()
+					defer mu.Unlock()
+					return &Integer{Value: int64(len(queueItems))}
+				},
+			}
+			qInst.Pairs["apakahKosong"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					mu.Lock()
+					defer mu.Unlock()
+					return &Boolean{Value: len(queueItems) == 0}
+				},
+			}
+			qInst.Pairs["semua"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					mu.Lock()
+					defer mu.Unlock()
+					res := append([]Object{}, queueItems...)
+					return &Array{Elements: res}
+				},
+			}
+			return qInst
+		},
+	}
+	env.Set("strukturData", strukturDataMap)
+
+	// Modul soket (TCP Client & Server Sederhana)
+	soketMap := &Map{Pairs: make(map[string]Object)}
+	soketMap.Pairs["hubungkan"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return NIL
+			}
+			jaringanTipe := args[0].Inspect()
+			alamat := args[1].Inspect()
+			conn, err := net.DialTimeout(jaringanTipe, alamat, 10*time.Second)
+			if err != nil {
+				return NIL
+			}
+			cMap := &Map{Pairs: make(map[string]Object)}
+			cMap.Pairs["tulis"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					if len(mArgs) < 1 {
+						return &Integer{Value: 0}
+					}
+					n, err := conn.Write([]byte(mArgs[0].Inspect()))
+					if err != nil {
+						return &Integer{Value: 0}
+					}
+					return &Integer{Value: int64(n)}
+				},
+			}
+			cMap.Pairs["baca"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					bufSize := 4096
+					if len(mArgs) > 0 {
+						if i, ok := mArgs[0].(*Integer); ok && i.Value > 0 {
+							bufSize = int(i.Value)
+						}
+					}
+					buf := make([]byte, bufSize)
+					n, err := conn.Read(buf)
+					if err != nil {
+						return &String{Value: ""}
+					}
+					return &String{Value: string(buf[:n])}
+				},
+			}
+			cMap.Pairs["tutup"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					_ = conn.Close()
+					return TRUE
+				},
+			}
+			return cMap
+		},
+	}
+	soketMap.Pairs["dengar"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return NIL
+			}
+			jaringanTipe := args[0].Inspect()
+			alamat := args[1].Inspect()
+			ln, err := net.Listen(jaringanTipe, alamat)
+			if err != nil {
+				return NIL
+			}
+			sMap := &Map{Pairs: make(map[string]Object)}
+			sMap.Pairs["terima"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					conn, err := ln.Accept()
+					if err != nil {
+						return NIL
+					}
+					cMap := &Map{Pairs: make(map[string]Object)}
+					cMap.Pairs["tulis"] = &Builtin{
+						Fn: func(subArgs ...Object) Object {
+							if len(subArgs) < 1 {
+								return &Integer{Value: 0}
+							}
+							n, err := conn.Write([]byte(subArgs[0].Inspect()))
+							if err != nil {
+								return &Integer{Value: 0}
+							}
+							return &Integer{Value: int64(n)}
+						},
+					}
+					cMap.Pairs["baca"] = &Builtin{
+						Fn: func(subArgs ...Object) Object {
+							bufSize := 4096
+							if len(subArgs) > 0 {
+								if i, ok := subArgs[0].(*Integer); ok && i.Value > 0 {
+									bufSize = int(i.Value)
+								}
+							}
+							buf := make([]byte, bufSize)
+							n, err := conn.Read(buf)
+							if err != nil {
+								return &String{Value: ""}
+							}
+							return &String{Value: string(buf[:n])}
+						},
+					}
+					cMap.Pairs["tutup"] = &Builtin{
+						Fn: func(subArgs ...Object) Object {
+							_ = conn.Close()
+							return TRUE
+						},
+					}
+					return cMap
+				},
+			}
+			sMap.Pairs["tutup"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					_ = ln.Close()
+					return TRUE
+				},
+			}
+			return sMap
+		},
+	}
+	env.Set("soket", soketMap)
 
 	// Modul pola (Ekspresi Reguler / Regex)
 	polaMap := &Map{Pairs: make(map[string]Object)}

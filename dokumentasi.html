@@ -199,6 +199,8 @@
           <li><a href="#modul-validasi">Modul `validasi`</a></li>
           <li><a href="#modul-angka">Modul `angka` (Bitwise)</a></li>
           <li><a href="#modul-terminal">Modul `terminal` (CLI Warna)</a></li>
+          <li><a href="#modul-struktur-data">Modul `strukturData` (Stack & Queue)</a></li>
+          <li><a href="#modul-soket">Modul `soket` (TCP Networking)</a></li>
           <li><a href="#modul-matematika">Modul `matematika`</a></li>
           <li><a href="#modul-kripto">Modul `kripto`</a></li>
           <li><a href="#modul-berkas-sistem">Modul `berkas` & `sistem`</a></li>
@@ -930,6 +932,45 @@ var geser = angka.geserKiri(1, 8) // 256</code></pre>
         <pre><code>cetak.tulis(terminal.hijau("✔ Operasi Berhasil!"))
 cetak.tulis(terminal.merah("✖ Terjadi Kesalahan Kritis!"))
 cetak.tulis(terminal.tebal(terminal.kuning("Peringatan: Kapasitas RAM menipis")))</code></pre>
+      </section>
+
+      <!-- Modul Standar: Struktur Data -->
+      <section id="modul-struktur-data" class="docs-section">
+        <h2>Modul `strukturData` (Tumpukan / Stack & Antrean / Queue)</h2>
+        <h3>1. Tumpukan (Stack - LIFO)</h3>
+        <p>Method: <code>dorong(item)</code>, <code>tarik()</code>, <code>intip()</code>, <code>panjang()</code>, <code>apakahKosong()</code>, <code>semua()</code>.</p>
+        <pre><code>var stack = strukturData.tumpukan()
+stack.dorong("halaman_1")
+stack.dorong("halaman_2")
+var aktif = stack.tarik() // "halaman_2"</code></pre>
+
+        <h3>2. Antrean (Queue - FIFO)</h3>
+        <p>Method: <code>masuk(item)</code>, <code>keluar()</code>, <code>depan()</code>, <code>panjang()</code>, <code>apakahKosong()</code>, <code>semua()</code>.</p>
+        <pre><code>var antre = strukturData.antrean()
+antre.masuk("tugas_A")
+antre.masuk("tugas_B")
+var tugasPertama = antre.keluar() // "tugas_A"</code></pre>
+      </section>
+
+      <!-- Modul Standar: Soket Jaringan -->
+      <section id="modul-soket" class="docs-section">
+        <h2>Modul `soket` (Koneksi TCP Networking)</h2>
+        <p>Mendukung koneksi jaringan soket murni tingkat rendah (TCP Client & Server):</p>
+        <pre><code>// 1. TCP Server Sederhana
+var server = soket.dengar("tcp", ":9000")
+ku fungsi() {
+    var klien = server.terima()
+    klien.tulis("Halo dari Server Bahasa Ku!\n")
+    klien.tutup()
+}()
+
+// 2. TCP Client
+var klien = soket.hubungkan("tcp", "127.0.0.1:9000")
+jika klien != kosong {
+    var balasan = klien.baca()
+    cetak.tulis("Balasan server:", balasan)
+    klien.tutup()
+}</code></pre>
       </section>
 
       <!-- Modul Standar: Matematika -->
