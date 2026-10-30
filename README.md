@@ -634,6 +634,40 @@ fungsi utama() {
 }
 ```
 
+### 17. Matematika Lanjutan (Euler, Logaritma), Buffer Bita (`bita`), Type Checkers, & Pustaka Acak (`contoh/dasar_matematika_bita.ku`)
+```ku
+paket utama
+
+pakai "cetak"
+pakai "matematika"
+pakai "bita"
+pakai "konversi"
+pakai "acak"
+
+fungsi utama() {
+    // 1. Konstanta Euler & Logaritma
+    cetak.tulis("Euler:", matematika.E) // 2.718282
+    cetak.tulis("Log10(100):", matematika.log10(100)) // 2
+    cetak.tulis("Nilai mutlak:", matematika.mutlak(-50)) // 50
+    cetak.tulis("Hipotenusa (3, 4):", matematika.hipot(3, 4)) // 5
+
+    // 2. Manipulasi Buffer Bita (Byte Array)
+    var dataBita = bita.dariTeks("Halo") // [72, 97, 108, 111]
+    var teksAsli = bita.keTeks(dataBita)  // "Halo"
+    var ukuranByte = bita.panjang("Halo") // 4
+
+    // 3. Predikat Tipe Data Dinamis (Type Guard)
+    cetak.tulis("Apakah angka?", konversi.apakahAngka(100))    // benar
+    cetak.tulis("Apakah teks?", konversi.apakahTeks("Halo"))   // benar
+    cetak.tulis("Apakah larik?", konversi.apakahLarik([1, 2])) // benar
+
+    // 4. Pengacakan Fleksibel
+    var hadiah = ["Mobil", "Motor", "Laptop"]
+    cetak.tulis("Pemenang acak:", acak.pilih(hadiah))
+    cetak.tulis("Kode voucher unik:", acak.teks(6))
+}
+```
+
 ---
 
 ## 📂 Struktur Proyek

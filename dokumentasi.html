@@ -191,6 +191,8 @@
           <li><a href="#modul-kompresi">Modul `kompresi` (Gzip)</a></li>
           <li><a href="#modul-jalur">Modul `jalur` (Filepath)</a></li>
           <li><a href="#modul-enkoding">Modul `enkoding` (CSV, URL, Heksa)</a></li>
+          <li><a href="#modul-bita">Modul `bita` (Byte Buffer)</a></li>
+          <li><a href="#modul-acak">Modul `acak`</a></li>
           <li><a href="#modul-teks">Modul `teks`</a></li>
           <li><a href="#modul-konversi">Modul `konversi`</a></li>
           <li><a href="#modul-json">Modul `json`</a></li>
@@ -674,6 +676,41 @@ var tabel = enkoding.uraiCSV(csvData)
 var hex = enkoding.kodekanHeksa("Ku") // 4b75</code></pre>
       </section>
 
+      <!-- Modul Standar: Bita (Byte Array) -->
+      <section id="modul-bita" class="docs-section">
+        <h2>Modul `bita` (Buffer Byte Array)</h2>
+        <table>
+          <thead>
+            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>bita.dariTeks(str)</code></td><td>Mengubah string menjadi larik angka byte (0..255)</td></tr>
+            <tr><td><code>bita.keTeks(arr)</code></td><td>Mengubah larik angka byte kembali ke string teks</td></tr>
+            <tr><td><code>bita.panjang(str)</code></td><td>Menghitung total panjang byte data</td></tr>
+          </tbody>
+        </table>
+        <pre><code>var bs = bita.dariTeks("Ku") // [75, 117]
+var teks = bita.keTeks(bs)   // "Ku"</code></pre>
+      </section>
+
+      <!-- Modul Standar: Acak -->
+      <section id="modul-acak" class="docs-section">
+        <h2>Modul `acak` (Pengacakan & Pemilihan)</h2>
+        <table>
+          <thead>
+            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>acak.pilih(arr)</code></td><td>Mengambil satu elemen acak dari larik</td></tr>
+            <tr><td><code>acak.teks(n)</code></td><td>Menghasilkan string alfanumerik acak dengan panjang n digit</td></tr>
+            <tr><td><code>acak.pecahan()</code></td><td>Menghasilkan bilangan acak float antara 0.0 hingga 1.0</td></tr>
+          </tbody>
+        </table>
+        <pre><code>var opsi = ["A", "B", "C"]
+var pilih = acak.pilih(opsi)
+var token = acak.teks(16) // Token unik acak</code></pre>
+      </section>
+
       <!-- Modul Standar: Teks -->
       <section id="modul-teks" class="docs-section">
         <h2>Modul `teks`</h2>
@@ -714,6 +751,11 @@ var hex = enkoding.kodekanHeksa("Ku") // 4b75</code></pre>
             <tr><td><code>konversi.tipe(val)</code></td><td>Mengembalikan nama tipe data (angka, pecahan, teks, boolean, daftar, peta, dll)</td></tr>
             <tr><td><code>konversi.rupiah(angka)</code></td><td>Format angka bilangan bulat menjadi format mata uang Rupiah (misal: <code>Rp 2.500.000</code>)</td></tr>
             <tr><td><code>konversi.desimal(angka, presisi)</code></td><td>Format pecahan dengan jumlah digit desimal yang ditentukan (misal: <code>3.142</code>)</td></tr>
+            <tr><td><code>konversi.apakahAngka(val)</code></td><td>Memeriksa apakah bertipe integer atau float (boolean)</td></tr>
+            <tr><td><code>konversi.apakahTeks(val)</code></td><td>Memeriksa apakah bertipe string teks (boolean)</td></tr>
+            <tr><td><code>konversi.apakahLarik(val)</code></td><td>Memeriksa apakah bertipe larik array (boolean)</td></tr>
+            <tr><td><code>konversi.apakahPeta(val)</code></td><td>Memeriksa apakah bertipe peta map (boolean)</td></tr>
+            <tr><td><code>konversi.apakahKosong(val)</code></td><td>Memeriksa apakah bernilai kosong / nihil (boolean)</td></tr>
           </tbody>
         </table>
       </section>
@@ -745,6 +787,10 @@ cetak.tulis("Status:", objek["status"])</code></pre>
             <tr><td><code>matematika.bulat(x)</code></td><td>Membulatkan angka ke integer terdekat</td></tr>
             <tr><td><code>matematika.lantai(x)</code></td><td>Pembulatan ke bawah (floor)</td></tr>
             <tr><td><code>matematika.langit(x)</code></td><td>Pembulatan ke atas (ceil)</td></tr>
+            <tr><td><code>matematika.mutlak(x)</code></td><td>Menghitung nilai absolut |x|</td></tr>
+            <tr><td><code>matematika.log(x)</code></td><td>Logaritma natural Ln(x)</td></tr>
+            <tr><td><code>matematika.log10(x)</code></td><td>Logaritma basis 10</td></tr>
+            <tr><td><code>matematika.hipot(x, y)</code></td><td>Panjang hipotenusa garis miring Pythagoras</td></tr>
             <tr><td><code>matematika.acak(min, max)</code></td><td>Menghasilkan bilangan acak rentang min..max</td></tr>
           </tbody>
         </table>

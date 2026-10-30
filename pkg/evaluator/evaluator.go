@@ -1180,6 +1180,70 @@ func InitGlobalEnvironment() *Environment {
 			return &Float{Value: total / float64(len(arr.Elements))}
 		},
 	}
+	matematikaMap.Pairs["E"] = &Float{Value: math.E}
+	matematikaMap.Pairs["log"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &Float{Value: 0}
+			}
+			var val float64
+			if i, ok := args[0].(*Integer); ok {
+				val = float64(i.Value)
+			} else if f, ok := args[0].(*Float); ok {
+				val = f.Value
+			}
+			return &Float{Value: math.Log(val)}
+		},
+	}
+	matematikaMap.Pairs["log10"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &Float{Value: 0}
+			}
+			var val float64
+			if i, ok := args[0].(*Integer); ok {
+				val = float64(i.Value)
+			} else if f, ok := args[0].(*Float); ok {
+				val = f.Value
+			}
+			return &Float{Value: math.Log10(val)}
+		},
+	}
+	matematikaMap.Pairs["mutlak"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &Float{Value: 0}
+			}
+			if i, ok := args[0].(*Integer); ok {
+				if i.Value < 0 {
+					return &Integer{Value: -i.Value}
+				}
+				return i
+			} else if f, ok := args[0].(*Float); ok {
+				return &Float{Value: math.Abs(f.Value)}
+			}
+			return args[0]
+		},
+	}
+	matematikaMap.Pairs["hipot"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return &Float{Value: 0}
+			}
+			var x, y float64
+			if i, ok := args[0].(*Integer); ok {
+				x = float64(i.Value)
+			} else if f, ok := args[0].(*Float); ok {
+				x = f.Value
+			}
+			if i, ok := args[1].(*Integer); ok {
+				y = float64(i.Value)
+			} else if f, ok := args[1].(*Float); ok {
+				y = f.Value
+			}
+			return &Float{Value: math.Hypot(x, y)}
+		},
+	}
 	env.Set("matematika", matematikaMap)
 
 	// Modul teks (Manipulasi String)
@@ -1497,7 +1561,129 @@ func InitGlobalEnvironment() *Environment {
 			return &String{Value: "Rp " + res}
 		},
 	}
+	konversiMap.Pairs["apakahAngka"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return FALSE
+			}
+			t := args[0].Type()
+			return &Boolean{Value: t == INTEGER_OBJ || t == FLOAT_OBJ}
+		},
+	}
+	konversiMap.Pairs["apakahTeks"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return FALSE
+			}
+			return &Boolean{Value: args[0].Type() == STRING_OBJ}
+		},
+	}
+	konversiMap.Pairs["apakahLarik"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return FALSE
+			}
+			return &Boolean{Value: args[0].Type() == ARRAY_OBJ}
+		},
+	}
+	konversiMap.Pairs["apakahPeta"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return FALSE
+			}
+			return &Boolean{Value: args[0].Type() == MAP_OBJ}
+		},
+	}
+	konversiMap.Pairs["apakahKosong"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return TRUE
+			}
+			return &Boolean{Value: args[0] == nil || args[0].Type() == NIL_OBJ}
+		},
+	}
 	env.Set("konversi", konversiMap)
+
+	// Modul bita (Manipulasi Byte Array & Buffer Biner)
+	bitaMap := &Map{Pairs: make(map[string]Object)}
+	bitaMap.Pairs["dariTeks"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &Array{Elements: []Object{}}
+			}
+			bs := []byte(args[0].Inspect())
+			elems := make([]Object, len(bs))
+			for i, b := range bs {
+				elems[i] = &Integer{Value: int64(b)}
+			}
+			return &Array{Elements: elems}
+		},
+	}
+	bitaMap.Pairs["keTeks"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			arr, ok := args[0].(*Array)
+			if !ok {
+				return &String{Value: ""}
+			}
+			bs := make([]byte, len(arr.Elements))
+			for i, e := range arr.Elements {
+				if intObj, isInt := e.(*Integer); isInt {
+					bs[i] = byte(intObj.Value)
+				}
+			}
+			return &String{Value: string(bs)}
+		},
+	}
+	bitaMap.Pairs["panjang"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &Integer{Value: 0}
+			}
+			return &Integer{Value: int64(len([]byte(args[0].Inspect())))}
+		},
+	}
+	env.Set("bita", bitaMap)
+
+	// Modul acak (Pengacakan Lanjutan & Pemilihan Data)
+	acakMap := &Map{Pairs: make(map[string]Object)}
+	acakMap.Pairs["pilih"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return NIL
+			}
+			arr, isArr := args[0].(*Array)
+			if !isArr || len(arr.Elements) == 0 {
+				return NIL
+			}
+			idx := mrand.Intn(len(arr.Elements))
+			return arr.Elements[idx]
+		},
+	}
+	acakMap.Pairs["pecahan"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			return &Float{Value: mrand.Float64()}
+		},
+	}
+	acakMap.Pairs["teks"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			n := 8
+			if len(args) > 0 {
+				if i, ok := args[0].(*Integer); ok && i.Value > 0 {
+					n = int(i.Value)
+				}
+			}
+			const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+			res := make([]byte, n)
+			for i := 0; i < n; i++ {
+				res[i] = chars[mrand.Intn(len(chars))]
+			}
+			return &String{Value: string(res)}
+		},
+	}
+	env.Set("acak", acakMap)
 
 	// Modul enkoding (CSV & URL Query)
 	enkodingMap := &Map{Pairs: make(map[string]Object)}

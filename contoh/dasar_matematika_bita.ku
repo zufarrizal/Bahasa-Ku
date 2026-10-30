@@ -1,0 +1,45 @@
+paket utama
+
+pakai "cetak"
+pakai "matematika"
+pakai "bita"
+pakai "konversi"
+pakai "acak"
+
+fungsi utama() {
+    cetak.tulis("=== 1. MATEMATIKA LANJUTAN & EULER ===")
+    cetak.tulis("Bilangan Euler (E):", matematika.E)
+    cetak.tulis("Ln(E):", matematika.log(matematika.E))
+    cetak.tulis("Log10(100):", matematika.log10(100))
+    cetak.tulis("Mutlak(-42.7):", matematika.mutlak(-42.7))
+    cetak.tulis("Panjang Hipotenusa (3, 4):", matematika.hipot(3, 4))
+
+    cetak.tulis("\n=== 2. MODUL BITA (BUFFER BYTE ARRAY) ===")
+    var kalimat = "Halo Ku"
+    var daftarBita = bita.dariTeks(kalimat)
+    cetak.tulis("Teks sumber:", kalimat)
+    cetak.tulis("Representasi Bita (ASCII/Byte):", daftarBita)
+    cetak.tulis("Konversi balik dari Bita:", bita.keTeks(daftarBita))
+    cetak.tulis("Ukuran bita teks:", bita.panjang(kalimat))
+
+    cetak.tulis("\n=== 3. PREDIKAT TIPE DATA (TYPE CHECKER) ===")
+    var skor = 95
+    var nama = "Zufar"
+    var buah = ["Mangga", "Apel"]
+    var petaUser = {"id": 1}
+    var kosongVal = kosong
+
+    cetak.tulis("Apakah skor angka?", konversi.apakahAngka(skor))
+    cetak.tulis("Apakah skor teks?", konversi.apakahTeks(skor))
+    cetak.tulis("Apakah nama teks?", konversi.apakahTeks(nama))
+    cetak.tulis("Apakah buah larik?", konversi.apakahLarik(buah))
+    cetak.tulis("Apakah petaUser peta?", konversi.apakahPeta(petaUser))
+    cetak.tulis("Apakah kosongVal kosong?", konversi.apakahKosong(kosongVal))
+
+    cetak.tulis("\n=== 4. PUSTAKA ACAK (PILIH & TEKS ACAK) ===")
+    var hadiah = ["Sepeda", "Laptop", "Mobil", "Buku"]
+    var hasilPilih = acak.pilih(hadiah)
+    cetak.tulis("Hadiah terpilih acak:", hasilPilih)
+    cetak.tulis("Kode voucher acak (8 digit):", acak.teks(8))
+    cetak.tulis("Bilangan pecahan acak [0..1):", acak.pecahan())
+}
