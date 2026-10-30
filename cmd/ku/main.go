@@ -2,7 +2,7 @@ package main
 
 import (
 	"bytes"
-	"fmt"
+	fmt "fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -135,12 +135,13 @@ func main() {
 	case "kompilasi", "build":
 		if len(args) < 2 {
 			fmt.Println("Galat: Harap tentukan nama berkas .ku yang ingin dikompilasi.")
-			fmt.Println("Contoh: ku kompilasi [-gui] app.ku [-o app.exe]")
+			fmt.Println("Contoh: ku kompilasi [-gui] [-ikon <ikon.ico>] app.ku [-o app.exe]")
 			os.Exit(1)
 		}
 		isGUI := false
 		sourceFile := ""
 		outputExe := ""
+		customIcon := ""
 
 		for i := 1; i < len(args); i++ {
 			arg := args[i]
@@ -148,6 +149,9 @@ func main() {
 				isGUI = true
 			} else if (arg == "-o" || arg == "--output") && i+1 < len(args) {
 				outputExe = args[i+1]
+				i++
+			} else if (arg == "-ikon" || arg == "--icon" || arg == "-ico") && i+1 < len(args) {
+				customIcon = args[i+1]
 				i++
 			} else if strings.HasPrefix(arg, "-") {
 				// Abaikan flag lain atau tangani jika ada
@@ -163,7 +167,7 @@ func main() {
 			os.Exit(1)
 		}
 
-		compileDirectToBinary(sourceFile, outputExe, isGUI)
+		compileDirectToBinary(sourceFile, outputExe, isGUI, customIcon)
 
 	case "inisiasi", "init", "inisialisasi":
 		if len(args) < 2 {
@@ -230,7 +234,7 @@ func printHelp() {
   ku uji [berkas/_uji.ku]  Menjalankan pengujian unit test otomatis
   ku tolakUkur [berkas]    Menjalankan pengujian tolok ukur performa (benchmark)
   ku rapi [-w] <berkas.ku> Merapikan format kode secara otomatis (mirip gofmt)
-  ku kompilasi <berkas.ku> [-o keluar.exe]  Kompilasi langsung ke biner mandiri (.exe)
+  ku kompilasi <berkas.ku> [-gui] [-ikon ikon.ico] [-o keluar.exe]  Kompilasi langsung ke biner mandiri (.exe)
   ku inisialisasi <nama_folder> [web|desktop|cli]  Membuat proyek baru beserta berkas ku.mod
   ku buat <berkas.ku>      Mengonversi berkas .ku ke .go murni
   ku versi                 Menampilkan versi
@@ -241,6 +245,7 @@ Contoh:
   ku uji
   ku rapi -w contoh/halo.ku
   ku kompilasi contoh/halo.ku -o HaloApp.exe
+  ku kompilasi -gui -ikon aset/ku.ico contoh/desktop_native.ku -o Aplikasi.exe
   ku inisiasi web portal-berita
 `)
 }
@@ -304,7 +309,7 @@ func transpileFile(source, target string) {
 	fmt.Printf("Berhasil mentranspilasi '%s' -> '%s'! ✨\n", source, target)
 }
 
-func compileDirectToBinary(source, outputExe string, isGUI bool) {
+func compileDirectToBinary(source, outputExe string, isGUI bool, customIcon string) {
 	content, err := os.ReadFile(source)
 	if err != nil {
 		fmt.Printf("Galat membaca berkas: %v\n", err)
@@ -498,12 +503,44 @@ replace github.com/zufarrizal/bahasa-ku => %q
 		tidyCmd.Dir = tempDir
 		_ = tidyCmd.Run()
 
-		// Sisipkan ku.syso jika ada di proyek untuk ikon & metadata Windows
-		sysoPath := filepath.Join(projRoot, "cmd", "ku", "ku.syso")
-		if _, err := os.Stat(sysoPath); err == nil {
-			sysoData, err := os.ReadFile(sysoPath)
-			if err == nil {
-				_ = os.WriteFile(filepath.Join(tempDir, "ku.syso"), sysoData, 0644)
+		// Penanganan Ikon Windows (.ico):
+		// 1. Jika pengguna menentukan -ikon <file.ico>, generate ku.syso via tool rsrc jika tersedia
+		// 2. Jika rsrc tidak ada atau -ikon tidak ditentukan, gunakan ikon default Bahasa Ku (defaultSysoBytes)
+		if runtime.GOOS == "windows" {
+			iconWritten := false
+			if customIcon != "" {
+				absIcon, err := filepath.Abs(customIcon)
+				if err == nil {
+					if _, err := os.Stat(absIcon); err == nil {
+						// Coba buat .syso kustom via rsrc
+						rsrcExe := "rsrc"
+						if rPath, err := exec.LookPath("rsrc"); err == nil {
+							rsrcExe = rPath
+						} else {
+							defaultRsrc := filepath.Join(os.Getenv("USERPROFILE"), "go", "bin", "rsrc.exe")
+							if _, err := os.Stat(defaultRsrc); err == nil {
+								rsrcExe = defaultRsrc
+							}
+						}
+						targetSyso := filepath.Join(tempDir, "ku.syso")
+						rsrcCmd := exec.Command(rsrcExe, "-ico", absIcon, "-o", targetSyso)
+						if err := rsrcCmd.Run(); err == nil {
+							iconWritten = true
+						}
+					} else {
+						fmt.Printf("Peringatan: Berkas ikon '%s' tidak ditemukan, menggunakan ikon default Bahasa Ku.\n", customIcon)
+					}
+				}
+			}
+
+			// Fallback ke ku.syso dari proyek lokal atau defaultSysoBytes bawaan biner
+			if !iconWritten {
+				sysoPath := filepath.Join(projRoot, "cmd", "ku", "ku.syso")
+				if sysoData, err := os.ReadFile(sysoPath); err == nil && len(sysoData) > 0 {
+					_ = os.WriteFile(filepath.Join(tempDir, "ku.syso"), sysoData, 0644)
+				} else if len(defaultSysoBytes) > 0 {
+					_ = os.WriteFile(filepath.Join(tempDir, "ku.syso"), defaultSysoBytes, 0644)
+				}
 			}
 		}
 
