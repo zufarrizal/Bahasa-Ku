@@ -1,0 +1,22 @@
+{
+  "name": "bahasa-ku",
+  "version": "0.1.0",
+  "description": "Bahasa pemrograman bernuansa Go dengan sintaks murni Bahasa Indonesia",
+  "main": "src/index.js",
+  "bin": {
+    "ku": "./bin/ku.js"
+  },
+  "type": "module",
+  "scripts": {
+    "test": "node test/run_tests.js"
+  },
+  "keywords": [
+    "bahasa-ku",
+    "compiler",
+    "interpreter",
+    "golang",
+    "indonesia"
+  ],
+  "author": "",
+  "license": "MIT"
+}

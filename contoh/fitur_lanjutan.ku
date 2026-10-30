@@ -1,0 +1,52 @@
+paket utama
+
+pakai "cetak"
+
+tipe Pengguna struktur {
+    nama string
+    umur angka
+}
+
+fungsi sapaHari(hari) {
+    pilih hari {
+        kasus "Senin":
+            kembalikan "Semangat awal pekan!"
+        kasus "Jumat":
+            kembalikan "Hampir akhir pekan!"
+        kasus "Minggu":
+            kembalikan "Waktu istirahat."
+        bawaan:
+            kembalikan "Hari kerja biasa."
+    }
+}
+
+fungsi utama() {
+    cetak.tulis("=== Uji Coba Fitur Lanjutan Bahasa Ku ===")
+
+    // 1. Array / Slice & Modul panjang + tambah
+    var buah = ["Apel", "Mangga", "Jeruk"]
+    cetak.tulis("Daftar buah awal:", buah)
+    cetak.tulis("Jumlah buah:", panjang(buah))
+    cetak.tulis("Buah pertama:", buah[0])
+
+    buah = tambah(buah, "Pisang")
+    cetak.tulis("Setelah ditambah:", buah)
+
+    // 2. Peta / Map (Kamus)
+    var ibukota = {
+        "Indonesia": "Nusantara",
+        "Jepang": "Tokyo"
+    }
+    cetak.tulis("Ibukota Indonesia:", ibukota["Indonesia"])
+
+    // 3. Struktur (Struct)
+    var programmer = Pengguna({
+        nama: "Budi Santoso",
+        umur: 25
+    })
+    cetak.tulis("Data Pengguna:", programmer.nama, "- Umur:", programmer.umur)
+
+    // 4. Pilih - Kasus (Switch - Case)
+    cetak.tulis("Pesan hari Jumat:", sapaHari("Jumat"))
+    cetak.tulis("Pesan hari Rabu:", sapaHari("Rabu"))
+}

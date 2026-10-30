@@ -1,0 +1,34 @@
+paket utama
+
+pakai "cetak"
+
+fungsi hitungFaktorial(n) {
+    jika n <= 1 {
+        kembalikan 1
+    }
+    kembalikan n * hitungFaktorial(n - 1)
+}
+
+fungsi periksaGenapGanjil(angka) {
+    jika angka % 2 == 0 {
+        kembalikan "Genap"
+    } lainnya {
+        kembalikan "Ganjil"
+    }
+}
+
+fungsi utama() {
+    cetak.tulis("=== Uji Coba Logika Bahasa Ku ===")
+    
+    var nama = "Pengembang Ku"
+    cetak.tulis("Halo,", nama)
+
+    cetak.tulis("\n--- Perulangan & Percabangan ---")
+    untuk i := 1; i <= 5; i++ {
+        cetak.tulis("Angka:", i, "->", periksaGenapGanjil(i))
+    }
+
+    cetak.tulis("\n--- Fungsi Rekursif (Faktorial) ---")
+    var hasil = hitungFaktorial(5)
+    cetak.tulis("Faktorial dari 5 adalah:", hasil)
+}

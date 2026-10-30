@@ -1,0 +1,8 @@
+paket utama
+
+pakai "cetak"
+
+fungsi utama() {
+    cetak.tulis("Halo Dunia dari Bahasa Ku!")
+    cetak.tulis("Selamat datang di era pemrograman berbahasa Indonesia.")
+}
