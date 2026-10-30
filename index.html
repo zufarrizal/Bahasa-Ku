@@ -83,6 +83,7 @@
       <nav class="nav-links">
         <a href="#playground">Playground</a>
         <a href="#fitur">Fitur</a>
+        <a href="dokumentasi.html" style="color: var(--accent); font-weight: 700;">📖 Dokumentasi</a>
         <a href="https://github.com/zufarrizal/Bahasa-Ku" target="_blank">GitHub</a>
         <a href="https://github.com/zufarrizal/Bahasa-Ku/releases" target="_blank">Unduh v0.2.0</a>
       </nav>
@@ -98,6 +99,15 @@
       <div class="install-box">
         <span class="install-cmd">irm https://raw.githubusercontent.com/zufarrizal/Bahasa-Ku/main/pasang.ps1 | iex</span>
         <button class="btn-copy" onclick="copyInstall()">Salin</button>
+      </div>
+
+      <div style="margin-top: 24px; display: flex; justify-content: center; gap: 16px;">
+        <a href="dokumentasi.html" style="background: linear-gradient(135deg, #00f0ff, #0077ff); color: #000; text-decoration: none; padding: 10px 22px; border-radius: 8px; font-weight: 700; font-size: 0.95rem; display: inline-flex; align-items: center; gap: 8px;">
+          📚 Baca Dokumentasi Lengkap &rarr;
+        </a>
+        <a href="#playground" style="background: rgba(255, 255, 255, 0.08); border: 1px solid var(--border); color: #fff; text-decoration: none; padding: 10px 22px; border-radius: 8px; font-weight: 600; font-size: 0.95rem; display: inline-flex; align-items: center; gap: 8px;">
+          ⚡ Coba di Browser
+        </a>
       </div>
     </section>
 
@@ -176,6 +186,21 @@ fungsi utama() {
         <div class="feature-icon">🎨</div>
         <h3>Dukungan VS Code</h3>
         <p>Dilengkapi ekstensi resmi untuk Visual Studio Code dengan pewarnaan sintaksis rapi dan ikon file unik.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⏱️</div>
+        <h3>Waktu & Durasi</h3>
+        <p>Modul <code>waktu</code> bawaan untuk stempel waktu Unix, formatting tanggal, dan kalkulasi durasi waktu.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔍</div>
+        <h3>Regex & Pola String</h3>
+        <p>Modul <code>pola</code> untuk pencocokan regular expression, pencarian multi-substring, dan sensor teks dinamis.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔄</div>
+        <h3>Konkurensi & Paralelisme</h3>
+        <p>Jalankan thread ringan Ku-routine via <code>ku fn()</code>, komunikasi <code>kanal</code>, dan sinkronisasi <code>kelompokTunggu</code>.</p>
       </div>
     </section>
   </main>

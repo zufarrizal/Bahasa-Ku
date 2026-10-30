@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dokumentasi Bahasa Ku - Panduan Lengkap & Referensi API</title>
+  <link rel="icon" type="image/svg+xml" href="aset/logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: #111827;
+      --card-sub: #0f172a;
+      --border: #1f2937;
+      --text: #f3f4f6;
+      --muted: #9ca3af;
+      --accent: #00f0ff;
+      --accent-blue: #0077ff;
+      --code-bg: #050811;
+      --sidebar-w: 280px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: var(--text); line-height: 1.6; }
+
+    /* Navigasi */
+    header { border-bottom: 1px solid var(--border); padding: 14px 24px; position: sticky; top: 0; background: rgba(9, 13, 22, 0.92); backdrop-filter: blur(12px); z-index: 100; }
+    .nav-container { max-width: 1400px; margin: auto; display: flex; justify-content: space-between; align-items: center; }
+    .logo-brand { display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 1.25rem; color: var(--text); text-decoration: none; }
+    .logo-brand img { width: 34px; height: 34px; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-weight: 500; font-size: 0.9rem; margin-left: 20px; transition: color 0.2s; }
+    .nav-links a:hover, .nav-links a.active { color: var(--accent); }
+
+    /* Layout Wrapper */
+    .docs-layout { display: flex; max-width: 1400px; margin: auto; min-height: calc(100vh - 65px); }
+
+    /* Sidebar */
+    .docs-sidebar {
+      width: var(--sidebar-w);
+      border-right: 1px solid var(--border);
+      padding: 24px 16px;
+      position: sticky;
+      top: 65px;
+      height: calc(100vh - 65px);
+      overflow-y: auto;
+      flex-shrink: 0;
+    }
+    .sidebar-group { margin-bottom: 24px; }
+    .sidebar-title { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); font-weight: 700; margin-bottom: 8px; padding-left: 10px; }
+    .sidebar-links { list-style: none; }
+    .sidebar-links li a {
+      display: block;
+      padding: 6px 12px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.88rem;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+    .sidebar-links li a:hover { color: #fff; background: rgba(255, 255, 255, 0.05); }
+
+    /* Main Content */
+    .docs-content { flex: 1; padding: 40px 48px 80px; max-width: 950px; }
+    
+    .docs-section { margin-bottom: 60px; scroll-margin-top: 90px; }
+    .docs-section h1 { font-size: 2.25rem; font-weight: 800; margin-bottom: 16px; color: #fff; }
+    .docs-section h2 { font-size: 1.6rem; font-weight: 700; margin-top: 36px; margin-bottom: 14px; border-bottom: 1px solid var(--border); padding-bottom: 8px; color: #fff; }
+    .docs-section h3 { font-size: 1.2rem; font-weight: 600; margin-top: 24px; margin-bottom: 10px; color: var(--accent); }
+    .docs-section p { color: #d1d5db; margin-bottom: 16px; font-size: 1rem; }
+    .docs-section ul, .docs-section ol { margin-left: 24px; margin-bottom: 16px; color: #d1d5db; }
+    .docs-section li { margin-bottom: 6px; }
+
+    /* Table */
+    table { width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 0.9rem; }
+    th, td { border: 1px solid var(--border); padding: 10px 14px; text-align: left; }
+    th { background: #0f172a; color: var(--accent); font-weight: 600; }
+    td code { background: rgba(255, 255, 255, 0.07); padding: 2px 6px; border-radius: 4px; font-family: 'Fira Code', monospace; color: #38bdf8; font-size: 0.85rem; }
+
+    /* Code Blocks */
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 20px;
+      overflow-x: auto;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.88rem;
+      line-height: 1.5;
+      color: #e5e7eb;
+    }
+    p code, li code {
+      background: rgba(255, 255, 255, 0.08);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'Fira Code', monospace;
+      color: #38bdf8;
+      font-size: 0.88rem;
+    }
+
+    /* Badges & Notes */
+    .note-box {
+      background: rgba(0, 240, 255, 0.06);
+      border-left: 4px solid var(--accent);
+      padding: 14px 18px;
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 20px;
+      font-size: 0.95rem;
+      color: #e0f2fe;
+    }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; background: rgba(0, 119, 255, 0.2); color: #60a5fa; border: 1px solid rgba(0, 119, 255, 0.4); }
+
+    /* Footer */
+    footer { border-top: 1px solid var(--border); padding: 32px 20px; text-align: center; color: var(--muted); font-size: 0.85rem; margin-top: 60px; }
+    footer a { color: var(--accent); text-decoration: none; }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .docs-layout { flex-direction: column; }
+      .docs-sidebar { width: 100%; height: auto; position: static; border-right: none; border-bottom: 1px solid var(--border); }
+      .docs-content { padding: 24px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="nav-container">
+      <a href="index.html" class="logo-brand">
+        <img src="aset/logo.svg" alt="Logo Ku">
+        <span>Bahasa Ku</span>
+      </a>
+      <nav class="nav-links">
+        <a href="index.html">Beranda</a>
+        <a href="index.html#playground">Playground</a>
+        <a href="dokumentasi.html" class="active">Dokumentasi</a>
+        <a href="https://github.com/zufarrizal/Bahasa-Ku" target="_blank">GitHub</a>
+        <a href="https://github.com/zufarrizal/Bahasa-Ku/releases" target="_blank">Unduh v0.2.0</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="docs-layout">
+    <!-- Sidebar Navigasi Dokumentasi -->
+    <aside class="docs-sidebar">
+      <div class="sidebar-group">
+        <div class="sidebar-title">Memulai</div>
+        <ul class="sidebar-links">
+          <li><a href="#pengantar">Pengantar & Filosofi</a></li>
+          <li><a href="#instalasi">Instalasi & Toolchain CLI</a></li>
+          <li><a href="#struktur-program">Struktur Program Dasar</a></li>
+        </ul>
+      </div>
+
+      <div class="sidebar-group">
+        <div class="sidebar-title">Sintaksis & Fondasi</div>
+        <ul class="sidebar-links">
+          <li><a href="#variabel-tipe">Variabel & Tipe Data</a></li>
+          <li><a href="#percabangan">Percabangan (jika, pilih)</a></li>
+          <li><a href="#perulangan">Perulangan (untuk)</a></li>
+          <li><a href="#fungsi-closure">Fungsi, Multi-Return & Closure</a></li>
+          <li><a href="#struktur-method">Struktur (Struct) & Method</a></li>
+          <li><a href="#penanganan-error">Panik & Pulih (Panic/Recover)</a></li>
+        </ul>
+      </div>
+
+      <div class="sidebar-group">
+        <div class="sidebar-title">Konkurensi & Sinkronisasi</div>
+        <ul class="sidebar-links">
+          <li><a href="#konkurensi">Ku-routine (`ku fn()`)</a></li>
+          <li><a href="#kanal">Kanal (Channel)</a></li>
+          <li><a href="#waitgroup">Sinkronisasi WaitGroup</a></li>
+        </ul>
+      </div>
+
+      <div class="sidebar-group">
+        <div class="sidebar-title">Pustaka Standar Bawaan</div>
+        <ul class="sidebar-links">
+          <li><a href="#modul-cetak">Modul `cetak`</a></li>
+          <li><a href="#modul-waktu">Modul `waktu`</a></li>
+          <li><a href="#modul-pola">Modul `pola` (Regex)</a></li>
+          <li><a href="#modul-larik">Modul `larik` & Koleksi</a></li>
+          <li><a href="#modul-teks">Modul `teks`</a></li>
+          <li><a href="#modul-json">Modul `json`</a></li>
+          <li><a href="#modul-matematika">Modul `matematika`</a></li>
+          <li><a href="#modul-kripto">Modul `kripto`</a></li>
+          <li><a href="#modul-berkas-sistem">Modul `berkas` & `sistem`</a></li>
+          <li><a href="#modul-web-desktop">Modul `web` & `jendela`</a></li>
+          <li><a href="#modul-basisdata">Modul `basisdata` (MySQL)</a></li>
+          <li><a href="#modul-uji">Modul `uji` (Unit Test)</a></li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Konten Dokumentasi -->
+    <main class="docs-content">
+      
+      <!-- Pengantar -->
+      <section id="pengantar" class="docs-section">
+        <h1>Dokumentasi Resmi Bahasa Ku</h1>
+        <p>Bahasa Ku adalah bahasa pemrograman edukatif modern bertingkat tinggi dengan sintaksis bahasa Indonesia yang dirancang di atas arsitektur bahasa <strong>Go (Golang)</strong>. Bahasa Ku memungkinkan pengembang, pelajar, maupun pemula untuk mempelajari konsep pemrograman modern—seperti konkurensi (Ku-routine), kanal, closures, manipulasi memori terstruktur, hingga web server—secara intuitif.</p>
+
+        <div class="note-box">
+          <strong>Pernyataan Etika & Sumber Inspirasi:</strong> Bahasa Ku terinspirasi oleh kesederhanaan desain arsitektur Google Go (The Go Authors / Google LLC). Bahasa Ku adalah proyek edukasi terbuka independen dan didistribusikan di bawah lisensi MIT.
+        </div>
+      </section>
+
+      <!-- Instalasi -->
+      <section id="instalasi" class="docs-section">
+        <h2>Instalasi & Toolchain CLI</h2>
+        <p>Bahasa Ku dapat dipasang secara langsung menggunakan satu perintah terminal otomatis di Windows (PowerShell):</p>
+        <pre><code>irm https://raw.githubusercontent.com/zufarrizal/Bahasa-Ku/main/pasang.ps1 | iex</code></pre>
+        
+        <p>Atau unduh biner langsung untuk Windows, Linux, maupun macOS dari <a href="https://github.com/zufarrizal/Bahasa-Ku/releases" target="_blank" style="color:var(--accent);">Halaman Rilis GitHub</a>.</p>
+
+        <h3>Perintah Dasar CLI `ku`</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Perintah</th>
+              <th>Deskripsi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>ku jalankan &lt;berkas.ku&gt;</code></td>
+              <td>Mengeksekusi berkas kode Ku secara instan dengan engine native</td>
+            </tr>
+            <tr>
+              <td><code>ku bangun &lt;berkas.ku&gt;</code></td>
+              <td>Mengompilasi berkas Ku menjadi biner mandiri (.exe / binary)</td>
+            </tr>
+            <tr>
+              <td><code>ku format &lt;berkas.ku&gt;</code></td>
+              <td>Merapikan indentasi dan spasi berkas kode secara otomatis</td>
+            </tr>
+            <tr>
+              <td><code>ku uji [berkas_uji.ku]</code></td>
+              <td>Menjalankan suite pengujian unit test internal</td>
+            </tr>
+            <tr>
+              <td><code>ku interaktif</code></td>
+              <td>Membuka mode REPL interaktif di terminal</td>
+            </tr>
+            <tr>
+              <td><code>ku versi</code></td>
+              <td>Menampilkan informasi versi runtime dan platform</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Struktur Program Dasar -->
+      <section id="struktur-program" class="docs-section">
+        <h2>Struktur Program Dasar</h2>
+        <p>Setiap program Bahasa Ku diawali dengan deklarasi paket dan impor pustaka, diikuti dengan fungsi entri utama <code>fungsi utama()</code>:</p>
+        <pre><code>paket utama
+
+pakai "cetak"
+
+fungsi utama() {
+    cetak.tulis("Halo dari Bahasa Ku!")
+}</code></pre>
+      </section>
+
+      <!-- Variabel & Tipe Data -->
+      <section id="variabel-tipe" class="docs-section">
+        <h2>Variabel & Tipe Data</h2>
+        <p>Bahasa Ku mendukung deklarasi variabel dinamis dan konstanta tetap:</p>
+        <pre><code>paket utama
+
+pakai "cetak"
+
+fungsi utama() {
+    // Deklarasi standar
+    var nama = "Budi"
+    
+    // Inisialisasi cepat
+    umur := 25
+    tinggi := 175.5
+    aktif := benar // boolean: benar / salah
+    
+    // Konstanta
+    tetap PI = 3.14159
+    
+    // Nilai kosong
+    var data = kosong // atau nihil
+
+    cetak.tulis(nama, umur, tinggi, aktif, PI)
+}</code></pre>
+
+        <h3>Array (Larik) & Map (Kamus)</h3>
+        <pre><code>// Larik (Array)
+var buah = ["Apel", "Mangga", "Jeruk"]
+tambah(buah, "Pisang")
+cetak.tulis("Jumlah buah:", panjang(buah))
+cetak.tulis("Buah pertama:", buah[0])
+
+// Slicing Larik
+var sub = buah[1:3] // Mengambil indeks 1 hingga 2
+
+// Kamus (Map)
+var profil = {
+    "nama": "Andi",
+    "pekerjaan": "Programmer"
+}
+profil["kota"] = "Jakarta"
+hapus(profil, "pekerjaan")
+cetak.tulis(profil["nama"])</code></pre>
+      </section>
+
+      <!-- Percabangan -->
+      <section id="percabangan" class="docs-section">
+        <h2>Percabangan (Kondisi)</h2>
+        <h3>1. Jika / Lainnya (`if` / `else`)</h3>
+        <pre><code>jika nilai >= 85 {
+    cetak.tulis("Predikat: A")
+} lainnya jika nilai >= 70 {
+    cetak.tulis("Predikat: B")
+} lainnya {
+    cetak.tulis("Predikat: C")
+}</code></pre>
+
+        <h3>2. Pilih / Kasus (`switch` / `case`)</h3>
+        <pre><code>pilih peran {
+    kasus "admin":
+        cetak.tulis("Akses penuh sistem")
+    kasus "editor", "penulis":
+        cetak.tulis("Akses tulis konten")
+    bawaan:
+        cetak.tulis("Akses pengunjung biasa")
+}</code></pre>
+      </section>
+
+      <!-- Perulangan -->
+      <section id="perulangan" class="docs-section">
+        <h2>Perulangan (`untuk`)</h2>
+        <h3>1. Perulangan Standar Tiga Bagian</h3>
+        <pre><code>untuk i := 0; i < 5; i++ {
+    cetak.tulis("Indeks:", i)
+}</code></pre>
+
+        <h3>2. Perulangan Koleksi (`untuk ... dalam`)</h3>
+        <pre><code>var warna = ["Merah", "Hijau", "Biru"]
+untuk idx, item dalam warna {
+    cetak.tulis(idx, ":", item)
+}
+
+// Menghiraukan indeks dengan blank identifier '_'
+untuk _, item dalam warna {
+    cetak.tulis(item)
+}</code></pre>
+
+        <h3>3. Perulangan Kondisional (While-style)</h3>
+        <pre><code>angka := 1
+untuk angka <= 10 {
+    angka += 2
+}</code></pre>
+      </section>
+
+      <!-- Fungsi & Closure -->
+      <section id="fungsi-closure" class="docs-section">
+        <h2>Fungsi, Multi-Return & Closure</h2>
+        <h3>1. Pengembalian Nilai Ganda (Multiple Return Values)</h3>
+        <pre><code>fungsi bagi(pembilang, penyebut) {
+    jika penyebut == 0 {
+        kembalikan 0, "Pembagian dengan nol dilarang!"
+    }
+    kembalikan pembilang / penyebut, kosong
+}
+
+// Pemanggilan
+hasil, galat := bagi(10, 2)
+jika galat != kosong {
+    cetak.tulis("Error:", galat)
+} lainnya {
+    cetak.tulis("Hasil:", hasil)
+}</code></pre>
+
+        <h3>2. Variadic Parameters & Fungsi Anonim (Closure)</h3>
+        <pre><code>fungsi jumlahkanSemua(...angka) {
+    total := 0
+    untuk _, n dalam angka {
+        total += n
+    }
+    kembalikan total
+}
+
+// Fungsi Anonim / Lambda
+var kuadrat = fungsi(x) {
+    kembalikan x * x
+}
+cetak.tulis("Hasil kuadrat 5:", kuadrat(5))</code></pre>
+      </section>
+
+      <!-- Struktur & Method -->
+      <section id="struktur-method" class="docs-section">
+        <h2>Struktur (Struct) & Method Receivers</h2>
+        <pre><code>tipe Persegi struktur {
+    panjang,
+    lebar
+}
+
+// Method receiver untuk struct Persegi
+fungsi (p Persegi) luas() {
+    kembalikan p.panjang * p.lebar
+}
+
+fungsi utama() {
+    var kotak = Persegi{panjang: 10, lebar: 5}
+    cetak.tulis("Luas kotak:", kotak.luas())
+}</code></pre>
+      </section>
+
+      <!-- Penanganan Error -->
+      <section id="penanganan-error" class="docs-section">
+        <h2>Panik & Pulih (`panik` & `pulih`)</h2>
+        <p>Mekanisme penanganan eksepsi bawaan setara Go <code>panic</code> dan <code>recover</code>:</p>
+        <pre><code>fungsi prosesData() {
+    tunda fungsi() {
+        var err = pulih()
+        jika err != kosong {
+            cetak.tulis("Sistem pulih dari insiden:", err)
+        }
+    }()
+
+    cetak.tulis("Memulai proses...")
+    panik("Koneksi terputus mendadak!")
+    cetak.tulis("Baris ini tidak akan dieksekusi")
+}</code></pre>
+      </section>
+
+      <!-- Konkurensi & Kanal -->
+      <section id="konkurensi" class="docs-section">
+        <h2>Konkurensi (`ku`) & Kanal (`kanal`)</h2>
+        <p>Jalankan pekerjaan paralel ringan menggunakan kata kunci <code>ku</code> dan komunikasikan data dengan aman menggunakan <code>kanal</code>:</p>
+        <pre><code>paket utama
+
+pakai "cetak"
+pakai "kanal"
+pakai "sistem"
+
+fungsi pekerja(pipa) {
+    sistem.tidur(500) // Istirahat 500 milidetik
+    pipa.kirim("Laporan Selesai")
+}
+
+fungsi utama() {
+    // Membuat kanal berkapasitas 1
+    var pipa = kanal.buat(1)
+
+    // Luncurkan Ku-routine
+    ku pekerja(pipa)
+
+    // Menerima data secara non-blocking
+    var pesan, berhasil = pipa.terimaDenganWaktu(1000)
+    jika berhasil {
+        cetak.tulis("Pesan diterima:", pesan)
+    }
+}</code></pre>
+      </section>
+
+      <!-- WaitGroup -->
+      <section id="waitgroup" class="docs-section">
+        <h2>Sinkronisasi Kelompok Tunggu (`kelompokTunggu`)</h2>
+        <pre><code>var kt = sistem.kelompokTunggu()
+
+untuk i := 1; i <= 3; i++ {
+    kt.tambah(1)
+    ku fungsi(id) {
+        tunda kt.selesai()
+        cetak.tulis("Tugas pekerja selesai:", id)
+    }(i)
+}
+
+kt.tunggu() // Menunggu hingga ketiga tugas selesai
+cetak.tulis("Semua tugas tuntas!")</code></pre>
+      </section>
+
+      <!-- Modul Standar: Cetak -->
+      <section id="modul-cetak" class="docs-section">
+        <h2>Modul `cetak`</h2>
+        <table>
+          <thead>
+            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>cetak.tulis(...data)</code></td><td>Mencetak argumen ke terminal dengan baris baru otomatis</td></tr>
+            <tr><td><code>cetak.tulisBaris(format, ...data)</code></td><td>Format string mirip Printf</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Modul Standar: Waktu -->
+      <section id="modul-waktu" class="docs-section">
+        <h2>Modul `waktu`</h2>
+        <p>Modul untuk pengelolaan stempel waktu, tanggal, dan kalkulasi durasi:</p>
+        <table>
+          <thead>
+            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>waktu.sekarang()</code></td><td>Mengembalikan objek Map berisi rincian: <code>tahun</code>, <code>bulan</code>, <code>hari</code>, <code>jam</code>, <code>menit</code>, <code>detik</code>, <code>detikUnix</code>, dan <code>teks</code></td></tr>
+            <tr><td><code>waktu.detikUnix()</code></td><td>Mengembalikan Unix timestamp (detik) saat ini</td></tr>
+            <tr><td><code>waktu.miliDetikUnix()</code></td><td>Mengembalikan Unix timestamp dalam milidetik</td></tr>
+            <tr><td><code>waktu.format(layout)</code> / <code>waktu.format(unix, layout)</code></td><td>Format tanggal/waktu sesuai format layout</td></tr>
+            <tr><td><code>waktu.tambahDetik(unix, detik)</code></td><td>Menambahkan durasi detik ke stempel waktu</td></tr>
+          </tbody>
+        </table>
+        <pre><code>var skr = waktu.sekarang()
+cetak.tulis("Tahun saat ini:", skr["tahun"])
+cetak.tulis("Tanggal lengkap:", skr["teks"]) // contoh: 2026-10-30 15:45:00</code></pre>
+      </section>
+
+      <!-- Modul Standar: Pola (Regex) -->
+      <section id="modul-pola" class="docs-section">
+        <h2>Modul `pola` (Ekspresi Reguler / Regex)</h2>
+        <p>Pencarian, pencocokan, dan manipulasi teks berbasis Regular Expression:</p>
+        <table>
+          <thead>
+            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>pola.cocok(regex, teks)</code></td><td>Mengembalikan boolean <code>benar</code> jika pola cocok</td></tr>
+            <tr><td><code>pola.temukanSemua(regex, teks)</code></td><td>Mengembalikan larik dari seluruh substring yang cocok</td></tr>
+            <tr><td><code>pola.ganti(regex, teks, pengganti)</code></td><td>Mengganti bagian teks yang cocok dengan teks baru</td></tr>
+          </tbody>
+        </table>
+        <pre><code>// Validasi Email
+var valid = pola.cocok("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", "admin@ku.id")
+
+// Masking data sensitif
+var sensor = pola.ganti("[0-9]", "Kode PIN: 8492", "*") // Kode PIN: ****</code></pre>
+      </section>
+
+      <!-- Modul Standar: Larik -->
+      <section id="modul-larik" class="docs-section">
+        <h2>Modul `larik` & Koleksi</h2>
+        <table>
+          <thead>
+            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>larik.urut(arr)</code></td><td>Mengurutkan larik secara ascending (angka maupun string)</td></tr>
+            <tr><td><code>larik.balik(arr)</code></td><td>Membalik susunan elemen larik</td></tr>
+            <tr><td><code>larik.acak(arr)</code></td><td>Mengocok urutan larik secara acak (shuffle)</td></tr>
+            <tr><td><code>larik.saring(arr, fn)</code></td><td>Menyaring elemen larik berdasarkan fungsi predikat (filter)</td></tr>
+            <tr><td><code>larik.petakan(arr, fn)</code></td><td>Mentransformasi setiap elemen larik menjadi nilai baru (map)</td></tr>
+            <tr><td><code>larik.reduksi(arr, fn, awal)</code></td><td>Merangkum larik menjadi satu nilai tunggal (reduce)</td></tr>
+            <tr><td><code>larik.temukan(arr, fn)</code></td><td>Menemukan elemen pertama yang memenuhi syarat predikat</td></tr>
+          </tbody>
+        </table>
+        <pre><code>var angka = [10, 5, 2, 8, 1]
+var urut = larik.urut(angka) // [1, 2, 5, 8, 10]
+var genap = larik.saring(urut, fungsi(x) { kembalikan x % 2 == 0 }) // [2, 8, 10]</code></pre>
+      </section>
+
+      <!-- Modul Standar: Teks -->
+      <section id="modul-teks" class="docs-section">
+        <h2>Modul `teks`</h2>
+        <table>
+          <thead>
+            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>teks.kapital(str)</code></td><td>Mengubah teks menjadi HURUF BESAR</td></tr>
+            <tr><td><code>teks.kecil(str)</code></td><td>Mengubah teks menjadi huruf kecil</td></tr>
+            <tr><td><code>teks.pangkas(str)</code></td><td>Menghapus spasi di awal dan akhir string</td></tr>
+            <tr><td><code>teks.pisah(str, pemisah)</code></td><td>Memecah teks menjadi larik substring</td></tr>
+            <tr><td><code>teks.gabung(arr, pemisah)</code></td><td>Menggabungkan larik teks dengan pemisah</td></tr>
+            <tr><td><code>teks.mengandung(str, sub)</code></td><td>Memeriksa apakah substring ada dalam teks</td></tr>
+            <tr><td><code>teks.awalan(str, prefix)</code></td><td>Memeriksa apakah teks diawali substring tertentu</td></tr>
+            <tr><td><code>teks.akhiran(str, suffix)</code></td><td>Memeriksa apakah teks diakhiri substring tertentu</td></tr>
+            <tr><td><code>teks.indeks(str, sub)</code></td><td>Mengembalikan posisi indeks kemunculan pertama substring</td></tr>
+            <tr><td><code>teks.ulang(str, n)</code></td><td>Mengulang teks sebanyak n kali</td></tr>
+            <tr><td><code>teks.format(str, ...args)</code></td><td>Format string dengan placeholder indeks {0}, {1}</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Modul Standar: JSON -->
+      <section id="modul-json" class="docs-section">
+        <h2>Modul `json`</h2>
+        <pre><code>// Serialisasi
+var payload = {"status": "sukses", "kode": 200}
+var stringJSON = json.kodekan(payload)
+
+// Deserialisasi
+var objek = json.urai(stringJSON)
+cetak.tulis("Status:", objek["status"])</code></pre>
+      </section>
+
+      <!-- Modul Standar: Matematika -->
+      <section id="modul-matematika" class="docs-section">
+        <h2>Modul `matematika`</h2>
+        <table>
+          <thead>
+            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>matematika.sin(x)</code>, <code>cos(x)</code>, <code>tan(x)</code></td><td>Fungsi trigonometri sudut radian</td></tr>
+            <tr><td><code>matematika.rataRata(arr)</code></td><td>Menghitung rata-rata nilai larik angka</td></tr>
+            <tr><td><code>matematika.akar(x)</code></td><td>Menghitung akar kuadrat</td></tr>
+            <tr><td><code>matematika.pangkat(x, y)</code></td><td>Menghitung pemangkatan angka x^y</td></tr>
+            <tr><td><code>matematika.bulat(x)</code></td><td>Membulatkan angka ke integer terdekat</td></tr>
+            <tr><td><code>matematika.lantai(x)</code></td><td>Pembulatan ke bawah (floor)</td></tr>
+            <tr><td><code>matematika.langit(x)</code></td><td>Pembulatan ke atas (ceil)</td></tr>
+            <tr><td><code>matematika.acak(min, max)</code></td><td>Menghasilkan bilangan acak rentang min..max</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Modul Standar: Kriptografi -->
+      <section id="modul-kripto" class="docs-section">
+        <h2>Modul `kripto`</h2>
+        <table>
+          <thead>
+            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>kripto.sha256(teks)</code></td><td>Hasing teks dengan algoritma SHA-256</td></tr>
+            <tr><td><code>kripto.md5(teks)</code></td><td>Hashing teks dengan algoritma MD5</td></tr>
+            <tr><td><code>kripto.kodekanBase64(teks)</code></td><td>Encoding teks ke format Base64</td></tr>
+            <tr><td><code>kripto.dekodekanBase64(str)</code></td><td>Decoding string Base64 kembali ke teks asli</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Modul Standar: Berkas & Sistem -->
+      <section id="modul-berkas-sistem" class="docs-section">
+        <h2>Modul `berkas` & `sistem`</h2>
+        <pre><code>// Modul Berkas (File I/O)
+berkas.tulis("catatan.txt", "Isi pesan penting")
+var isi = berkas.baca("catatan.txt")
+var ada = berkas.ada("catatan.txt")
+
+// Modul Sistem
+var osName = sistem.os() // windows, linux, darwin
+sistem.tidur(1000)      // Sleep dalam milidetik
+sistem.keluar(0)        // Exit program</code></pre>
+      </section>
+
+      <!-- Modul Standar: Web & Desktop -->
+      <section id="modul-web-desktop" class="docs-section">
+        <h2>Modul `web` & `jendela`</h2>
+        <h3>1. HTTP Server API</h3>
+        <pre><code>web.rute("/", fungsi(permintaan, respons) {
+    respons.json({"pesan": "Selamat datang di API Bahasa Ku!"})
+})
+web.jalankan(8080)</code></pre>
+
+        <h3>2. Aplikasi Desktop GUI Native</h3>
+        <pre><code>// Menampilkan kotak pesan dialog native OS
+jendela.pesan("Halo", "Aplikasi Desktop Bahasa Ku Native!")
+
+// Menampilkan kotak tanya konfirmasi
+jika jendela.konfirmasi("Konfirmasi", "Apakah Anda yakin ingin lanjut?") {
+    cetak.tulis("Pengguna menyetujui.")
+}</code></pre>
+      </section>
+
+      <!-- Modul Standar: Basis Data -->
+      <section id="modul-basisdata" class="docs-section">
+        <h2>Modul `basisdata` (MySQL)</h2>
+        <pre><code>// Sambungkan ke server MySQL
+basisdata.buka("mysql", "root:kata_sandi@tcp(127.0.0.1:3306)/db_ku")
+
+// Eksekusi DDL / DML
+basisdata.eksekusi("INSERT INTO pengguna (nama, email) VALUES ('Zufar', 'zufar@ku.id')")
+
+// Kueri data
+var hasil = basisdata.kueri("SELECT id, nama, email FROM pengguna")
+cetak.tulis("Data pengguna:", hasil)</code></pre>
+      </section>
+
+      <!-- Modul Standar: Uji (Testing) -->
+      <section id="modul-uji" class="docs-section">
+        <h2>Modul `uji` (Unit Test Internal)</h2>
+        <p>Jalankan tes unit melalui perintah CLI <code>ku uji berkas_uji.ku</code>:</p>
+        <pre><code>uji.sama(hitungFaktorial(3), 6)
+uji.benar(panjang([1, 2, 3]) == 3)</code></pre>
+      </section>
+
+    </main>
+  </div>
+
+  <footer>
+    <p>Bahasa Ku &copy; 2026 Zufar Rizal. Lisensi Terbuka MIT.</p>
+    <p style="margin-top: 6px;"><a href="index.html">Kembali ke Halaman Beranda</a> &bull; <a href="https://github.com/zufarrizal/Bahasa-Ku" target="_blank">Repositori GitHub</a></p>
+  </footer>
+
+</body>
+</html>
