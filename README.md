@@ -5,8 +5,8 @@
 </p>
 
 <p align="center">
-  <b>Bahasa pemrograman bernuansa Go dengan sintaks murni berbahasa Indonesia.</b><br>
-  <i>Cepat, Modern, Multiplatform, dan Mudah Dipahami.</i>
+  <b>Bahasa pemrograman edukatif bernuansa Go dengan sintaks murni berbahasa Indonesia.</b><br>
+  <i>Cepat, Modern, Multiplatform, dan Ramah bagi Pemula.</i>
 </p>
 
 ---
@@ -282,6 +282,11 @@ go test ./...
 
 ---
 
-## 📄 Lisensi
+## 📄 Lisensi & Pernyataan Etika (Ethical Notice)
 
-Didistribusikan di bawah lisensi [MIT](LICENSE).
+Proyek ini didistribusikan di bawah lisensi terbuka [MIT License](LICENSE).
+
+### Pengakuan & Penghormatan Hak Cipta
+- **Sumber Inspirasi:** Bahasa Ku dirancang sebagai bahasa tingkat tinggi untuk tujuan edukasi dan kemudahan akses (*accessibility*), yang **terinspirasi oleh arsitektur dan kesederhanaan bahasa Go (The Go Authors / Google LLC)**.
+- **Batasan Afiliasi:** Bahasa Ku adalah proyek independen dan tidak terafiliasi, disponsori, maupun didukung secara resmi oleh Google LLC atau The Go Authors. Seluruh merek dagang dan hak kekayaan intelektual dari bahasa Go tetap sepenuhnya milik pemegang hak cipta aslinya.
+- **Tujuan Pengembangan:** Proyek ini lahir sebagai sarana edukasi untuk membantu penutur Bahasa Indonesia mempelajari konsep komputasi, algoritma, dan pemrograman sistem dengan hambatan bahasa yang seminimal mungkin.
