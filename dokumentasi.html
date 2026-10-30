@@ -186,7 +186,10 @@
           <li><a href="#modul-waktu">Modul `waktu`</a></li>
           <li><a href="#modul-pola">Modul `pola` (Regex)</a></li>
           <li><a href="#modul-larik">Modul `larik` & Koleksi</a></li>
+          <li><a href="#modul-jalur">Modul `jalur` (Filepath)</a></li>
+          <li><a href="#modul-enkoding">Modul `enkoding` (CSV & URL)</a></li>
           <li><a href="#modul-teks">Modul `teks`</a></li>
+          <li><a href="#modul-konversi">Modul `konversi`</a></li>
           <li><a href="#modul-json">Modul `json`</a></li>
           <li><a href="#modul-matematika">Modul `matematika`</a></li>
           <li><a href="#modul-kripto">Modul `kripto`</a></li>
@@ -561,6 +564,46 @@ var urut = larik.urut(angka) // [1, 2, 5, 8, 10]
 var genap = larik.saring(urut, fungsi(x) { kembalikan x % 2 == 0 }) // [2, 8, 10]</code></pre>
       </section>
 
+      <!-- Modul Standar: Jalur -->
+      <section id="modul-jalur" class="docs-section">
+        <h2>Modul `jalur` (Manipulasi Path Berkas ala filepath)</h2>
+        <p>Pengelolaan path dan lokasi berkas independen lintas sistem operasi:</p>
+        <table>
+          <thead>
+            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>jalur.gabung(...bagian)</code></td><td>Menggabungkan bagian-bagian direktori/path dengan separator OS yang tepat</td></tr>
+            <tr><td><code>jalur.nama(path)</code></td><td>Mengambil nama berkas saja dari sebuah path (Base)</td></tr>
+            <tr><td><code>jalur.induk(path)</code></td><td>Mengambil folder direktori induk (Dir)</td></tr>
+            <tr><td><code>jalur.ekstensi(path)</code></td><td>Mengambil ekstensi berkas (Ext, misal: <code>.ku</code>)</td></tr>
+          </tbody>
+        </table>
+        <pre><code>var lokasi = jalur.gabung("folder", "sub", "utama.ku")
+cetak.tulis("Nama berkas:", jalur.nama(lokasi)) // utama.ku
+cetak.tulis("Folder induk:", jalur.induk(lokasi)) // folder/sub
+cetak.tulis("Ekstensi:", jalur.ekstensi(lokasi)) // .ku</code></pre>
+      </section>
+
+      <!-- Modul Standar: Enkoding -->
+      <section id="modul-enkoding" class="docs-section">
+        <h2>Modul `enkoding` (CSV & URL Query)</h2>
+        <table>
+          <thead>
+            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>enkoding.uraiCSV(teks)</code></td><td>Mem-parse string CSV menjadi larik 2-dimensi</td></tr>
+            <tr><td><code>enkoding.kodekanCSV(larik2D)</code></td><td>Mengonversi larik 2-dimensi menjadi teks string CSV</td></tr>
+            <tr><td><code>enkoding.kodekanURL(teks)</code></td><td>Meng-encode teks menjadi format URL Query Escape</td></tr>
+            <tr><td><code>enkoding.dekodekanURL(teks)</code></td><td>Men-decode format URL kembali ke teks asli</td></tr>
+          </tbody>
+        </table>
+        <pre><code>var csvData = "nama,skor\nBudi,95"
+var tabel = enkoding.uraiCSV(csvData)
+cetak.tulis(tabel[1][0]) // Budi</code></pre>
+      </section>
+
       <!-- Modul Standar: Teks -->
       <section id="modul-teks" class="docs-section">
         <h2>Modul `teks`</h2>
@@ -580,6 +623,24 @@ var genap = larik.saring(urut, fungsi(x) { kembalikan x % 2 == 0 }) // [2, 8, 10
             <tr><td><code>teks.indeks(str, sub)</code></td><td>Mengembalikan posisi indeks kemunculan pertama substring</td></tr>
             <tr><td><code>teks.ulang(str, n)</code></td><td>Mengulang teks sebanyak n kali</td></tr>
             <tr><td><code>teks.format(str, ...args)</code></td><td>Format string dengan placeholder indeks {0}, {1}</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Modul Standar: Konversi -->
+      <section id="modul-konversi" class="docs-section">
+        <h2>Modul `konversi`</h2>
+        <table>
+          <thead>
+            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>konversi.keAngka(val)</code></td><td>Mengonversi nilai menjadi integer (angka bulat)</td></tr>
+            <tr><td><code>konversi.kePecahan(val)</code></td><td>Mengonversi nilai menjadi float (bilangan pecahan)</td></tr>
+            <tr><td><code>konversi.keTeks(val)</code></td><td>Mengonversi nilai menjadi string representasi teks</td></tr>
+            <tr><td><code>konversi.tipe(val)</code></td><td>Mengembalikan nama tipe data (angka, pecahan, teks, boolean, daftar, peta, dll)</td></tr>
+            <tr><td><code>konversi.rupiah(angka)</code></td><td>Format angka bilangan bulat menjadi format mata uang Rupiah (misal: <code>Rp 2.500.000</code>)</td></tr>
+            <tr><td><code>konversi.desimal(angka, presisi)</code></td><td>Format pecahan dengan jumlah digit desimal yang ditentukan (misal: <code>3.142</code>)</td></tr>
           </tbody>
         </table>
       </section>
@@ -626,6 +687,9 @@ cetak.tulis("Status:", objek["status"])</code></pre>
           <tbody>
             <tr><td><code>kripto.sha256(teks)</code></td><td>Hasing teks dengan algoritma SHA-256</td></tr>
             <tr><td><code>kripto.md5(teks)</code></td><td>Hashing teks dengan algoritma MD5</td></tr>
+            <tr><td><code>kripto.hmacSha256(kunci, pesan)</code></td><td>Menghasilkan tanda tangan HMAC berbasis SHA-256</td></tr>
+            <tr><td><code>kripto.uuid()</code></td><td>Menghasilkan string ID unik global UUID v4 standar RFC 4122</td></tr>
+            <tr><td><code>kripto.tokenAcak(panjang)</code></td><td>Menghasilkan string heksadesimal acak kriptografis</td></tr>
             <tr><td><code>kripto.kodekanBase64(teks)</code></td><td>Encoding teks ke format Base64</td></tr>
             <tr><td><code>kripto.dekodekanBase64(str)</code></td><td>Decoding string Base64 kembali ke teks asli</td></tr>
           </tbody>
@@ -639,11 +703,17 @@ cetak.tulis("Status:", objek["status"])</code></pre>
 berkas.tulis("catatan.txt", "Isi pesan penting")
 var isi = berkas.baca("catatan.txt")
 var ada = berkas.ada("catatan.txt")
+berkas.buatFolder("data/arsip")
+var daftarBerkas = berkas.daftar(".")
 
-// Modul Sistem
+// Modul Sistem & Lingkungan OS
 var osName = sistem.os() // windows, linux, darwin
-sistem.tidur(1000)      // Sleep dalam milidetik
-sistem.keluar(0)        // Exit program</code></pre>
+sistem.aturLingkungan("APLIKASI_ENV", "produksi")
+var envVal = sistem.lingkungan("APLIKASI_ENV")
+var cwd = sistem.folderKerja() // current directory
+var args = sistem.argumen() // argumen baris perintah CLI
+sistem.tidur(1000)          // Sleep dalam milidetik
+sistem.keluar(0)            // Exit program</code></pre>
       </section>
 
       <!-- Modul Standar: Web & Desktop -->

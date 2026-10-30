@@ -528,6 +528,37 @@ fungsi utama() {
 }
 ```
 
+### 14. Jalur Berkas, Enkoding CSV & URL, UUID & HMAC (`contoh/dasar_jalur_enkoding.ku`)
+```ku
+paket utama
+
+pakai "cetak"
+pakai "jalur"
+pakai "enkoding"
+pakai "kripto"
+pakai "konversi"
+
+fungsi utama() {
+    // 1. Modul Jalur (filepath)
+    var path = jalur.gabung("proyek", "sumber", "app.ku")
+    cetak.tulis("Nama berkas:", jalur.nama(path))   // app.ku
+    cetak.tulis("Folder induk:", jalur.induk(path)) // proyek/sumber
+    cetak.tulis("Ekstensi:", jalur.ekstensi(path))  // .ku
+
+    // 2. Modul Enkoding CSV & URL Query
+    var tabel = enkoding.uraiCSV("nama,skor\nBudi,95")
+    var urlEnk = enkoding.kodekanURL("bahasa ku & golang") // bahasa+ku+%26+golang
+
+    // 3. Kripto UUID & HMAC-SHA256
+    var idUnik = kripto.uuid() // misal: 63107efa-1d39-4669-93b5-4dc560bc08d1
+    var signature = kripto.hmacSha256("rahasia", "data payload")
+
+    // 4. Konversi Format Rupiah & Desimal
+    cetak.tulis(konversi.rupiah(2500000))        // Rp 2.500.000
+    cetak.tulis(konversi.desimal(3.14159265, 3)) // 3.142
+}
+```
+
 ---
 
 ## 📂 Struktur Proyek

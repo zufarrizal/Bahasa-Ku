@@ -2,11 +2,14 @@ package evaluator
 
 import (
 	"bufio"
+	"bytes"
+	"crypto/hmac"
 	"crypto/md5"
 	"crypto/rand"
 	"crypto/sha256"
 	"database/sql"
 	"encoding/base64"
+	"encoding/csv"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -14,6 +17,7 @@ import (
 	"math"
 	mrand "math/rand"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -624,7 +628,53 @@ func InitGlobalEnvironment() *Environment {
 			return &Integer{Value: fi.Size()}
 		},
 	}
+	berkasMap.Pairs["buatFolder"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return FALSE
+			}
+			err := os.MkdirAll(args[0].Inspect(), 0755)
+			return &Boolean{Value: err == nil}
+		},
+	}
 	env.Set("berkas", berkasMap)
+
+	// Modul jalur (Manipulasi Path Berkas ala filepath)
+	jalurMap := &Map{Pairs: make(map[string]Object)}
+	jalurMap.Pairs["gabung"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			parts := []string{}
+			for _, a := range args {
+				parts = append(parts, a.Inspect())
+			}
+			return &String{Value: filepath.Join(parts...)}
+		},
+	}
+	jalurMap.Pairs["nama"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			return &String{Value: filepath.Base(args[0].Inspect())}
+		},
+	}
+	jalurMap.Pairs["induk"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			return &String{Value: filepath.Dir(args[0].Inspect())}
+		},
+	}
+	jalurMap.Pairs["ekstensi"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			return &String{Value: filepath.Ext(args[0].Inspect())}
+		},
+	}
+	env.Set("jalur", jalurMap)
 
 	// Modul sistem (OS, Env, Argumen, Waktu)
 	sistemMap := &Map{Pairs: make(map[string]Object)}
@@ -635,6 +685,26 @@ func InitGlobalEnvironment() *Environment {
 			}
 			key := args[0].Inspect()
 			return &String{Value: os.Getenv(key)}
+		},
+	}
+	sistemMap.Pairs["aturLingkungan"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return FALSE
+			}
+			key := args[0].Inspect()
+			val := args[1].Inspect()
+			err := os.Setenv(key, val)
+			return &Boolean{Value: err == nil}
+		},
+	}
+	sistemMap.Pairs["folderKerja"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			wd, err := os.Getwd()
+			if err != nil {
+				return &String{Value: ""}
+			}
+			return &String{Value: wd}
 		},
 	}
 	sistemMap.Pairs["waktu"] = &Builtin{
@@ -840,6 +910,28 @@ func InitGlobalEnvironment() *Environment {
 			bytes := make([]byte, n)
 			_, _ = rand.Read(bytes)
 			return &String{Value: hex.EncodeToString(bytes)[:n]}
+		},
+	}
+	kriptoMap.Pairs["uuid"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			u := make([]byte, 16)
+			_, _ = rand.Read(u)
+			u[6] = (u[6] & 0x0f) | 0x40 // Version 4
+			u[8] = (u[8] & 0x3f) | 0x80 // Variant RFC 4122
+			uuidStr := fmt.Sprintf("%08x-%04x-%04x-%04x-%012x", u[0:4], u[4:6], u[6:8], u[8:10], u[10:])
+			return &String{Value: uuidStr}
+		},
+	}
+	kriptoMap.Pairs["hmacSha256"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return &String{Value: ""}
+			}
+			key := []byte(args[0].Inspect())
+			pesan := []byte(args[1].Inspect())
+			mac := hmac.New(sha256.New, key)
+			mac.Write(pesan)
+			return &String{Value: hex.EncodeToString(mac.Sum(nil))}
 		},
 	}
 	env.Set("kripto", kriptoMap)
@@ -1206,7 +1298,135 @@ func InitGlobalEnvironment() *Environment {
 			}
 		},
 	}
+	konversiMap.Pairs["desimal"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: "0"}
+			}
+			var val float64
+			if i, ok := args[0].(*Integer); ok {
+				val = float64(i.Value)
+			} else if f, ok := args[0].(*Float); ok {
+				val = f.Value
+			}
+			presisi := 2
+			if len(args) >= 2 {
+				if p, ok := args[1].(*Integer); ok && p.Value >= 0 {
+					presisi = int(p.Value)
+				}
+			}
+			formatStr := fmt.Sprintf("%%.%df", presisi)
+			return &String{Value: fmt.Sprintf(formatStr, val)}
+		},
+	}
+	konversiMap.Pairs["rupiah"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: "Rp 0"}
+			}
+			var val int64
+			if i, ok := args[0].(*Integer); ok {
+				val = i.Value
+			} else if f, ok := args[0].(*Float); ok {
+				val = int64(f.Value)
+			}
+			isNegative := val < 0
+			if isNegative {
+				val = -val
+			}
+			s := strconv.FormatInt(val, 10)
+			n := len(s)
+			if n <= 3 {
+				if isNegative {
+					return &String{Value: fmt.Sprintf("Rp -%s", s)}
+				}
+				return &String{Value: fmt.Sprintf("Rp %s", s)}
+			}
+			var out []string
+			rem := n % 3
+			if rem > 0 {
+				out = append(out, s[:rem])
+			}
+			for i := rem; i < n; i += 3 {
+				out = append(out, s[i:i+3])
+			}
+			res := strings.Join(out, ".")
+			if isNegative {
+				res = "-" + res
+			}
+			return &String{Value: "Rp " + res}
+		},
+	}
 	env.Set("konversi", konversiMap)
+
+	// Modul enkoding (CSV & URL Query)
+	enkodingMap := &Map{Pairs: make(map[string]Object)}
+	enkodingMap.Pairs["uraiCSV"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &Array{Elements: []Object{}}
+			}
+			r := csv.NewReader(strings.NewReader(args[0].Inspect()))
+			records, err := r.ReadAll()
+			if err != nil {
+				return &Array{Elements: []Object{}}
+			}
+			rows := make([]Object, len(records))
+			for i, row := range records {
+				cols := make([]Object, len(row))
+				for j, col := range row {
+					cols[j] = &String{Value: col}
+				}
+				rows[i] = &Array{Elements: cols}
+			}
+			return &Array{Elements: rows}
+		},
+	}
+	enkodingMap.Pairs["kodekanCSV"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			arr, isArr := args[0].(*Array)
+			if !isArr {
+				return &String{Value: ""}
+			}
+			var buf bytes.Buffer
+			w := csv.NewWriter(&buf)
+			for _, rowObj := range arr.Elements {
+				if rowArr, ok := rowObj.(*Array); ok {
+					record := []string{}
+					for _, col := range rowArr.Elements {
+						record = append(record, col.Inspect())
+					}
+					_ = w.Write(record)
+				}
+			}
+			w.Flush()
+			return &String{Value: buf.String()}
+		},
+	}
+	enkodingMap.Pairs["kodekanURL"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			return &String{Value: url.QueryEscape(args[0].Inspect())}
+		},
+	}
+	enkodingMap.Pairs["dekodekanURL"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			res, err := url.QueryUnescape(args[0].Inspect())
+			if err != nil {
+				return args[0]
+			}
+			return &String{Value: res}
+		},
+	}
+	env.Set("enkoding", enkodingMap)
 
 	// Modul masukan (Terminal Input / Scanner)
 	masukanMap := &Map{Pairs: make(map[string]Object)}

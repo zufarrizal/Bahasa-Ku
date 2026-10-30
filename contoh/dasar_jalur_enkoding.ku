@@ -1,0 +1,54 @@
+paket utama
+
+pakai "cetak"
+pakai "jalur"
+pakai "enkoding"
+pakai "kripto"
+pakai "konversi"
+pakai "sistem"
+
+fungsi utama() {
+    cetak.tulis("=== 1. MODUL JALUR (PATH FILE) ===")
+    var lokasi = jalur.gabung("proyek", "sumber", "utama.ku")
+    cetak.tulis("Path gabungan:", lokasi)
+    cetak.tulis("Nama berkas:", jalur.nama(lokasi))
+    cetak.tulis("Folder induk:", jalur.induk(lokasi))
+    cetak.tulis("Ekstensi:", jalur.ekstensi(lokasi))
+
+    cetak.tulis("\n=== 2. MODUL ENKODING (CSV & URL) ===")
+    var dataCSV = "nama,nilai,keterangan\nBudi,90,Lulus\nSiti,85,Lulus"
+    var tabel = enkoding.uraiCSV(dataCSV)
+    cetak.tulis("Total baris CSV:", panjang(tabel))
+    untuk _, baris dalam tabel {
+        cetak.tulis("Baris:", baris)
+    }
+
+    var tabelBaru = [
+        ["Produk", "Harga"],
+        ["Laptop", "8500000"],
+        ["Mouse", "150000"]
+    ]
+    var teksCSV = enkoding.kodekanCSV(tabelBaru)
+    cetak.tulis("Hasil kodekan CSV:\n" + teksCSV)
+
+    var urlAsal = "kata kunci=bahasa ku & golang"
+    var urlEnkode = enkoding.kodekanURL(urlAsal)
+    cetak.tulis("URL Enkode:", urlEnkode)
+    cetak.tulis("URL Dekode:", enkoding.dekodekanURL(urlEnkode))
+
+    cetak.tulis("\n=== 3. MODUL KRIPTO (UUID & HMAC-SHA256) ===")
+    var idUnik = kripto.uuid()
+    cetak.tulis("UUID v4:", idUnik)
+    var tandaTangan = kripto.hmacSha256("kunci-rahasia", "pesan otentikasi")
+    cetak.tulis("HMAC SHA-256:", tandaTangan)
+
+    cetak.tulis("\n=== 4. FORMAT RUPIAH & DESIMAL ===")
+    var harga = 2500000
+    cetak.tulis("Format Rupiah:", konversi.rupiah(harga))
+    cetak.tulis("Format Desimal (3 digit):", konversi.desimal(3.14159265, 3))
+
+    cetak.tulis("\n=== 5. SISTEM & ENV ===")
+    sistem.aturLingkungan("APLIKASI_KU", "Aktif")
+    cetak.tulis("Env APLIKASI_KU:", sistem.lingkungan("APLIKASI_KU"))
+    cetak.tulis("Folder kerja saat ini:", sistem.folderKerja())
+}
