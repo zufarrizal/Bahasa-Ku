@@ -23,11 +23,11 @@
       "patterns": [
         {
           "name": "keyword.control.ku",
-          "match": "\\b(ku|jika|lainnya|untuk|selama|dalam|rentang|pilih|kasus|bawaan|kembalikan|tunda|henti|berhenti|lanjut|coba|tangkap|akhirnya)\\b"
+          "match": "\\b(ku|jika|lainnya|untuk|selama|dalam|rentang|pilih|kasus|bawaan|teruskan|kembalikan|tunda|henti|berhenti|lanjut|coba|tangkap|akhirnya)\\b"
         },
         {
           "name": "keyword.declaration.ku",
-          "match": "\\b(paket|pakai|impor|fungsi|var|variabel|tetap|konst|tipe|struktur)\\b"
+          "match": "\\b(paket|pakai|impor|fungsi|var|variabel|tetap|konst|tipe|struktur|antarmuka|interface)\\b"
         },
         {
           "name": "constant.language.ku",
@@ -35,7 +35,7 @@
         },
         {
           "name": "support.class.ku",
-          "match": "\\b(cetak|web|jendela|basisdata|berkas|sistem|jaringan|kripto|matematika|teks|konversi|masukan|panjang|tambah|hapus|panik|pulih|uji|kanal|json|larik|waktu|pola|kelompokTunggu|jalur|enkoding|peta|kompresi|catatan|bita|acak|validasi|terminal|angka|strukturData|soket)\\b"
+          "match": "\\b(cetak|web|jendela|basisdata|berkas|sistem|jaringan|kripto|matematika|teks|konversi|masukan|panjang|kapasitas|salin|buat|tutup|tambah|hapus|panik|pulih|uji|kanal|json|larik|waktu|pola|kelompokTunggu|jalur|enkoding|peta|kompresi|catatan|bita|acak|validasi|terminal|angka|strukturData|soket|atomik)\\b"
         }
       ]
     },
