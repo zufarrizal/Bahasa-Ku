@@ -841,6 +841,8 @@ jika json.valid(teksJSON) {
             <tr><td><code>validasi.apakahAlfabet(teks)</code></td><td>Memeriksa apakah seluruh karakter hanya berisi huruf (boolean)</td></tr>
             <tr><td><code>validasi.apakahNumerik(teks)</code></td><td>Memeriksa apakah seluruh karakter hanya berisi digit angka (boolean)</td></tr>
             <tr><td><code>validasi.apakahAlfanumerik(teks)</code></td><td>Memeriksa apakah string hanya terdiri dari kombinasi huruf dan angka (boolean)</td></tr>
+            <tr><td><code>validasi.apakahPanjang(teks, min, max)</code></td><td>Memeriksa apakah panjang karakter teks berada dalam batas minimum dan maksimum (boolean)</td></tr>
+            <tr><td><code>validasi.apakahJSON(teks)</code></td><td>Memeriksa apakah string merupakan JSON valid tanpa melempar galat (boolean)</td></tr>
           </tbody>
         </table>
         <pre><code>jika validasi.apakahEmail("pengguna@domain.id") {
@@ -902,6 +904,9 @@ var irisan = larik.irisan(unik, [4, 5, 6]) // [4, 5]</code></pre>
             <tr><td><code>peta.salin(map)</code></td><td>Menduplikasi / membuat salinan mandiri dari peta (clone)</td></tr>
             <tr><td><code>peta.ambil(map, kunci, [bawaan])</code></td><td>Mengambil nilai kunci dengan opsi nilai bawaan (fallback) jika kunci nihil</td></tr>
             <tr><td><code>peta.gabung(...peta)</code></td><td>Menggabungkan beberapa objek kamus/peta menjadi satu</td></tr>
+            <tr><td><code>peta.balik(map)</code></td><td>Menukar pasangan kunci dan nilai menjadi nilai dan kunci baru</td></tr>
+            <tr><td><code>peta.saring(map, fn)</code></td><td>Menyaring isi kamus dengan fungsi predikat <code>fungsi(kunci, nilai)</code></td></tr>
+            <tr><td><code>peta.petakan(map, fn)</code></td><td>Mentransformasi nilai kamus dengan fungsi <code>fungsi(kunci, nilai)</code></td></tr>
           </tbody>
         </table>
         <pre><code>var data = {"nama": "Ku", "status": "aktif"}
@@ -936,7 +941,9 @@ var tugasPertama = antre.keluar() // "tugas_A"</code></pre>
           </thead>
           <tbody>
             <tr><td><code>matematika.sin(x)</code>, <code>cos(x)</code>, <code>tan(x)</code></td><td>Fungsi trigonometri sudut radian</td></tr>
-            <tr><td><code>matematika.rataRata(arr)</code></td><td>Menghitung rata-rata nilai larik angka</td></tr>
+            <tr><td><code>matematika.jumlah(arr)</code></td><td>Menjumlahkan seluruh elemen angka dalam larik (sum)</td></tr>
+            <tr><td><code>matematika.rataRata(arr)</code></td><td>Menghitung rata-rata nilai larik angka (mean)</td></tr>
+            <tr><td><code>matematika.median(arr)</code></td><td>Menghitung nilai tengah statistik dari sekumpulan angka</td></tr>
             <tr><td><code>matematika.akar(x)</code></td><td>Menghitung akar kuadrat</td></tr>
             <tr><td><code>matematika.pangkat(x, y)</code></td><td>Menghitung pemangkatan angka x^y</td></tr>
             <tr><td><code>matematika.bulat(x)</code></td><td>Membulatkan angka ke integer terdekat</td></tr>
@@ -1108,6 +1115,8 @@ sistem.keluar(0)            // Exit program</code></pre>
             <tr><td><code>waktu.lewat(tMulai)</code></td><td>Menghitung selisih durasi yang telah berlalu dalam milidetik (float)</td></tr>
             <tr><td><code>waktu.setelah(ms, fungsi)</code></td><td>Mengeksekusi fungsi asinkron sekali setelah jeda ms milidetik (setTimeout)</td></tr>
             <tr><td><code>waktu.setiap(ms, fungsi)</code></td><td>Mengeksekusi fungsi secara berulang setiap ms milidetik (mengembalikan objek dengan method <code>hentikan()</code>)</td></tr>
+            <tr><td><code>waktu.formatDurasi(milidetik)</code></td><td>Format durasi menjadi teks yang ramah dibaca manusia (contoh: <code>1500 -> "1.5d"</code>, <code>125000 -> "2m 5d"</code>)</td></tr>
+            <tr><td><code>waktu.sejak(stempelMili)</code></td><td>Menghitung selisih durasi dalam milidetik yang telah berlalu sejak stempel waktu tersebut</td></tr>
           </tbody>
         </table>
         <pre><code>var t = waktu.mulai()

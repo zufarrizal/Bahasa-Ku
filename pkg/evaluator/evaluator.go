@@ -1829,6 +1829,61 @@ func InitGlobalEnvironment() *Environment {
 			return &Float{Value: total / float64(len(arr.Elements))}
 		},
 	}
+	matematikaMap.Pairs["jumlah"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &Integer{Value: 0}
+			}
+			arr, isArr := args[0].(*Array)
+			if !isArr || len(arr.Elements) == 0 {
+				return &Integer{Value: 0}
+			}
+			hasFloat := false
+			totalInt := int64(0)
+			totalFloat := float64(0)
+			for _, e := range arr.Elements {
+				if i, ok := e.(*Integer); ok {
+					totalInt += i.Value
+					totalFloat += float64(i.Value)
+				} else if f, ok := e.(*Float); ok {
+					hasFloat = true
+					totalFloat += f.Value
+				}
+			}
+			if hasFloat {
+				return &Float{Value: totalFloat}
+			}
+			return &Integer{Value: totalInt}
+		},
+	}
+	matematikaMap.Pairs["median"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &Float{Value: 0}
+			}
+			arr, isArr := args[0].(*Array)
+			if !isArr || len(arr.Elements) == 0 {
+				return &Float{Value: 0}
+			}
+			nums := []float64{}
+			for _, e := range arr.Elements {
+				if i, ok := e.(*Integer); ok {
+					nums = append(nums, float64(i.Value))
+				} else if f, ok := e.(*Float); ok {
+					nums = append(nums, f.Value)
+				}
+			}
+			if len(nums) == 0 {
+				return &Float{Value: 0}
+			}
+			sort.Float64s(nums)
+			n := len(nums)
+			if n%2 == 1 {
+				return &Float{Value: nums[n/2]}
+			}
+			return &Float{Value: (nums[(n/2)-1] + nums[n/2]) / 2.0}
+		},
+	}
 	matematikaMap.Pairs["E"] = &Float{Value: math.E}
 	matematikaMap.Pairs["log"] = &Builtin{
 		Fn: func(args ...Object) Object {
@@ -2782,6 +2837,43 @@ func InitGlobalEnvironment() *Environment {
 			return TRUE
 		},
 	}
+	validasiMap.Pairs["apakahPanjang"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 3 {
+				return FALSE
+			}
+			s := args[0].Inspect()
+			if sObj, ok := args[0].(*String); ok {
+				s = sObj.Value
+			}
+			minLen := int64(0)
+			maxLen := int64(math.MaxInt64)
+			if i, ok := args[1].(*Integer); ok {
+				minLen = i.Value
+			}
+			if i, ok := args[2].(*Integer); ok {
+				maxLen = i.Value
+			}
+			l := int64(len(s))
+			return &Boolean{Value: l >= minLen && l <= maxLen}
+		},
+	}
+	validasiMap.Pairs["apakahJSON"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return FALSE
+			}
+			s := args[0].Inspect()
+			if sObj, ok := args[0].(*String); ok {
+				s = sObj.Value
+			}
+			s = strings.TrimSpace(s)
+			if len(s) < 2 {
+				return FALSE
+			}
+			return &Boolean{Value: json.Valid([]byte(s))}
+		},
+	}
 	env.Set("validasi", validasiMap)
 
 	// Modul catatan (Logging Terstruktur dengan Timestamp)
@@ -3077,6 +3169,60 @@ func InitGlobalEnvironment() *Environment {
 				return args[2]
 			}
 			return NIL
+		},
+	}
+	petaMap.Pairs["balik"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &Map{Pairs: make(map[string]Object)}
+			}
+			m, isMap := args[0].(*Map)
+			if !isMap {
+				return args[0]
+			}
+			newMap := &Map{Pairs: make(map[string]Object)}
+			for k, v := range m.Pairs {
+				newMap.Pairs[v.Inspect()] = &String{Value: k}
+			}
+			return newMap
+		},
+	}
+	petaMap.Pairs["saring"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return &Map{Pairs: make(map[string]Object)}
+			}
+			m, isMap := args[0].(*Map)
+			if !isMap {
+				return &Map{Pairs: make(map[string]Object)}
+			}
+			fn := args[1]
+			newMap := &Map{Pairs: make(map[string]Object)}
+			for k, v := range m.Pairs {
+				res := applyFunction(fn, []Object{&String{Value: k}, v}, env)
+				if isTruthy(res) {
+					newMap.Pairs[k] = v
+				}
+			}
+			return newMap
+		},
+	}
+	petaMap.Pairs["petakan"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return &Map{Pairs: make(map[string]Object)}
+			}
+			m, isMap := args[0].(*Map)
+			if !isMap {
+				return &Map{Pairs: make(map[string]Object)}
+			}
+			fn := args[1]
+			newMap := &Map{Pairs: make(map[string]Object)}
+			for k, v := range m.Pairs {
+				res := applyFunction(fn, []Object{&String{Value: k}, v}, env)
+				newMap.Pairs[k] = res
+			}
+			return newMap
 		},
 	}
 	env.Set("peta", petaMap)
@@ -4043,6 +4189,63 @@ func InitGlobalEnvironment() *Environment {
 				},
 			}
 			return timerMap
+		},
+	}
+	waktuMap.Pairs["formatDurasi"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: "0ms"}
+			}
+			var ms int64
+			if i, ok := args[0].(*Integer); ok {
+				ms = i.Value
+			} else if f, ok := args[0].(*Float); ok {
+				ms = int64(f.Value)
+			}
+			if ms < 0 {
+				ms = -ms
+			}
+			if ms < 1000 {
+				return &String{Value: fmt.Sprintf("%dms", ms)}
+			}
+			totalSec := ms / 1000
+			remMs := ms % 1000
+			if totalSec < 60 {
+				if remMs > 0 {
+					return &String{Value: fmt.Sprintf("%.1fd", float64(ms)/1000.0)}
+				}
+				return &String{Value: fmt.Sprintf("%dd", totalSec)}
+			}
+			menit := totalSec / 60
+			detik := totalSec % 60
+			if menit < 60 {
+				if detik > 0 {
+					return &String{Value: fmt.Sprintf("%dm %dd", menit, detik)}
+				}
+				return &String{Value: fmt.Sprintf("%dm", menit)}
+			}
+			jam := menit / 60
+			remMenit := menit % 60
+			if remMenit > 0 {
+				return &String{Value: fmt.Sprintf("%dj %dm", jam, remMenit)}
+			}
+			return &String{Value: fmt.Sprintf("%dj", jam)}
+		},
+	}
+	waktuMap.Pairs["sejak"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &Integer{Value: 0}
+			}
+			var startMili int64
+			if i, ok := args[0].(*Integer); ok {
+				startMili = i.Value
+			}
+			diff := time.Now().UnixMilli() - startMili
+			if diff < 0 {
+				diff = 0
+			}
+			return &Integer{Value: diff}
 		},
 	}
 	env.Set("waktu", waktuMap)

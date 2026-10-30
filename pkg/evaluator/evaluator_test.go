@@ -436,3 +436,83 @@ fungsi utama() {
 		t.Errorf("Diharapkan 100, didapat %d", intVal.Value)
 	}
 }
+
+func TestFondasiMatematikaValidasiWaktuPeta(t *testing.T) {
+	input := `
+paket utama
+fungsi utama() {
+    // 1. Uji matematika (jumlah, rataRata, median, jepit)
+    var jlh = matematika.jumlah([10, 20, 30])
+    jika jlh != 60 {
+        kembalikan 1
+    }
+    var med = matematika.median([5, 1, 9, 3])
+    jika med != 4.0 {
+        kembalikan 2
+    }
+    var jpt = matematika.jepit(150, 0, 100)
+    jika jpt != 100 {
+        kembalikan 3
+    }
+
+    // 2. Uji validasi (apakahAlfabet, apakahNumerik, apakahPanjang, apakahJSON)
+    jika !validasi.apakahAlfabet("BahasaKu") || validasi.apakahAlfabet("Ku123") {
+        kembalikan 4
+    }
+    jika !validasi.apakahNumerik("12345") || validasi.apakahNumerik("12a45") {
+        kembalikan 5
+    }
+    jika !validasi.apakahPanjang("admin", 3, 10) || validasi.apakahPanjang("a", 3, 10) == benar {
+        kembalikan 6
+    }
+    jika !validasi.apakahJSON("{\"ok\": true}") || validasi.apakahJSON("{rusak:") == benar {
+        kembalikan 7
+    }
+
+    // 3. Uji waktu (formatDurasi & sejak)
+    var d1 = waktu.formatDurasi(500)
+    var d2 = waktu.formatDurasi(1500)
+    var d3 = waktu.formatDurasi(125000)
+    jika d1 != "500ms" || d2 != "1.5d" || d3 != "2m 5d" {
+        kembalikan 8
+    }
+    var skrg = waktu.miliDetikUnix()
+    var delta = waktu.sejak(skrg)
+    jika delta < 0 {
+        kembalikan 9
+    }
+
+    // 4. Uji peta (balik, saring, petakan)
+    var p = {"a": "1", "b": "2"}
+    var blk = peta.balik(p)
+    jika blk["1"] != "a" || blk["2"] != "b" {
+        kembalikan 10
+    }
+
+    var skor = {"budi": 80, "siti": 55, "ani": 90}
+    var lulus = peta.saring(skor, fungsi(k, v) {
+        kembalikan v >= 70
+    })
+    jika !peta.ada(lulus, "budi") || peta.ada(lulus, "siti") == benar {
+        kembalikan 11
+    }
+
+    var naik = peta.petakan({"a": 10, "b": 20}, fungsi(k, v) {
+        kembalikan v + 5
+    })
+    jika naik["a"] != 15 || naik["b"] != 25 {
+        kembalikan 12
+    }
+
+    kembalikan 200
+}
+`
+	val := runKuCode(input)
+	intVal, ok := val.(*evaluator.Integer)
+	if !ok {
+		t.Fatalf("Nilai bukan Integer: %v", val)
+	}
+	if intVal.Value != 200 {
+		t.Errorf("Diharapkan 200, didapat %d", intVal.Value)
+	}
+}
