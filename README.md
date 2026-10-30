@@ -559,6 +559,44 @@ fungsi utama() {
 }
 ```
 
+### 15. Ekstraksi Kamus (`peta`), Kompresi Gzip, Himpunan Larik & Benchmark (`contoh/dasar_peta_kompresi.ku`)
+```ku
+paket utama
+
+pakai "cetak"
+pakai "peta"
+pakai "kompresi"
+pakai "larik"
+pakai "waktu"
+pakai "sistem"
+
+fungsi utama() {
+    // 1. Ekstraksi dan Penggabungan Map (Peta)
+    var profil = {"nama": "Bahasa Ku", "status": "aktif"}
+    var kunci = peta.kunci(profil)  // ["nama", "status"]
+    var ada = peta.ada(profil, "nama") // benar
+
+    // 2. Kompresi & Dekompresi Gzip
+    var dataGz = kompresi.gzip("Teks rahasia yang panjang...")
+    var teksAsli = kompresi.ungzip(dataGz)
+
+    // 3. Himpunan & Dedup Larik
+    var angka = [1, 2, 2, 3, 4, 4, 5]
+    var unik = larik.unik(angka)                 // [1, 2, 3, 4, 5]
+    var irisan = larik.irisan(unik, [4, 5, 6])   // [4, 5]
+    var gabung = larik.gabungan(unik, [5, 6, 7]) // [1, 2, 3, 4, 5, 6, 7]
+
+    // 4. Pengukur Waktu Eksekusi (Benchmark)
+    var tMulai = waktu.mulai()
+    // Operasi...
+    cetak.tulis("Waktu eksekusi:", waktu.lewat(tMulai), "ms")
+
+    // 5. Eksekusi Perintah Subprocess OS
+    var res = sistem.perintah("cmd", "/c", "echo Halo Ku!")
+    cetak.tulis(res["keluaran"])
+}
+```
+
 ---
 
 ## 📂 Struktur Proyek

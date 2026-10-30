@@ -3,6 +3,7 @@ package evaluator
 import (
 	"bufio"
 	"bytes"
+	"compress/gzip"
 	"crypto/hmac"
 	"crypto/md5"
 	"crypto/rand"
@@ -768,6 +769,38 @@ func InitGlobalEnvironment() *Environment {
 			return arr
 		},
 	}
+	sistemMap.Pairs["perintah"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			resMap := &Map{Pairs: make(map[string]Object)}
+			if len(args) < 1 {
+				resMap.Pairs["sukses"] = FALSE
+				resMap.Pairs["kode"] = &Integer{Value: 1}
+				resMap.Pairs["keluaran"] = &String{Value: "nama perintah tidak ditentukan"}
+				return resMap
+			}
+			cmdName := args[0].Inspect()
+			cmdArgs := []string{}
+			for _, a := range args[1:] {
+				cmdArgs = append(cmdArgs, a.Inspect())
+			}
+			cmd := exec.Command(cmdName, cmdArgs...)
+			out, err := cmd.CombinedOutput()
+			exitCode := int64(0)
+			if err != nil {
+				if exitErr, ok := err.(*exec.ExitError); ok {
+					exitCode = int64(exitErr.ExitCode())
+				} else {
+					exitCode = 1
+				}
+				resMap.Pairs["sukses"] = FALSE
+			} else {
+				resMap.Pairs["sukses"] = TRUE
+			}
+			resMap.Pairs["kode"] = &Integer{Value: exitCode}
+			resMap.Pairs["keluaran"] = &String{Value: strings.TrimSpace(string(out))}
+			return resMap
+		},
+	}
 	env.Set("sistem", sistemMap)
 
 	// Modul jaringan (HTTP Client / Fetch API)
@@ -1428,6 +1461,118 @@ func InitGlobalEnvironment() *Environment {
 	}
 	env.Set("enkoding", enkodingMap)
 
+	// Modul kompresi (Gzip)
+	kompresiMap := &Map{Pairs: make(map[string]Object)}
+	kompresiMap.Pairs["gzip"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			var buf bytes.Buffer
+			gw := gzip.NewWriter(&buf)
+			_, err := gw.Write([]byte(args[0].Inspect()))
+			if err != nil {
+				return &String{Value: ""}
+			}
+			_ = gw.Close()
+			return &String{Value: base64.StdEncoding.EncodeToString(buf.Bytes())}
+		},
+	}
+	kompresiMap.Pairs["ungzip"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			data, err := base64.StdEncoding.DecodeString(args[0].Inspect())
+			if err != nil {
+				return &String{Value: ""}
+			}
+			gr, err := gzip.NewReader(bytes.NewReader(data))
+			if err != nil {
+				return &String{Value: ""}
+			}
+			defer gr.Close()
+			res, err := io.ReadAll(gr)
+			if err != nil {
+				return &String{Value: ""}
+			}
+			return &String{Value: string(res)}
+		},
+	}
+	env.Set("kompresi", kompresiMap)
+
+	// Modul peta (Utilitas Kamus / Map)
+	petaMap := &Map{Pairs: make(map[string]Object)}
+	petaMap.Pairs["kunci"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &Array{Elements: []Object{}}
+			}
+			m, isMap := args[0].(*Map)
+			if !isMap {
+				return &Array{Elements: []Object{}}
+			}
+			keys := make([]string, 0, len(m.Pairs))
+			for k := range m.Pairs {
+				keys = append(keys, k)
+			}
+			sort.Strings(keys)
+			res := make([]Object, len(keys))
+			for i, k := range keys {
+				res[i] = &String{Value: k}
+			}
+			return &Array{Elements: res}
+		},
+	}
+	petaMap.Pairs["nilai"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &Array{Elements: []Object{}}
+			}
+			m, isMap := args[0].(*Map)
+			if !isMap {
+				return &Array{Elements: []Object{}}
+			}
+			keys := make([]string, 0, len(m.Pairs))
+			for k := range m.Pairs {
+				keys = append(keys, k)
+			}
+			sort.Strings(keys)
+			res := make([]Object, len(keys))
+			for i, k := range keys {
+				res[i] = m.Pairs[k]
+			}
+			return &Array{Elements: res}
+		},
+	}
+	petaMap.Pairs["ada"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return FALSE
+			}
+			m, isMap := args[0].(*Map)
+			if !isMap {
+				return FALSE
+			}
+			_, exists := m.Pairs[args[1].Inspect()]
+			return &Boolean{Value: exists}
+		},
+	}
+	petaMap.Pairs["gabung"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			newMap := &Map{Pairs: make(map[string]Object)}
+			for _, a := range args {
+				if m, ok := a.(*Map); ok {
+					for k, v := range m.Pairs {
+						newMap.Pairs[k] = v
+					}
+				}
+			}
+			return newMap
+		},
+	}
+	env.Set("peta", petaMap)
+
 	// Modul masukan (Terminal Input / Scanner)
 	masukanMap := &Map{Pairs: make(map[string]Object)}
 	masukanMap.Pairs["baca"] = &Builtin{
@@ -1781,6 +1926,115 @@ func InitGlobalEnvironment() *Environment {
 			return &Array{Elements: res}
 		},
 	}
+	larikMap.Pairs["unik"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &Array{Elements: []Object{}}
+			}
+			arr, isArr := args[0].(*Array)
+			if !isArr {
+				return args[0]
+			}
+			seen := make(map[string]bool)
+			res := []Object{}
+			for _, elem := range arr.Elements {
+				key := elem.Inspect()
+				if !seen[key] {
+					seen[key] = true
+					res = append(res, elem)
+				}
+			}
+			return &Array{Elements: res}
+		},
+	}
+	larikMap.Pairs["irisan"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return &Array{Elements: []Object{}}
+			}
+			arr1, isArr1 := args[0].(*Array)
+			arr2, isArr2 := args[1].(*Array)
+			if !isArr1 || !isArr2 {
+				return &Array{Elements: []Object{}}
+			}
+			map2 := make(map[string]bool)
+			for _, e := range arr2.Elements {
+				map2[e.Inspect()] = true
+			}
+			res := []Object{}
+			seen := make(map[string]bool)
+			for _, e := range arr1.Elements {
+				k := e.Inspect()
+				if map2[k] && !seen[k] {
+					seen[k] = true
+					res = append(res, e)
+				}
+			}
+			return &Array{Elements: res}
+		},
+	}
+	larikMap.Pairs["gabungan"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return &Array{Elements: []Object{}}
+			}
+			arr1, isArr1 := args[0].(*Array)
+			arr2, isArr2 := args[1].(*Array)
+			if !isArr1 || !isArr2 {
+				return &Array{Elements: []Object{}}
+			}
+			seen := make(map[string]bool)
+			res := []Object{}
+			for _, e := range arr1.Elements {
+				k := e.Inspect()
+				if !seen[k] {
+					seen[k] = true
+					res = append(res, e)
+				}
+			}
+			for _, e := range arr2.Elements {
+				k := e.Inspect()
+				if !seen[k] {
+					seen[k] = true
+					res = append(res, e)
+				}
+			}
+			return &Array{Elements: res}
+		},
+	}
+	larikMap.Pairs["iris"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &Array{Elements: []Object{}}
+			}
+			arr, isArr := args[0].(*Array)
+			if !isArr {
+				return args[0]
+			}
+			start := int64(0)
+			end := int64(len(arr.Elements))
+			if len(args) >= 2 {
+				if s, ok := args[1].(*Integer); ok {
+					start = s.Value
+				}
+			}
+			if len(args) >= 3 {
+				if e, ok := args[2].(*Integer); ok {
+					end = e.Value
+				}
+			}
+			if start < 0 {
+				start = 0
+			}
+			if end > int64(len(arr.Elements)) {
+				end = int64(len(arr.Elements))
+			}
+			if start > end {
+				return &Array{Elements: []Object{}}
+			}
+			return &Array{Elements: arr.Elements[start:end]}
+		},
+	}
 	env.Set("larik", larikMap)
 
 	// Modul uji (Unit Testing Internal)
@@ -1882,6 +2136,24 @@ func InitGlobalEnvironment() *Environment {
 				tambah = t.Value
 			}
 			return &Integer{Value: secVal + tambah}
+		},
+	}
+	waktuMap.Pairs["mulai"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			return &Integer{Value: time.Now().UnixNano()}
+		},
+	}
+	waktuMap.Pairs["lewat"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &Float{Value: 0}
+			}
+			if i, ok := args[0].(*Integer); ok {
+				elapsedNano := time.Now().UnixNano() - i.Value
+				elapsedMs := float64(elapsedNano) / 1e6
+				return &Float{Value: elapsedMs}
+			}
+			return &Float{Value: 0}
 		},
 	}
 	env.Set("waktu", waktuMap)

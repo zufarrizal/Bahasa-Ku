@@ -1,0 +1,53 @@
+paket utama
+
+pakai "cetak"
+pakai "peta"
+pakai "kompresi"
+pakai "sistem"
+pakai "larik"
+pakai "waktu"
+
+fungsi utama() {
+    cetak.tulis("=== 1. MODUL PETA (KAMUS / MAP) ===")
+    var kamus1 = {"nama": "Bahasa Ku", "versi": "0.2.0"}
+    var kamus2 = {"penulis": "Zufar", "lisensi": "MIT"}
+    var gabungan = peta.gabung(kamus1, kamus2)
+    cetak.tulis("Kunci peta:", peta.kunci(gabungan))
+    cetak.tulis("Nilai peta:", peta.nilai(gabungan))
+    cetak.tulis("Apakah ada kunci 'penulis'?", peta.ada(gabungan, "penulis"))
+    cetak.tulis("Apakah ada kunci 'rahasia'?", peta.ada(gabungan, "rahasia"))
+
+    cetak.tulis("\n=== 2. MODUL KOMPRESI GZIP ===")
+    var kalimatAsli = "Bahasa Ku dirancang dengan kesederhanaan arsitektur Go untuk edukasi Indonesia."
+    var dataGzip = kompresi.gzip(kalimatAsli)
+    cetak.tulis("Teks Asli (" + teks.format(panjang(kalimatAsli)) + " byte):", kalimatAsli)
+    cetak.tulis("Gzip Base64 (" + teks.format(panjang(dataGzip)) + " byte):", dataGzip)
+    var dekompres = kompresi.ungzip(dataGzip)
+    cetak.tulis("Hasil Dekompresi:", dekompres)
+
+    cetak.tulis("\n=== 3. HIMPUNAN & OPERASI LARIK ===")
+    var daftarA = [1, 2, 2, 3, 4, 4, 5]
+    var unikA = larik.unik(daftarA)
+    cetak.tulis("Larik asal:", daftarA)
+    cetak.tulis("Larik unik:", unikA)
+
+    var daftarB = [4, 5, 6, 7]
+    cetak.tulis("Irisan A & B:", larik.irisan(unikA, daftarB))
+    cetak.tulis("Gabungan A & B:", larik.gabungan(unikA, daftarB))
+    cetak.tulis("Potongan larik (indeks 1..3):", larik.iris(unikA, 1, 3))
+
+    cetak.tulis("\n=== 4. PENGUKUR WAKTU / STOPWATCH ===")
+    var tAwal = waktu.mulai()
+    // Lakukan proses kalkulasi ringan
+    var counter = 0
+    untuk i := 0; i < 10000; i++ {
+        counter += 1
+    }
+    var durasiMs = waktu.lewat(tAwal)
+    cetak.tulis("Kalkulasi selesai. Durasi eksekusi:", durasiMs, "milidetik")
+
+    cetak.tulis("\n=== 5. SISTEM PERINTAH SUBPROCESS ===")
+    var infoOS = sistem.perintah("cmd", "/c", "echo Halo dari Subprocess Bahasa Ku!")
+    cetak.tulis("Hasil Subprocess:", infoOS["keluaran"])
+    cetak.tulis("Status Sukses:", infoOS["sukses"])
+}

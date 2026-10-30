@@ -183,9 +183,11 @@
         <div class="sidebar-title">Pustaka Standar Bawaan</div>
         <ul class="sidebar-links">
           <li><a href="#modul-cetak">Modul `cetak`</a></li>
-          <li><a href="#modul-waktu">Modul `waktu`</a></li>
+          <li><a href="#modul-waktu">Modul `waktu` & Stopwatch</a></li>
           <li><a href="#modul-pola">Modul `pola` (Regex)</a></li>
-          <li><a href="#modul-larik">Modul `larik` & Koleksi</a></li>
+          <li><a href="#modul-larik">Modul `larik` & Himpunan</a></li>
+          <li><a href="#modul-peta">Modul `peta` (Kamus / Map)</a></li>
+          <li><a href="#modul-kompresi">Modul `kompresi` (Gzip)</a></li>
           <li><a href="#modul-jalur">Modul `jalur` (Filepath)</a></li>
           <li><a href="#modul-enkoding">Modul `enkoding` (CSV & URL)</a></li>
           <li><a href="#modul-teks">Modul `teks`</a></li>
@@ -502,8 +504,8 @@ cetak.tulis("Semua tugas tuntas!")</code></pre>
 
       <!-- Modul Standar: Waktu -->
       <section id="modul-waktu" class="docs-section">
-        <h2>Modul `waktu`</h2>
-        <p>Modul untuk pengelolaan stempel waktu, tanggal, dan kalkulasi durasi:</p>
+        <h2>Modul `waktu` & Stopwatch</h2>
+        <p>Modul untuk pengelolaan stempel waktu, tanggal, kalkulasi durasi, dan pengukuran benchmark waktu:</p>
         <table>
           <thead>
             <tr><th>Fungsi</th><th>Deskripsi</th></tr>
@@ -514,11 +516,13 @@ cetak.tulis("Semua tugas tuntas!")</code></pre>
             <tr><td><code>waktu.miliDetikUnix()</code></td><td>Mengembalikan Unix timestamp dalam milidetik</td></tr>
             <tr><td><code>waktu.format(layout)</code> / <code>waktu.format(unix, layout)</code></td><td>Format tanggal/waktu sesuai format layout</td></tr>
             <tr><td><code>waktu.tambahDetik(unix, detik)</code></td><td>Menambahkan durasi detik ke stempel waktu</td></tr>
+            <tr><td><code>waktu.mulai()</code></td><td>Memulai stopwatch / pencatat waktu titik awal (nanodetik)</td></tr>
+            <tr><td><code>waktu.lewat(tMulai)</code></td><td>Menghitung selisih durasi yang telah berlalu dalam milidetik (float)</td></tr>
           </tbody>
         </table>
-        <pre><code>var skr = waktu.sekarang()
-cetak.tulis("Tahun saat ini:", skr["tahun"])
-cetak.tulis("Tanggal lengkap:", skr["teks"]) // contoh: 2026-10-30 15:45:00</code></pre>
+        <pre><code>var t = waktu.mulai()
+// Proses komputasi...
+cetak.tulis("Waktu proses:", waktu.lewat(t), "ms")</code></pre>
       </section>
 
       <!-- Modul Standar: Pola (Regex) -->
@@ -544,7 +548,7 @@ var sensor = pola.ganti("[0-9]", "Kode PIN: 8492", "*") // Kode PIN: ****</code>
 
       <!-- Modul Standar: Larik -->
       <section id="modul-larik" class="docs-section">
-        <h2>Modul `larik` & Koleksi</h2>
+        <h2>Modul `larik` & Himpunan</h2>
         <table>
           <thead>
             <tr><th>Fungsi</th><th>Deskripsi</th></tr>
@@ -553,15 +557,57 @@ var sensor = pola.ganti("[0-9]", "Kode PIN: 8492", "*") // Kode PIN: ****</code>
             <tr><td><code>larik.urut(arr)</code></td><td>Mengurutkan larik secara ascending (angka maupun string)</td></tr>
             <tr><td><code>larik.balik(arr)</code></td><td>Membalik susunan elemen larik</td></tr>
             <tr><td><code>larik.acak(arr)</code></td><td>Mengocok urutan larik secara acak (shuffle)</td></tr>
+            <tr><td><code>larik.unik(arr)</code></td><td>Menghilangkan duplikat elemen larik (deduplikasi)</td></tr>
+            <tr><td><code>larik.irisan(arr1, arr2)</code></td><td>Mencari perpotongan elemen yang ada di kedua larik (intersection)</td></tr>
+            <tr><td><code>larik.gabungan(arr1, arr2)</code></td><td>Menggabungkan dua larik menjadi himpunan unik (union)</td></tr>
+            <tr><td><code>larik.iris(arr, mulai, selesai)</code></td><td>Memotong larik pada rentang indeks tertentu (slice)</td></tr>
             <tr><td><code>larik.saring(arr, fn)</code></td><td>Menyaring elemen larik berdasarkan fungsi predikat (filter)</td></tr>
             <tr><td><code>larik.petakan(arr, fn)</code></td><td>Mentransformasi setiap elemen larik menjadi nilai baru (map)</td></tr>
             <tr><td><code>larik.reduksi(arr, fn, awal)</code></td><td>Merangkum larik menjadi satu nilai tunggal (reduce)</td></tr>
             <tr><td><code>larik.temukan(arr, fn)</code></td><td>Menemukan elemen pertama yang memenuhi syarat predikat</td></tr>
           </tbody>
         </table>
-        <pre><code>var angka = [10, 5, 2, 8, 1]
-var urut = larik.urut(angka) // [1, 2, 5, 8, 10]
-var genap = larik.saring(urut, fungsi(x) { kembalikan x % 2 == 0 }) // [2, 8, 10]</code></pre>
+        <pre><code>var angka = [1, 2, 2, 3, 4, 4, 5]
+var unik = larik.unik(angka) // [1, 2, 3, 4, 5]
+var irisan = larik.irisan(unik, [4, 5, 6]) // [4, 5]</code></pre>
+      </section>
+
+      <!-- Modul Standar: Peta -->
+      <section id="modul-peta" class="docs-section">
+        <h2>Modul `peta` (Kamus / Map)</h2>
+        <p>Utilitas untuk manipulasi data asosiatif pasangan kunci dan nilai:</p>
+        <table>
+          <thead>
+            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>peta.kunci(map)</code></td><td>Mengembalikan larik dari seluruh kunci yang terdaftar</td></tr>
+            <tr><td><code>peta.nilai(map)</code></td><td>Mengembalikan larik dari seluruh nilai yang ada</td></tr>
+            <tr><td><code>peta.ada(map, kunci)</code></td><td>Memeriksa apakah sebuah kunci ada dalam peta (boolean)</td></tr>
+            <tr><td><code>peta.gabung(...peta)</code></td><td>Menggabungkan beberapa objek kamus/peta menjadi satu</td></tr>
+          </tbody>
+        </table>
+        <pre><code>var data = {"nama": "Ku", "status": "aktif"}
+var kunci = peta.kunci(data) // ["nama", "status"]
+jika peta.ada(data, "nama") {
+    cetak.tulis("Kunci nama terdaftar!")
+}</code></pre>
+      </section>
+
+      <!-- Modul Standar: Kompresi -->
+      <section id="modul-kompresi" class="docs-section">
+        <h2>Modul `kompresi` (Gzip)</h2>
+        <table>
+          <thead>
+            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>kompresi.gzip(teks)</code></td><td>Mengompresi data teks menjadi format Base64 Gzip</td></tr>
+            <tr><td><code>kompresi.ungzip(teksGz)</code></td><td>Mendekompresi data Base64 Gzip kembali ke teks asli</td></tr>
+          </tbody>
+        </table>
+        <pre><code>var gz = kompresi.gzip("Teks panjang yang ingin dikompresi...")
+var asli = kompresi.ungzip(gz)</code></pre>
       </section>
 
       <!-- Modul Standar: Jalur -->
@@ -712,6 +758,8 @@ sistem.aturLingkungan("APLIKASI_ENV", "produksi")
 var envVal = sistem.lingkungan("APLIKASI_ENV")
 var cwd = sistem.folderKerja() // current directory
 var args = sistem.argumen() // argumen baris perintah CLI
+var info = sistem.perintah("git", "--version") // eksekusi subprocess shell
+cetak.tulis("Output:", info["keluaran"])
 sistem.tidur(1000)          // Sleep dalam milidetik
 sistem.keluar(0)            // Exit program</code></pre>
       </section>
