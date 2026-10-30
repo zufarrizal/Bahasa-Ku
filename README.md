@@ -17,36 +17,42 @@ Engine compiler & runtime **Ku** dibangun langsung menggunakan **Go Murni** (men
 
 ---
 
-## 🛠️ Cara Menjalankan
+## 📦 Cara Memasang & Menggunakan (Bagi Pengguna)
 
-### Menggunakan Native Binary (`ku.exe`)
+Pengguna **TIDAK PERLU** memasang Go untuk menjalankan Bahasa Ku. File binary mandiri siap unduh sudah disediakan:
 
-1. **Build compiler:**
+### 1. Unduh Binary Siap Pakai (Windows, Linux, macOS)
+Kunjungi halaman **[Rilis GitHub](https://github.com/zufarrizal/Bahasa-Ku/releases)**, lalu unduh binary yang sesuai:
+- **Windows:** Unduh `ku-windows-amd64.exe` (bisa diganti nama jadi `ku.exe`).
+- **Linux:** Unduh `ku-linux-amd64` (`chmod +x ku-linux-amd64`).
+- **macOS (Apple Silicon):** Unduh `ku-darwin-arm64`.
+
+### 2. Pasang via Go (Jika Memiliki Go di Komputer)
 ```bash
-go build -o ku.exe ./cmd/ku
+go install github.com/zufarrizal/bahasa-ku/cmd/ku@latest
 ```
 
-2. **Cek Versi:**
+---
+
+## 🛠️ Menjalankan Program dengan CLI `ku`
+
 ```bash
-.\ku.exe versi
+# Menjalankan program berkas .ku
+ku jalankan contoh/halo.ku
+ku jalankan contoh/logika.ku
+ku jalankan contoh/server_web.ku
+ku jalankan contoh/aplikasi_desktop.ku
+
+# Mengonversi berkas .ku ke kode Go murni (.go)
+ku buat contoh/tunda.ku hasil.go
+
+# Memeriksa versi
+ku versi
 ```
 
-### 3. Menjalankan Program:
-```bash
-# Program CLI Halo Dunia
-.\ku.exe jalankan contoh/halo.ku
+---
 
-# Server Web HTTP & REST API JSON
-.\ku.exe jalankan contoh/server_web.ku
-
-# Aplikasi Desktop GUI Windows
-.\ku.exe jalankan contoh/aplikasi_desktop.ku
-```
-
-4. **Kompilasi / Transpilasi ke Go:**
-```bash
-.\ku.exe buat contoh/tunda.ku hasil.go
-```
+## 📖 Padanan Kata Kunci (Go vs Ku)
 
 | Go | Ku | Deskripsi |
 | :--- | :--- | :--- |

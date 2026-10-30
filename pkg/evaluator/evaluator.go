@@ -1,6 +1,7 @@
 package evaluator
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -9,9 +10,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"syscall"
-	"unsafe"
 
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/zufarrizal/bahasa-ku/pkg/ast"
 )
 
@@ -228,7 +228,7 @@ func InitGlobalEnvironment() *Environment {
 				}
 
 				w.Header().Set("Content-Type", "text/html; charset=utf-8")
-				fmt.Fprint(w, respObj.Inspect())
+				w.Write([]byte(respObj.Inspect()))
 			})
 			return NIL
 		},
@@ -261,15 +261,7 @@ func InitGlobalEnvironment() *Environment {
 				isi = args[1].Inspect()
 			}
 
-			if runtime.GOOS == "windows" {
-				user32 := syscall.NewLazyDLL("user32.dll")
-				msgBox := user32.NewProc("MessageBoxW")
-				tPtr, _ := syscall.UTF16PtrFromString(judul)
-				cPtr, _ := syscall.UTF16PtrFromString(isi)
-				msgBox.Call(0, uintptr(unsafe.Pointer(cPtr)), uintptr(unsafe.Pointer(tPtr)), 0)
-			} else {
-				fmt.Printf("[%s] %s\n", judul, isi)
-			}
+			tampilkanPesanNative(judul, isi)
 			return NIL
 		},
 	}
@@ -335,6 +327,107 @@ func InitGlobalEnvironment() *Environment {
 		},
 	}
 	env.Set("jendela", jendelaMap)
+
+	// Modul basisdata (Database / MySQL)
+	basisdataMap := &Map{Pairs: make(map[string]Object)}
+	basisdataMap.Pairs["sambung"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return NIL
+			}
+			driver := args[0].Inspect() // misal "mysql"
+			dsn := args[1].Inspect()    // misal "user:password@tcp(127.0.0.1:3306)/dbname"
+
+			db, err := sql.Open(driver, dsn)
+			connMap := &Map{Pairs: make(map[string]Object)}
+
+			if err != nil {
+				connMap.Pairs["terhubung"] = FALSE
+				connMap.Pairs["pesan"] = &String{Value: err.Error()}
+				return connMap
+			}
+
+			// Uji ping
+			pingErr := db.Ping()
+			if pingErr != nil {
+				connMap.Pairs["terhubung"] = FALSE
+				connMap.Pairs["pesan"] = &String{Value: pingErr.Error()}
+			} else {
+				connMap.Pairs["terhubung"] = TRUE
+				connMap.Pairs["pesan"] = &String{Value: "Koneksi berhasil"}
+			}
+
+			// Method eksekusi query
+			connMap.Pairs["kueri"] = &Builtin{
+				Fn: func(qArgs ...Object) Object {
+					if len(qArgs) < 1 {
+						return &Array{Elements: []Object{}}
+					}
+					queryStr := qArgs[0].Inspect()
+					rows, qErr := db.Query(queryStr)
+					if qErr != nil {
+						fmt.Printf("Galat kueri: %v\n", qErr)
+						return &Array{Elements: []Object{}}
+					}
+					defer rows.Close()
+
+					cols, _ := rows.Columns()
+					hasilArray := &Array{Elements: []Object{}}
+
+					for rows.Next() {
+						vals := make([]interface{}, len(cols))
+						valPtrs := make([]interface{}, len(cols))
+						for i := range vals {
+							valPtrs[i] = &vals[i]
+						}
+						rows.Scan(valPtrs...)
+
+						barisMap := &Map{Pairs: make(map[string]Object)}
+						for i, col := range cols {
+							valStr := ""
+							if vals[i] != nil {
+								if b, ok := vals[i].([]byte); ok {
+									valStr = string(b)
+								} else {
+									valStr = fmt.Sprintf("%v", vals[i])
+								}
+							}
+							barisMap.Pairs[col] = &String{Value: valStr}
+						}
+						hasilArray.Elements = append(hasilArray.Elements, barisMap)
+					}
+					return hasilArray
+				},
+			}
+
+			// Method eksekusi perintah (INSERT, UPDATE, CREATE, DELETE)
+			connMap.Pairs["eksekusi"] = &Builtin{
+				Fn: func(eArgs ...Object) Object {
+					if len(eArgs) < 1 {
+						return FALSE
+					}
+					sqlStr := eArgs[0].Inspect()
+					_, exErr := db.Exec(sqlStr)
+					if exErr != nil {
+						fmt.Printf("Galat eksekusi: %v\n", exErr)
+						return FALSE
+					}
+					return TRUE
+				},
+			}
+
+			// Tutup koneksi
+			connMap.Pairs["tutup"] = &Builtin{
+				Fn: func(tArgs ...Object) Object {
+					db.Close()
+					return NIL
+				},
+			}
+
+			return connMap
+		},
+	}
+	env.Set("basisdata", basisdataMap)
 
 	// Bawaan: panjang & tambah
 	env.Set("panjang", &Builtin{
