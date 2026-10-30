@@ -69,6 +69,7 @@ func init() {
 
 // Gunakan delimiter biner unik di akhir berkas
 var embeddedMarker = []byte("\n<--KU_APP_BUNDLED_PAYLOAD_START-->\n")
+var embeddedEndMarker = []byte("\n<--KU_APP_BUNDLED_PAYLOAD_END-->\n")
 
 func main() {
 	args := os.Args[1:]
@@ -79,9 +80,10 @@ func main() {
 		if err == nil {
 			selfData, err := os.ReadFile(selfExe)
 			if err == nil {
-				idx := bytes.LastIndex(selfData, embeddedMarker)
-				if idx != -1 && idx > 5000000 {
-					embeddedScript := string(selfData[idx+len(embeddedMarker):])
+				idxStart := bytes.LastIndex(selfData, embeddedMarker)
+				idxEnd := bytes.LastIndex(selfData, embeddedEndMarker)
+				if idxStart != -1 && idxEnd != -1 && idxEnd > idxStart {
+					embeddedScript := string(selfData[idxStart+len(embeddedMarker) : idxEnd])
 					l := lexer.New(embeddedScript)
 					p := parser.New(l)
 					prog := p.ParseProgram()
@@ -471,6 +473,7 @@ func main() {
 					bundled.Write(baseBin)
 					bundled.Write(embeddedMarker)
 					bundled.Write(content)
+					bundled.Write(embeddedEndMarker)
 					if err := os.WriteFile(absOutput, bundled.Bytes(), 0755); err == nil {
 						fmt.Printf("Berhasil mengompilasi '%s' -> '%s' (Biner Mandiri Portabel Bahasa Ku)! 🎉\n", source, outputExe)
 						return
@@ -524,6 +527,7 @@ replace github.com/zufarrizal/bahasa-ku => %q
 			bundled.Write(baseBin)
 			bundled.Write(embeddedMarker)
 			bundled.Write(content)
+			bundled.Write(embeddedEndMarker)
 			if err := os.WriteFile(absOutput, bundled.Bytes(), 0755); err == nil {
 				fmt.Printf("Berhasil mengompilasi '%s' -> '%s' (Biner Mandiri Portabel Bahasa Ku)! 🎉\n", source, outputExe)
 				return
