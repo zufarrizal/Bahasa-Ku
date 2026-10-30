@@ -4,48 +4,46 @@
 
   <defs>
     <!-- Gradient Cyan ke Electric Blue khas Go -->
-    <linearGradient id="kuStrokeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="kuGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#00F0FF" />
       <stop offset="60%" stop-color="#00A3FF" />
       <stop offset="100%" stop-color="#0066FF" />
     </linearGradient>
 
-    <!-- Glow Halus -->
+    <!-- Halus Bayangan Cahaya -->
     <filter id="kuGlow" x="-20%" y="-20%" width="140%" height="140%">
       <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#00A3FF" flood-opacity="0.35" />
     </filter>
   </defs>
 
-  <!-- Bentuk Monogram K Lengkap Persis Sketsa Gambar -->
+  <!-- Komposisi Simbol < dan Huruf u Sempurna -->
   <g filter="url(#kuGlow)">
-    <!-- 1. Batang Utama Vertikal (Kiri Huruf K) -->
-    <path d="M 120,96 L 120,416" 
-          stroke="url(#kuStrokeGrad)" 
-          stroke-width="56" 
-          stroke-linecap="round" />
-
-    <!-- 2. Lengan Atas K (Diagonal ke Kanan Atas) -->
-    <path d="M 148,220 L 290,96" 
-          stroke="url(#kuStrokeGrad)" 
-          stroke-width="54" 
-          stroke-linecap="round" />
-
-    <!-- 3. KAKI BAWAH K (Bagian Kiri-Bawah K) -->
-    <path d="M 148,250 L 220,340" 
-          stroke="url(#kuStrokeGrad)" 
-          stroke-width="54" 
-          stroke-linecap="round" />
-
-    <!-- 4. LENGKUNGAN KAKI KANAN KE BAWAH LALU NAIK JADI 'u' (Persis Sketsa) -->
-    <path d="M 210,250 
-             C 255,270 270,305 275,345 
-             C 282,395 316,424 366,416 
-             C 414,408 436,365 432,295 
-             L 430,240" 
-          stroke="url(#kuStrokeGrad)" 
+    <!-- 1. Simbol '<' Sempurna (Karakter Kode Khas Programmer, Membentuk Sisi Kiri) -->
+    <path d="M 226,140 L 118,256 L 226,372" 
+          stroke="url(#kuGrad)" 
           stroke-width="54" 
           stroke-linecap="round" 
-          stroke-linejoin="round"
+          stroke-linejoin="round" 
+          fill="none" />
+
+    <!-- 2. Huruf 'u' Sempurna (Mangkuk Geometris Presisi, Melambangkan 'u') -->
+    <!-- Garis turun kiri -> kurva dasar U -> garis naik kanan -> tiang vertikal kanan u -->
+    <path d="M 280,210 
+             L 280,314 
+             C 280,378 334,394 372,394 
+             C 410,394 440,366 440,314 
+             L 440,210" 
+          stroke="url(#kuGrad)" 
+          stroke-width="54" 
+          stroke-linecap="round" 
+          stroke-linejoin="round" 
+          fill="none" />
+
+    <!-- Batang Penutup Kanan Huruf 'u' Sempurna -->
+    <path d="M 440,240 L 440,388" 
+          stroke="url(#kuGrad)" 
+          stroke-width="54" 
+          stroke-linecap="round" 
           fill="none" />
   </g>
 </svg>

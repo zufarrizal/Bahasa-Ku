@@ -1,13 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
   <rect width="64" height="64" rx="16" fill="#0A0E17" />
   <g stroke="#00F0FF" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none">
-    <!-- Batang Vertikal K -->
-    <path d="M 15,12 L 15,52" />
-    <!-- Lengan Atas K -->
-    <path d="M 19,28 L 36,12" />
-    <!-- Kaki Bawah K -->
-    <path d="M 19,31 L 28,42" />
-    <!-- Lengkungan Kanan jadi u -->
-    <path d="M 27,31 C 32,34 34,38 35,43 C 36,49 40,53 46,52 C 52,51 55,46 54,37 L 54,30" />
+    <!-- Simbol < -->
+    <path d="M 28,18 L 15,32 L 28,46" />
+    <!-- Huruf u sempurna -->
+    <path d="M 35,26 L 35,39 C 35,47 42,49 47,49 C 52,49 55,45 55,39 L 55,26" />
+    <path d="M 55,30 L 55,48" />
   </g>
 </svg>
