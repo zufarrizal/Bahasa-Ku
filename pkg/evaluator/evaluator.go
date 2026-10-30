@@ -638,6 +638,54 @@ func InitGlobalEnvironment() *Environment {
 			return &Boolean{Value: err == nil}
 		},
 	}
+	berkasMap.Pairs["tambah"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return FALSE
+			}
+			filePath := args[0].Inspect()
+			data := args[1].Inspect()
+			f, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+			if err != nil {
+				return FALSE
+			}
+			defer f.Close()
+			_, err = f.WriteString(data)
+			return &Boolean{Value: err == nil}
+		},
+	}
+	berkasMap.Pairs["salin"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return FALSE
+			}
+			srcPath := args[0].Inspect()
+			dstPath := args[1].Inspect()
+			srcFile, err := os.Open(srcPath)
+			if err != nil {
+				return FALSE
+			}
+			defer srcFile.Close()
+			dstFile, err := os.Create(dstPath)
+			if err != nil {
+				return FALSE
+			}
+			defer dstFile.Close()
+			_, err = io.Copy(dstFile, srcFile)
+			return &Boolean{Value: err == nil}
+		},
+	}
+	berkasMap.Pairs["pindah"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return FALSE
+			}
+			srcPath := args[0].Inspect()
+			dstPath := args[1].Inspect()
+			err := os.Rename(srcPath, dstPath)
+			return &Boolean{Value: err == nil}
+		},
+	}
 	env.Set("berkas", berkasMap)
 
 	// Modul jalur (Manipulasi Path Berkas ala filepath)
@@ -1264,6 +1312,65 @@ func InitGlobalEnvironment() *Environment {
 			return &Integer{Value: int64(strings.Index(args[0].Inspect(), args[1].Inspect()))}
 		},
 	}
+	teksMap.Pairs["padKiri"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return args[0]
+			}
+			s := args[0].Inspect()
+			targetLen := 0
+			if i, ok := args[1].(*Integer); ok {
+				targetLen = int(i.Value)
+			}
+			padChar := " "
+			if len(args) >= 3 && len(args[2].Inspect()) > 0 {
+				padChar = string(args[2].Inspect()[0])
+			}
+			if len(s) >= targetLen {
+				return &String{Value: s}
+			}
+			pad := strings.Repeat(padChar, targetLen-len(s))
+			return &String{Value: pad + s}
+		},
+	}
+	teksMap.Pairs["padKanan"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return args[0]
+			}
+			s := args[0].Inspect()
+			targetLen := 0
+			if i, ok := args[1].(*Integer); ok {
+				targetLen = int(i.Value)
+			}
+			padChar := " "
+			if len(args) >= 3 && len(args[2].Inspect()) > 0 {
+				padChar = string(args[2].Inspect()[0])
+			}
+			if len(s) >= targetLen {
+				return &String{Value: s}
+			}
+			pad := strings.Repeat(padChar, targetLen-len(s))
+			return &String{Value: s + pad}
+		},
+	}
+	teksMap.Pairs["karakter"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return &String{Value: ""}
+			}
+			s := args[0].Inspect()
+			idx := int64(0)
+			if i, ok := args[1].(*Integer); ok {
+				idx = i.Value
+			}
+			runes := []rune(s)
+			if idx < 0 || idx >= int64(len(runes)) {
+				return &String{Value: ""}
+			}
+			return &String{Value: string(runes[idx])}
+		},
+	}
 	env.Set("teks", teksMap)
 
 	// Modul konversi (Konversi Tipe Data)
@@ -1459,7 +1566,64 @@ func InitGlobalEnvironment() *Environment {
 			return &String{Value: res}
 		},
 	}
+	enkodingMap.Pairs["kodekanHeksa"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			return &String{Value: hex.EncodeToString([]byte(args[0].Inspect()))}
+		},
+	}
+	enkodingMap.Pairs["dekodekanHeksa"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			data, err := hex.DecodeString(args[0].Inspect())
+			if err != nil {
+				return args[0]
+			}
+			return &String{Value: string(data)}
+		},
+	}
 	env.Set("enkoding", enkodingMap)
+
+	// Modul catatan (Logging Terstruktur dengan Timestamp)
+	catatanMap := &Map{Pairs: make(map[string]Object)}
+	catatanMap.Pairs["info"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			ts := time.Now().Format("2006-01-02 15:04:05")
+			items := []string{}
+			for _, a := range args {
+				items = append(items, a.Inspect())
+			}
+			fmt.Printf("[INFO] %s: %s\n", ts, strings.Join(items, " "))
+			return NIL
+		},
+	}
+	catatanMap.Pairs["peringatan"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			ts := time.Now().Format("2006-01-02 15:04:05")
+			items := []string{}
+			for _, a := range args {
+				items = append(items, a.Inspect())
+			}
+			fmt.Printf("[PERINGATAN] %s: %s\n", ts, strings.Join(items, " "))
+			return NIL
+		},
+	}
+	catatanMap.Pairs["galat"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			ts := time.Now().Format("2006-01-02 15:04:05")
+			items := []string{}
+			for _, a := range args {
+				items = append(items, a.Inspect())
+			}
+			fmt.Printf("[GALAT] %s: %s\n", ts, strings.Join(items, " "))
+			return NIL
+		},
+	}
+	env.Set("catatan", catatanMap)
 
 	// Modul kompresi (Gzip)
 	kompresiMap := &Map{Pairs: make(map[string]Object)}
@@ -2033,6 +2197,42 @@ func InitGlobalEnvironment() *Environment {
 				return &Array{Elements: []Object{}}
 			}
 			return &Array{Elements: arr.Elements[start:end]}
+		},
+	}
+	larikMap.Pairs["mengandung"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return FALSE
+			}
+			arr, isArr := args[0].(*Array)
+			if !isArr {
+				return FALSE
+			}
+			target := args[1]
+			for _, e := range arr.Elements {
+				if objectsEqual(e, target) {
+					return TRUE
+				}
+			}
+			return FALSE
+		},
+	}
+	larikMap.Pairs["indeks"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return &Integer{Value: -1}
+			}
+			arr, isArr := args[0].(*Array)
+			if !isArr {
+				return &Integer{Value: -1}
+			}
+			target := args[1]
+			for i, e := range arr.Elements {
+				if objectsEqual(e, target) {
+					return &Integer{Value: int64(i)}
+				}
+			}
+			return &Integer{Value: -1}
 		},
 	}
 	env.Set("larik", larikMap)

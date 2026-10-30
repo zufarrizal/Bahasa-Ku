@@ -597,6 +597,43 @@ fungsi utama() {
 }
 ```
 
+### 16. I/O Berkas Lanjutan, Logging Terstruktur (`catatan`), Padding Teks, & Enkoding Heksa (`contoh/dasar_berkas_catatan.ku`)
+```ku
+paket utama
+
+pakai "cetak"
+pakai "berkas"
+pakai "catatan"
+pakai "teks"
+pakai "enkoding"
+pakai "larik"
+
+fungsi utama() {
+    // 1. Logging Terstruktur dengan Timestamp Otomatis
+    catatan.info("Memulai pemrosesan transaksi...")
+    catatan.peringatan("Beban sistem mendekati ambang batas!")
+
+    // 2. Manipulasi File: Tambah (Append), Salin, dan Pindah
+    berkas.tambah("riwayat.txt", "Pencatatan baris baru\n")
+    berkas.salin("riwayat.txt", "cadangan_riwayat.txt")
+    berkas.pindah("cadangan_riwayat.txt", "arsip.txt")
+
+    // 3. Padding Teks & Karakter
+    var idOrder = teks.padKiri("42", 5, "0") // "00042"
+    var kolom = teks.padKanan("Barang", 10, " ") // "Barang    "
+    var hurufPertama = teks.karakter("Bahasa Ku", 0) // "B"
+
+    // 4. Enkoding Biner Heksadesimal
+    var heksa = enkoding.kodekanHeksa("Ku") // "4b75"
+    var teksAsli = enkoding.dekodekanHeksa(heksa) // "Ku"
+
+    // 5. Pencarian Elemen Larik
+    var bahasa = ["Go", "Ku", "Python"]
+    var adaKu = larik.mengandung(bahasa, "Ku") // benar
+    var posisiKu = larik.indeks(bahasa, "Ku") // 1
+}
+```
+
 ---
 
 ## 📂 Struktur Proyek

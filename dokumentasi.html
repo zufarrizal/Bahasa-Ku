@@ -183,13 +183,14 @@
         <div class="sidebar-title">Pustaka Standar Bawaan</div>
         <ul class="sidebar-links">
           <li><a href="#modul-cetak">Modul `cetak`</a></li>
+          <li><a href="#modul-catatan">Modul `catatan` (Logging)</a></li>
           <li><a href="#modul-waktu">Modul `waktu` & Stopwatch</a></li>
           <li><a href="#modul-pola">Modul `pola` (Regex)</a></li>
           <li><a href="#modul-larik">Modul `larik` & Himpunan</a></li>
           <li><a href="#modul-peta">Modul `peta` (Kamus / Map)</a></li>
           <li><a href="#modul-kompresi">Modul `kompresi` (Gzip)</a></li>
           <li><a href="#modul-jalur">Modul `jalur` (Filepath)</a></li>
-          <li><a href="#modul-enkoding">Modul `enkoding` (CSV & URL)</a></li>
+          <li><a href="#modul-enkoding">Modul `enkoding` (CSV, URL, Heksa)</a></li>
           <li><a href="#modul-teks">Modul `teks`</a></li>
           <li><a href="#modul-konversi">Modul `konversi`</a></li>
           <li><a href="#modul-json">Modul `json`</a></li>
@@ -502,6 +503,25 @@ cetak.tulis("Semua tugas tuntas!")</code></pre>
         </table>
       </section>
 
+      <!-- Modul Standar: Catatan (Logging) -->
+      <section id="modul-catatan" class="docs-section">
+        <h2>Modul `catatan` (Logging Terstruktur)</h2>
+        <p>Pencatatan aktivitas sistem dengan stempel waktu dan level log otomatis:</p>
+        <table>
+          <thead>
+            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>catatan.info(...pesan)</code></td><td>Mencetak log level INFO berformat <code>[INFO] YYYY-MM-DD HH:MM:SS: pesan...</code></td></tr>
+            <tr><td><code>catatan.peringatan(...pesan)</code></td><td>Mencetak log level PERINGATAN</td></tr>
+            <tr><td><code>catatan.galat(...pesan)</code></td><td>Mencetak log level GALAT</td></tr>
+          </tbody>
+        </table>
+        <pre><code>catatan.info("Server web aktif di port 8080")
+catatan.peringatan("Koneksi lambat terdeteksi!")
+catatan.galat("Gagal memproses transaksi ID #102")</code></pre>
+      </section>
+
       <!-- Modul Standar: Waktu -->
       <section id="modul-waktu" class="docs-section">
         <h2>Modul `waktu` & Stopwatch</h2>
@@ -561,6 +581,8 @@ var sensor = pola.ganti("[0-9]", "Kode PIN: 8492", "*") // Kode PIN: ****</code>
             <tr><td><code>larik.irisan(arr1, arr2)</code></td><td>Mencari perpotongan elemen yang ada di kedua larik (intersection)</td></tr>
             <tr><td><code>larik.gabungan(arr1, arr2)</code></td><td>Menggabungkan dua larik menjadi himpunan unik (union)</td></tr>
             <tr><td><code>larik.iris(arr, mulai, selesai)</code></td><td>Memotong larik pada rentang indeks tertentu (slice)</td></tr>
+            <tr><td><code>larik.mengandung(arr, nilai)</code></td><td>Memeriksa apakah elemen ada di dalam larik (boolean)</td></tr>
+            <tr><td><code>larik.indeks(arr, nilai)</code></td><td>Mencari indeks posisi kemunculan pertama elemen (-1 jika nihil)</td></tr>
             <tr><td><code>larik.saring(arr, fn)</code></td><td>Menyaring elemen larik berdasarkan fungsi predikat (filter)</td></tr>
             <tr><td><code>larik.petakan(arr, fn)</code></td><td>Mentransformasi setiap elemen larik menjadi nilai baru (map)</td></tr>
             <tr><td><code>larik.reduksi(arr, fn, awal)</code></td><td>Merangkum larik menjadi satu nilai tunggal (reduce)</td></tr>
@@ -633,7 +655,7 @@ cetak.tulis("Ekstensi:", jalur.ekstensi(lokasi)) // .ku</code></pre>
 
       <!-- Modul Standar: Enkoding -->
       <section id="modul-enkoding" class="docs-section">
-        <h2>Modul `enkoding` (CSV & URL Query)</h2>
+        <h2>Modul `enkoding` (CSV, URL Query & Heksadesimal)</h2>
         <table>
           <thead>
             <tr><th>Fungsi</th><th>Deskripsi</th></tr>
@@ -643,11 +665,13 @@ cetak.tulis("Ekstensi:", jalur.ekstensi(lokasi)) // .ku</code></pre>
             <tr><td><code>enkoding.kodekanCSV(larik2D)</code></td><td>Mengonversi larik 2-dimensi menjadi teks string CSV</td></tr>
             <tr><td><code>enkoding.kodekanURL(teks)</code></td><td>Meng-encode teks menjadi format URL Query Escape</td></tr>
             <tr><td><code>enkoding.dekodekanURL(teks)</code></td><td>Men-decode format URL kembali ke teks asli</td></tr>
+            <tr><td><code>enkoding.kodekanHeksa(teks)</code></td><td>Mengonversi teks string ke string heksadesimal biner</td></tr>
+            <tr><td><code>enkoding.dekodekanHeksa(heksaStr)</code></td><td>Mendekode string heksadesimal biner ke teks asli</td></tr>
           </tbody>
         </table>
         <pre><code>var csvData = "nama,skor\nBudi,95"
 var tabel = enkoding.uraiCSV(csvData)
-cetak.tulis(tabel[1][0]) // Budi</code></pre>
+var hex = enkoding.kodekanHeksa("Ku") // 4b75</code></pre>
       </section>
 
       <!-- Modul Standar: Teks -->
@@ -667,6 +691,9 @@ cetak.tulis(tabel[1][0]) // Budi</code></pre>
             <tr><td><code>teks.awalan(str, prefix)</code></td><td>Memeriksa apakah teks diawali substring tertentu</td></tr>
             <tr><td><code>teks.akhiran(str, suffix)</code></td><td>Memeriksa apakah teks diakhiri substring tertentu</td></tr>
             <tr><td><code>teks.indeks(str, sub)</code></td><td>Mengembalikan posisi indeks kemunculan pertama substring</td></tr>
+            <tr><td><code>teks.padKiri(str, panjang, pad)</code></td><td>Menambahkan karakter padding di sebelah kiri string (contoh: <code>00042</code>)</td></tr>
+            <tr><td><code>teks.padKanan(str, panjang, pad)</code></td><td>Menambahkan karakter padding di sebelah kanan string</td></tr>
+            <tr><td><code>teks.karakter(str, indeks)</code></td><td>Mengambil satu karakter pada indeks tertentu sebagai string</td></tr>
             <tr><td><code>teks.ulang(str, n)</code></td><td>Mengulang teks sebanyak n kali</td></tr>
             <tr><td><code>teks.format(str, ...args)</code></td><td>Format string dengan placeholder indeks {0}, {1}</td></tr>
           </tbody>
@@ -746,9 +773,12 @@ cetak.tulis("Status:", objek["status"])</code></pre>
       <section id="modul-berkas-sistem" class="docs-section">
         <h2>Modul `berkas` & `sistem`</h2>
         <pre><code>// Modul Berkas (File I/O)
-berkas.tulis("catatan.txt", "Isi pesan penting")
+berkas.tulis("catatan.txt", "Isi pesan penting\n")
+berkas.tambah("catatan.txt", "Baris tambahan\n")
 var isi = berkas.baca("catatan.txt")
 var ada = berkas.ada("catatan.txt")
+berkas.salin("catatan.txt", "salinan.txt")
+berkas.pindah("salinan.txt", "arsip.txt")
 berkas.buatFolder("data/arsip")
 var daftarBerkas = berkas.daftar(".")
 
