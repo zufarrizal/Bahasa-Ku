@@ -1,0 +1,166 @@
+{
+  "Program Utama": {
+    "prefix": "utama",
+    "body": [
+      "paket utama\n",
+      "pakai \"cetak\"\n",
+      "fungsi utama() {",
+      "\tcetak.tulis(\"${1:Halo Dunia dari Bahasa Ku!}\")",
+      "}"
+    ],
+    "description": "Struktur Program Utama Bahasa Ku"
+  },
+  "Deklarasi Fungsi": {
+    "prefix": "fungsi",
+    "body": [
+      "fungsi ${1:namaFungsi}(${2:parameter}) {",
+      "\t${3:// implementasi}",
+      "\tkembalikan ${4:nilai}",
+      "}"
+    ],
+    "description": "Deklarasi Fungsi Standar"
+  },
+  "Metode Receiver Struct": {
+    "prefix": "metode",
+    "body": [
+      "fungsi (${1:m} ${2:NamaStruktur}) ${3:NamaMetode}(${4:params}) {",
+      "\t${5:// logika metode}",
+      "}"
+    ],
+    "description": "Metode Receiver Struct ala Go"
+  },
+  "Deklarasi Struktur": {
+    "prefix": "struktur",
+    "body": [
+      "tipe ${1:NamaStruktur} struktur {",
+      "\t${2:fieldSatu}",
+      "\t${3:fieldDua}",
+      "}"
+    ],
+    "description": "Deklarasi Struct Data"
+  },
+  "Deklarasi Antarmuka": {
+    "prefix": "antarmuka",
+    "body": [
+      "tipe ${1:NamaAntarmuka} antarmuka {",
+      "\t${2:MetodeSatu}()",
+      "\t${3:MetodeDua}()",
+      "}"
+    ],
+    "description": "Deklarasi Antarmuka (Interface) ala Go"
+  },
+  "Perulangan Standar": {
+    "prefix": "untuk",
+    "body": [
+      "untuk ${1:i} := 0; ${1:i} < ${2:10}; ${1:i}++ {",
+      "\t${3:cetak.tulis(${1:i})}",
+      "}"
+    ],
+    "description": "Perulangan Untuk Tiga Bagian"
+  },
+  "Perulangan Koleksi (Range)": {
+    "prefix": "untuk-rentang",
+    "body": [
+      "untuk ${1:idx}, ${2:item} dalam ${3:koleksi} {",
+      "\t${4:cetak.tulis(${1:idx}, ${2:item})}",
+      "}"
+    ],
+    "description": "Perulangan Rentang Koleksi (for range)"
+  },
+  "Drain Loop Kanal": {
+    "prefix": "untuk-kanal",
+    "body": [
+      "untuk ${1:pesan} dalam ${2:antreanKanal} {",
+      "\t${3:cetak.tulis(\"Menerima:\", ${1:pesan})}",
+      "}"
+    ],
+    "description": "Menerima Aliran Data Kanal Hingga Ditutup"
+  },
+  "Percabangan Jika": {
+    "prefix": "jika",
+    "body": [
+      "jika ${1:kondisi} {",
+      "\t${2:// benar}",
+      "} lainnya {",
+      "\t${3:// salah}",
+      "}"
+    ],
+    "description": "Pernyataan Kondisional Jika - Lainnya"
+  },
+  "Pilih Kasus (Switch)": {
+    "prefix": "pilih",
+    "body": [
+      "pilih ${1:nilai} {",
+      "kasus ${2:\"kondisi_1\"}:",
+      "\t${3:// aksi 1}",
+      "kasus ${4:\"kondisi_2\"}:",
+      "\t${5:// aksi 2}",
+      "bawaan:",
+      "\t${6:// aksi bawaan}",
+      "}"
+    ],
+    "description": "Pernyataan Pemilihan Nilai (Switch Statement)"
+  },
+  "Pilih Kanal (Select Statement)": {
+    "prefix": "pilih-kanal",
+    "body": [
+      "pilih {",
+      "kasus ${1:msg} := <-${2:ch1}:",
+      "\tcetak.tulis(\"Menerima dari ch1:\", ${1:msg})",
+      "kasus ${3:ch2} <- ${4:data}:",
+      "\tcetak.tulis(\"Berhasil kirim ke ch2\")",
+      "bawaan:",
+      "\tcetak.tulis(\"Tidak ada kanal yang siap\")",
+      "}"
+    ],
+    "description": "Multiplexing Kanal (Select Statement ala Go)"
+  },
+  "Ku-routine Konkurensi": {
+    "prefix": "ku-anonim",
+    "body": [
+      "ku fungsi() {",
+      "\t${1:// pekerjaan paralel ringan}",
+      "}()"
+    ],
+    "description": "Luncurkan Goroutine Ringan Anonim"
+  },
+  "Coba Tangkap Galat": {
+    "prefix": "coba",
+    "body": [
+      "coba {",
+      "\t${1:// operasi berisiko}",
+      "} tangkap (${2:galat}) {",
+      "\tcetak.tulis(\"Terjadi kesalahan:\", ${2:galat})",
+      "} akhirnya {",
+      "\t${3:// selalu dijalankan}",
+      "}"
+    ],
+    "description": "Blok Penanganan Galat Terstruktur"
+  },
+  "REST API Server Web": {
+    "prefix": "web-server",
+    "body": [
+      "web.aktifkanCORS()",
+      "web.dapatkan(\"/api/${1:pengguna}\", fungsi(permintaan, respons) {",
+      "\trespons.status(200)",
+      "\trespons.json({\"status\": \"sukses\", \"data\": [\"Contoh Data\"]})",
+      "})",
+      "cetak.tulis(\"Server berjalan di port :${2:8080}\")",
+      "web.jalankan(${2:8080})"
+    ],
+    "description": "Server Web HTTP REST API Bawaan"
+  },
+  "Koneksi Basis Data SQLite": {
+    "prefix": "sqlite-buka",
+    "body": [
+      "var db = basisdata.bukaBerkas(\"${1:data.db}\")",
+      "jika db[\"terhubung\"] == benar {",
+      "\tdb.eksekusi(\"CREATE TABLE IF NOT EXISTS ${2:tabel} (id INTEGER PRIMARY KEY, nama TEXT);\")",
+      "\tvar data = db.kueri(\"SELECT * FROM ${2:tabel}\")",
+      "\tcetak.tulis(data)",
+      "\tdb.tutup()",
+      "}"
+    ],
+    "description": "Membuka & Kueri Berkas SQLite Lokal"
+  }
+}
