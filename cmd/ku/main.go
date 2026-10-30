@@ -594,6 +594,13 @@ replace github.com/zufarrizal/bahasa-ku => %q
 	goModCmd.Dir = tempDir2
 	_ = goModCmd.Run()
 
+	// Pastikan ku.syso juga ditulis di tempDir2 pada Metode 3
+	if runtime.GOOS == "windows" {
+		if len(defaultSysoBytes) > 0 {
+			_ = os.WriteFile(filepath.Join(tempDir2, "ku.syso"), defaultSysoBytes, 0644)
+		}
+	}
+
 	buildCmd := exec.Command(goExe, "build", fmt.Sprintf("-ldflags=%s", ldFlags), "-o", absOutput, "main.go")
 	buildCmd.Dir = tempDir2
 	buildOutput, err := buildCmd.CombinedOutput()
