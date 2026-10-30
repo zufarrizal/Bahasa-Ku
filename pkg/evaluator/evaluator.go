@@ -44,7 +44,15 @@ const (
 	BREAK_OBJ        = "BREAK"
 	CONTINUE_OBJ     = "CONTINUE"
 	PANIC_OBJ        = "PANIC"
+	CHANNEL_OBJ      = "CHANNEL"
 )
+
+type ChannelObject struct {
+	Ch chan Object
+}
+
+func (c *ChannelObject) Type() ObjectType { return CHANNEL_OBJ }
+func (c *ChannelObject) Inspect() string  { return "kanal" }
 
 type PanicObject struct {
 	Value Object
@@ -565,6 +573,44 @@ func InitGlobalEnvironment() *Environment {
 				return TRUE
 			}
 			return FALSE
+		},
+	}
+	berkasMap.Pairs["buatDirektori"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return FALSE
+			}
+			err := os.MkdirAll(args[0].Inspect(), 0755)
+			return &Boolean{Value: err == nil}
+		},
+	}
+	berkasMap.Pairs["daftar"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			dir := "."
+			if len(args) > 0 {
+				dir = args[0].Inspect()
+			}
+			entries, err := os.ReadDir(dir)
+			if err != nil {
+				return &Array{Elements: []Object{}}
+			}
+			res := []Object{}
+			for _, e := range entries {
+				res = append(res, &String{Value: e.Name()})
+			}
+			return &Array{Elements: res}
+		},
+	}
+	berkasMap.Pairs["ukuran"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &Integer{Value: 0}
+			}
+			fi, err := os.Stat(args[0].Inspect())
+			if err != nil {
+				return &Integer{Value: 0}
+			}
+			return &Integer{Value: fi.Size()}
 		},
 	}
 	env.Set("berkas", berkasMap)
@@ -1112,6 +1158,48 @@ func InitGlobalEnvironment() *Environment {
 			return NIL
 		},
 	})
+
+	// Modul kanal (Go Channel)
+	kanalMap := &Map{Pairs: make(map[string]Object)}
+	kanalMap.Pairs["buat"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			capVal := int64(0)
+			if len(args) > 0 {
+				if i, ok := args[0].(*Integer); ok && i.Value > 0 {
+					capVal = i.Value
+				}
+			}
+			ch := make(chan Object, capVal)
+			chInst := &Map{Pairs: make(map[string]Object)}
+			chInst.Pairs["kirim"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					if len(mArgs) > 0 {
+						ch <- mArgs[0]
+					} else {
+						ch <- NIL
+					}
+					return TRUE
+				},
+			}
+			chInst.Pairs["terima"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					val := <-ch
+					if val == nil {
+						return NIL
+					}
+					return val
+				},
+			}
+			chInst.Pairs["tutup"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					close(ch)
+					return TRUE
+				},
+			}
+			return chInst
+		},
+	}
+	env.Set("kanal", kanalMap)
 
 	// Modul uji (Unit Testing Internal)
 	ujiMap := &Map{Pairs: make(map[string]Object)}
@@ -1912,6 +2000,14 @@ func evalInfixExpression(op string, left, right Object) Object {
 			return TRUE
 		}
 		return FALSE
+	}
+	if op == "??" {
+		if left != nil && left != NIL {
+			if s, isStr := left.(*String); !isStr || s.Value != "" {
+				return left
+			}
+		}
+		return right
 	}
 
 	return NIL

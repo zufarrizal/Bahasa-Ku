@@ -199,6 +199,14 @@ func (l *Lexer) NextToken() token.Token {
 		}
 	case '^':
 		tok = token.Token{Type: token.BIT_XOR, Literal: string(l.ch), Line: curLine, Column: curCol}
+	case '?':
+		if l.peekChar() == '?' {
+			ch := l.ch
+			l.readChar()
+			tok = token.Token{Type: token.COALESCE, Literal: string(ch) + string(l.ch), Line: curLine, Column: curCol}
+		} else {
+			tok = token.Token{Type: token.ILLEGAL, Literal: string(l.ch), Line: curLine, Column: curCol}
+		}
 	case ';':
 		tok = token.Token{Type: token.SEMICOLON, Literal: string(l.ch), Line: curLine, Column: curCol}
 	case ',':

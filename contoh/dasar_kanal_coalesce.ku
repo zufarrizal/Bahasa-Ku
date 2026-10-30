@@ -1,0 +1,54 @@
+paket utama
+
+pakai "cetak"
+pakai "sistem"
+pakai "kanal"
+pakai "berkas"
+pakai "konversi"
+
+fungsi prosesLatar(k) {
+    cetak.tulis("Ku-routine: Menghitung hasil di background...")
+    sistem.tidur(1)
+    k.kirim("Hasil perhitungan: 42")
+}
+
+fungsi utama() {
+    cetak.tulis("=== Uji Kanal (Channel), Null Coalescing (??), dan Berkas Lanjutan ===")
+
+    // 1. Uji Saluran Komunikasi (Kanal)
+    var antrean = kanal.buat(1)
+    ku prosesLatar(antrean)
+
+    cetak.tulis("Utama: Menunggu data dari kanal...")
+    var pesan = antrean.terima()
+    cetak.tulis("Utama menerima:", pesan)
+
+    // 2. Uji Operator Null Coalescing (??)
+    var konfigurasiPort = sistem.lingkungan("PORT_TIDAK_ADA") ?? "8080"
+    cetak.tulis("Port aktif (default ??):", konfigurasiPort)
+
+    var dataKosong = nihil
+    var nilaiPasti = dataKosong ?? "Nilai Pengganti Aman"
+    cetak.tulis("Nilai fallback:", nilaiPasti)
+
+    // 3. Uji Modul Berkas Lanjutan (buatDirektori, daftar, ukuran)
+    berkas.buatDirektori("folder_sementara/sub")
+    berkas.tulis("folder_sementara/sub/catatan.txt", "Bahasa Ku sangat cepat!")
+
+    jika berkas.ada("folder_sementara/sub/catatan.txt") {
+        cetak.tulis("Ukuran berkas catatan.txt:", berkas.ukuran("folder_sementara/sub/catatan.txt"), "bita")
+    }
+
+    var isiFolder = berkas.daftar("folder_sementara/sub")
+    cetak.tulis("Isi folder:", isiFolder)
+
+    // Bersihkan
+    berkas.hapus("folder_sementara/sub/catatan.txt")
+    berkas.hapus("folder_sementara/sub")
+    berkas.hapus("folder_sementara")
+
+    // 4. Uji Type Checking Runtime
+    uji.sama(konversi.tipe(100), "angka")
+    uji.sama(konversi.tipe("teks"), "teks")
+    uji.sama(konversi.tipe([1, 2]), "daftar")
+}

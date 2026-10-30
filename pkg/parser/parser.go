@@ -12,6 +12,7 @@ import (
 const (
 	_ int = iota
 	LOWEST
+	COALESCE    // ??
 	LOGIC       // ||, &&
 	BIT_OR      // |
 	BIT_XOR     // ^
@@ -27,6 +28,7 @@ const (
 )
 
 var precedences = map[token.TokenType]int{
+	token.COALESCE:  COALESCE,
 	token.OR:        LOGIC,
 	token.AND:       LOGIC,
 	token.BIT_OR:    BIT_OR,
@@ -663,7 +665,7 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 		switch p.peekToken.Type {
 		case token.PLUS, token.MINUS, token.SLASH, token.ASTERISK, token.MOD,
 			token.EQ, token.NOT_EQ, token.LT, token.GT, token.LTE, token.GTE,
-			token.AND, token.OR, token.BIT_AND, token.BIT_OR, token.BIT_XOR, token.SHL, token.SHR:
+			token.AND, token.OR, token.COALESCE, token.BIT_AND, token.BIT_OR, token.BIT_XOR, token.SHL, token.SHR:
 			p.nextToken()
 			left = p.parseInfix(left)
 		case token.LPAREN:

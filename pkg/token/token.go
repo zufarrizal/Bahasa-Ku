@@ -46,6 +46,7 @@ const (
 	GTE    = ">="
 	AND    = "&&"
 	OR     = "||"
+	COALESCE = "??"
 
 	// Bitwise Operators
 	BIT_AND = "&"

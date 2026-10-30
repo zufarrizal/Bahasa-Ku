@@ -402,6 +402,37 @@ fungsi utama() {
 }
 ```
 
+### 10. Kanal Konkurensi (`kanal`), Null Coalescing (`??`), & Berkas Lanjutan (`contoh/dasar_kanal_coalesce.ku`)
+```ku
+paket utama
+
+pakai "cetak"
+pakai "kanal"
+pakai "sistem"
+pakai "berkas"
+
+fungsi utama() {
+    // 1. Saluran komunikasi konkurensi (channel Go)
+    var pipa = kanal.buat(1)
+    ku fungsi() {
+        sistem.tidur(1)
+        pipa.kirim("Pesan rahasia dari Ku-routine!")
+    }()
+
+    var pesan = pipa.terima()
+    cetak.tulis("Diterima:", pesan)
+
+    // 2. Operator Fallback Null Coalescing (??)
+    var port = sistem.lingkungan("PORT") ?? "3000"
+    cetak.tulis("Port aktif:", port)
+
+    // 3. Operasi berkas lanjutan
+    berkas.buatDirektori("arsip/laporan")
+    var isiFolder = berkas.daftar("arsip")
+    cetak.tulis("Daftar arsip:", isiFolder)
+}
+```
+
 ---
 
 ## 📂 Struktur Proyek
