@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <rect width="64" height="64" rx="14" fill="#090D16" />
-  <g>
-    <!-- Batang K -->
-    <rect x="14" y="14" width="9" height="36" fill="#00D2FF" />
-    <!-- Sayap Atas K -->
-    <polygon points="26,30 42,14 53,14 34,33" fill="#7000FF" />
-    <!-- Sayap Bawah K -->
-    <polygon points="30,29 53,50 42,50 23,34" fill="#0077FF" />
+  <rect width="64" height="64" rx="16" fill="#0A0E17" />
+  <g fill="#00E5FF">
+    <!-- Batang Vertikal K -->
+    <rect x="13" y="12" width="7" height="40" rx="3.5" />
+    <!-- Diagonal Atas K -->
+    <path d="M 18,31 L 38,13 C 39,12 41,12 42,13 L 44,15 C 45,16 45,18 44,19 L 27,35 Z" />
+    <!-- Kaki Kanan Melengkung jadi 'u' -->
+    <path d="M 24,32 L 35,43 C 37,45 40,46 44,46 C 49,46 53,42 53,37 L 53,27 C 53,25 55,24 57,24 C 59,24 60,25 60,27 L 60,37 C 60,46 53,53 44,53 C 38,53 33,51 29,47 L 20,38 Z" />
   </g>
 </svg>
