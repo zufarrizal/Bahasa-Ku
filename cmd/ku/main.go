@@ -67,37 +67,68 @@ func init() {
 	})
 }
 
-// Gunakan delimiter biner unik di akhir berkas
-var embeddedMarker = []byte("\n<--KU_APP_BUNDLED_PAYLOAD_START-->\n")
-var embeddedEndMarker = []byte("\n<--KU_APP_BUNDLED_PAYLOAD_END-->\n")
+// Footer biner 8 byte penanda payload Bahasa Ku
+var kuMagicFooter = []byte("KUAPP\x01\x00\x00")
+
+func readEmbeddedScript(exePath string) (string, bool) {
+	f, err := os.Open(exePath)
+	if err != nil {
+		return "", false
+	}
+	defer f.Close()
+
+	stat, err := f.Stat()
+	if err != nil || stat.Size() < 16 {
+		return "", false
+	}
+
+	// Baca 16 byte terakhir: [8 byte panjang payload (uint64 little endian)][8 byte KUAPP\x01\x00\x00]
+	tail := make([]byte, 16)
+	if _, err := f.ReadAt(tail, stat.Size()-16); err != nil {
+		return "", false
+	}
+
+	if !bytes.Equal(tail[8:], kuMagicFooter) {
+		return "", false
+	}
+
+	payloadLen := int64(tail[0]) | int64(tail[1])<<8 | int64(tail[2])<<16 | int64(tail[3])<<24 |
+		int64(tail[4])<<32 | int64(tail[5])<<40 | int64(tail[6])<<48 | int64(tail[7])<<56
+
+	if payloadLen <= 0 || payloadLen > stat.Size()-16 {
+		return "", false
+	}
+
+	payloadOffset := stat.Size() - 16 - payloadLen
+	payloadBytes := make([]byte, payloadLen)
+	if _, err := f.ReadAt(payloadBytes, payloadOffset); err != nil {
+		return "", false
+	}
+
+	return string(payloadBytes), true
+}
 
 func main() {
 	args := os.Args[1:]
 
-	// 1. Cek mode biner mandiri hasil kompilasi
+	// 1. Cek mode biner mandiri hasil kompilasi (Payload Appended Executable)
 	if len(args) == 0 {
 		selfExe, err := os.Executable()
 		if err == nil {
-			selfData, err := os.ReadFile(selfExe)
-			if err == nil {
-				idxStart := bytes.LastIndex(selfData, embeddedMarker)
-				idxEnd := bytes.LastIndex(selfData, embeddedEndMarker)
-				if idxStart != -1 && idxEnd != -1 && idxEnd > idxStart {
-					embeddedScript := string(selfData[idxStart+len(embeddedMarker) : idxEnd])
-					l := lexer.New(embeddedScript)
-					p := parser.New(l)
-					prog := p.ParseProgram()
-					if len(p.Errors()) > 0 {
-						fmt.Println("Galat Sintaks pada Program Mandiri:")
-						for _, e := range p.Errors() {
-							fmt.Println(" -", e)
-						}
-						os.Exit(1)
+			if scriptSource, ok := readEmbeddedScript(selfExe); ok {
+				l := lexer.New(scriptSource)
+				p := parser.New(l)
+				prog := p.ParseProgram()
+				if len(p.Errors()) > 0 {
+					fmt.Println("Galat Sintaks pada Program Mandiri:")
+					for _, e := range p.Errors() {
+						fmt.Println(" -", e)
 					}
-					env := evaluator.InitGlobalEnvironment()
-					evaluator.Eval(prog, env)
-					return
+					os.Exit(1)
 				}
+				env := evaluator.InitGlobalEnvironment()
+				evaluator.Eval(prog, env)
+				return
 			}
 		}
 		repl.Start(os.Stdin, os.Stdout, version)
@@ -142,11 +173,14 @@ func main() {
 		sourceFile := ""
 		outputExe := ""
 		customIcon := ""
+		useNative := false
 
 		for i := 1; i < len(args); i++ {
 			arg := args[i]
 			if arg == "-gui" || arg == "--gui" || arg == "-app" {
 				isGUI = true
+			} else if arg == "-native" || arg == "--native" {
+				useNative = true
 			} else if (arg == "-o" || arg == "--output") && i+1 < len(args) {
 				outputExe = args[i+1]
 				i++
@@ -167,7 +201,7 @@ func main() {
 			os.Exit(1)
 		}
 
-		compileDirectToBinary(sourceFile, outputExe, isGUI, customIcon)
+		compileDirectToBinary(sourceFile, outputExe, isGUI, customIcon, useNative)
 
 	case "inisiasi", "init", "inisialisasi":
 		if len(args) < 2 {
@@ -234,7 +268,7 @@ func printHelp() {
   ku uji [berkas/_uji.ku]  Menjalankan pengujian unit test otomatis
   ku tolakUkur [berkas]    Menjalankan pengujian tolok ukur performa (benchmark)
   ku rapi [-w] <berkas.ku> Merapikan format kode secara otomatis (mirip gofmt)
-  ku kompilasi <berkas.ku> [-gui] [-ikon ikon.ico] [-o keluar.exe]  Kompilasi langsung ke biner mandiri (.exe)
+  ku kompilasi <berkas.ku> [-gui] [-ikon ikon.ico] [-native] [-o keluar.exe]  Kompilasi langsung ke biner mandiri (.exe)
   ku inisialisasi <nama_folder> [web|desktop|cli]  Membuat proyek baru beserta berkas ku.mod
   ku buat <berkas.ku>      Mengonversi berkas .ku ke .go murni
   ku versi                 Menampilkan versi
@@ -309,7 +343,39 @@ func transpileFile(source, target string) {
 	fmt.Printf("Berhasil mentranspilasi '%s' -> '%s'! ✨\n", source, target)
 }
 
-func compileDirectToBinary(source, outputExe string, isGUI bool, customIcon string) {
+func setWindowsPESubsystemGUI(binPath string) error {
+	data, err := os.ReadFile(binPath)
+	if err != nil {
+		return err
+	}
+	if len(data) < 0x40 {
+		return fmt.Errorf("berkas terlalu kecil untuk format PE")
+	}
+	// Periksa header DOS ("MZ")
+	if data[0] != 'M' || data[1] != 'Z' {
+		return nil // Bukan format PE Windows
+	}
+	// Dapatkan offset ke PE Header dari 0x3C
+	peOffset := int(data[0x3C]) | int(data[0x3D])<<8 | int(data[0x3E])<<16 | int(data[0x3F])<<24
+	if peOffset < 0 || peOffset+0x60 > len(data) {
+		return fmt.Errorf("offset PE tidak valid")
+	}
+	// Periksa signature "PE\0\0"
+	if data[peOffset] != 'P' || data[peOffset+1] != 'E' || data[peOffset+2] != 0 || data[peOffset+3] != 0 {
+		return fmt.Errorf("signature PE tidak valid")
+	}
+	// Subsystem terletak pada Optional Header di offset: peOffset + 0x18 + 0x44 (baik untuk PE32 maupun PE32+)
+	subsystemOffset := peOffset + 0x18 + 0x44
+	if subsystemOffset+2 <= len(data) {
+		// Setel Subsystem = 2 (IMAGE_SUBSYSTEM_WINDOWS_GUI)
+		data[subsystemOffset] = 2
+		data[subsystemOffset+1] = 0
+		return os.WriteFile(binPath, data, 0755)
+	}
+	return fmt.Errorf("offset subsistem di luar jangkauan")
+}
+
+func compileDirectToBinary(source, outputExe string, isGUI bool, customIcon string, useNative bool) {
 	content, err := os.ReadFile(source)
 	if err != nil {
 		fmt.Printf("Galat membaca berkas: %v\n", err)
@@ -347,14 +413,55 @@ func compileDirectToBinary(source, outputExe string, isGUI bool, customIcon stri
 
 	absOutput, _ := filepath.Abs(outputExe)
 
-	// Tentukan ldflags (hilangkan konsol CMD di Windows jika isGUI aktif)
+	// METODE UTAMA (DEFAULT): Builder Mandiri Asli Bahasa Ku (Zero Dependency Bundler)
+	// Hanya gunakan toolchain native jika pengguna secara eksplisit meminta flag -native atau ikon kustom
+	if !useNative && customIcon == "" {
+		if selfExe, err := os.Executable(); err == nil {
+			if baseBin, err := os.ReadFile(selfExe); err == nil {
+				// Bersihkan payload aplikasi terdahulu jika selfExe adalah hasil biner bundler
+				cleanBin := baseBin
+				if len(baseBin) >= 16 && bytes.Equal(baseBin[len(baseBin)-8:], kuMagicFooter) {
+					pLen := int64(baseBin[len(baseBin)-16]) | int64(baseBin[len(baseBin)-15])<<8 |
+						int64(baseBin[len(baseBin)-14])<<16 | int64(baseBin[len(baseBin)-13])<<24 |
+						int64(baseBin[len(baseBin)-12])<<32 | int64(baseBin[len(baseBin)-11])<<40 |
+						int64(baseBin[len(baseBin)-10])<<48 | int64(baseBin[len(baseBin)-9])<<56
+					if pLen > 0 && pLen <= int64(len(baseBin)-16) {
+						cleanBin = baseBin[:int64(len(baseBin)-16)-pLen]
+					}
+				}
+
+				// Struktur format biner terbundel:
+				// [Biner Ku Asli (cleanBin)][Konten Skrip (content)][8 byte Panjang Payload (uint64 LE)][8 byte KUAPP\x01\x00\x00]
+				var bundled bytes.Buffer
+				bundled.Write(cleanBin)
+				bundled.Write(content)
+
+				lenBytes := make([]byte, 8)
+				cLen := uint64(len(content))
+				for i := 0; i < 8; i++ {
+					lenBytes[i] = byte(cLen >> (i * 8))
+				}
+				bundled.Write(lenBytes)
+				bundled.Write(kuMagicFooter)
+
+				if err := os.WriteFile(absOutput, bundled.Bytes(), 0755); err == nil {
+					// Jika mode GUI di Windows, patch PE header langsung agar bebas jendela konsol CMD
+					if isGUI && runtime.GOOS == "windows" {
+						_ = setWindowsPESubsystemGUI(absOutput)
+					}
+					fmt.Printf("Berhasil mengompilasi '%s' -> '%s' (Biner Mandiri Asli Bahasa Ku)! 🎉\n", source, outputExe)
+					return
+				}
+			}
+		}
+	}
+
+	// METODE SEKUNDER / CADANGAN: Kompilasi Native (Jika flag -native atau ada ikon kustom)
 	ldFlags := "-s -w"
 	if isGUI && runtime.GOOS == "windows" {
 		ldFlags = "-s -w -H windowsgui"
 	}
 
-	// Metode 1: Kompilasi mandiri via Go Toolchain resmi dengan embedding runner runtime
-	// Menghasilkan executable biner asli OS yang 100% valid, mandiri, dan bebas error antarmuka Windows PE
 	goExe := "go"
 	if p, err := exec.LookPath("go"); err == nil {
 		goExe = p
@@ -404,7 +511,6 @@ func main() {
 		// Cari root folder proyek repositori Bahasa Ku yang memiliki go.mod
 		projRoot := ""
 
-		// Cek 1: Apakah direktori kerja saat ini atau parent-nya memiliki go.mod Bahasa Ku
 		cwd, _ := os.Getwd()
 		absCwd, _ := filepath.Abs(cwd)
 		curr := absCwd
@@ -423,8 +529,6 @@ func main() {
 			curr = parent
 		}
 
-		// Cek 2: Jika tidak ditemukan dari CWD (misal user menjalankan ku di folder sembarang/temp),
-		// cari dari lokasi biner ku.exe berada
 		if projRoot == "" {
 			if selfExe, err := os.Executable(); err == nil {
 				curr = filepath.Dir(selfExe)
@@ -445,7 +549,6 @@ func main() {
 			}
 		}
 
-		// Cek 3: Fallback ke GOPATH sumber repositori jika terpasang
 		if projRoot == "" {
 			gopath := os.Getenv("GOPATH")
 			if gopath == "" {
@@ -463,31 +566,8 @@ func main() {
 			}
 		}
 
-		// Cek 4: Self-Contained Embedding Bundling (Zero-Dependency Compiler)
-		// Jika Go toolchain tidak menemukan source tree atau Go compiler gagal,
-		// kita bundel langsung ke biner mandiri menggunakan engine ku.exe
-		if projRoot == "" {
-			// Bundling langsung payload skrip ke dalam template ku.exe
-			if selfExe, err := os.Executable(); err == nil {
-				if baseBin, err := os.ReadFile(selfExe); err == nil {
-					// Hapus payload lama jika ada
-					if idx := bytes.LastIndex(baseBin, embeddedMarker); idx != -1 {
-						baseBin = baseBin[:idx]
-					}
-					var bundled bytes.Buffer
-					bundled.Write(baseBin)
-					bundled.Write(embeddedMarker)
-					bundled.Write(content)
-					bundled.Write(embeddedEndMarker)
-					if err := os.WriteFile(absOutput, bundled.Bytes(), 0755); err == nil {
-						fmt.Printf("Berhasil mengompilasi '%s' -> '%s' (Biner Mandiri Portabel Bahasa Ku)! 🎉\n", source, outputExe)
-						return
-					}
-				}
-			}
-		}
-
-		goModContent := fmt.Sprintf(`module kuapp
+		if projRoot != "" {
+			goModContent := fmt.Sprintf(`module kuapp
 
 go 1.22
 
@@ -496,83 +576,60 @@ require github.com/zufarrizal/bahasa-ku v0.0.0
 replace github.com/zufarrizal/bahasa-ku => %q
 `, filepath.ToSlash(projRoot))
 
-		_ = os.WriteFile(filepath.Join(tempDir, "go.mod"), []byte(goModContent), 0644)
+			_ = os.WriteFile(filepath.Join(tempDir, "go.mod"), []byte(goModContent), 0644)
 
-		// Jalankan go mod tidy agar dependensi disinkronkan
-		tidyCmd := exec.Command(goExe, "mod", "tidy")
-		tidyCmd.Dir = tempDir
-		_ = tidyCmd.Run()
+			tidyCmd := exec.Command(goExe, "mod", "tidy")
+			tidyCmd.Dir = tempDir
+			_ = tidyCmd.Run()
 
-		// Penanganan Ikon Windows (.ico):
-		// 1. Jika pengguna menentukan -ikon <file.ico>, generate ku.syso via tool rsrc jika tersedia
-		// 2. Jika rsrc tidak ada atau -ikon tidak ditentukan, gunakan ikon default Bahasa Ku (defaultSysoBytes)
-		if runtime.GOOS == "windows" {
-			iconWritten := false
-			if customIcon != "" {
-				absIcon, err := filepath.Abs(customIcon)
-				if err == nil {
-					if _, err := os.Stat(absIcon); err == nil {
-						// Coba buat .syso kustom via rsrc
-						rsrcExe := "rsrc"
-						if rPath, err := exec.LookPath("rsrc"); err == nil {
-							rsrcExe = rPath
-						} else {
-							defaultRsrc := filepath.Join(os.Getenv("USERPROFILE"), "go", "bin", "rsrc.exe")
-							if _, err := os.Stat(defaultRsrc); err == nil {
-								rsrcExe = defaultRsrc
+			if runtime.GOOS == "windows" {
+				iconWritten := false
+				if customIcon != "" {
+					absIcon, err := filepath.Abs(customIcon)
+					if err == nil {
+						if _, err := os.Stat(absIcon); err == nil {
+							rsrcExe := "rsrc"
+							if rPath, err := exec.LookPath("rsrc"); err == nil {
+								rsrcExe = rPath
+							} else {
+								defaultRsrc := filepath.Join(os.Getenv("USERPROFILE"), "go", "bin", "rsrc.exe")
+								if _, err := os.Stat(defaultRsrc); err == nil {
+									rsrcExe = defaultRsrc
+								}
 							}
+							targetSyso := filepath.Join(tempDir, "ku.syso")
+							rsrcCmd := exec.Command(rsrcExe, "-ico", absIcon, "-o", targetSyso)
+							if err := rsrcCmd.Run(); err == nil {
+								iconWritten = true
+							}
+						} else {
+							fmt.Printf("Peringatan: Berkas ikon '%s' tidak ditemukan, menggunakan ikon default Bahasa Ku.\n", customIcon)
 						}
-						targetSyso := filepath.Join(tempDir, "ku.syso")
-						rsrcCmd := exec.Command(rsrcExe, "-ico", absIcon, "-o", targetSyso)
-						if err := rsrcCmd.Run(); err == nil {
-							iconWritten = true
-						}
-					} else {
-						fmt.Printf("Peringatan: Berkas ikon '%s' tidak ditemukan, menggunakan ikon default Bahasa Ku.\n", customIcon)
+					}
+				}
+
+				if !iconWritten {
+					sysoPath := filepath.Join(projRoot, "cmd", "ku", "ku.syso")
+					if sysoData, err := os.ReadFile(sysoPath); err == nil && len(sysoData) > 0 {
+						_ = os.WriteFile(filepath.Join(tempDir, "ku.syso"), sysoData, 0644)
+					} else if len(defaultSysoBytes) > 0 {
+						_ = os.WriteFile(filepath.Join(tempDir, "ku.syso"), defaultSysoBytes, 0644)
 					}
 				}
 			}
 
-			// Fallback ke ku.syso dari proyek lokal atau defaultSysoBytes bawaan biner
-			if !iconWritten {
-				sysoPath := filepath.Join(projRoot, "cmd", "ku", "ku.syso")
-				if sysoData, err := os.ReadFile(sysoPath); err == nil && len(sysoData) > 0 {
-					_ = os.WriteFile(filepath.Join(tempDir, "ku.syso"), sysoData, 0644)
-				} else if len(defaultSysoBytes) > 0 {
-					_ = os.WriteFile(filepath.Join(tempDir, "ku.syso"), defaultSysoBytes, 0644)
-				}
-			}
-		}
-
-		buildCmd := exec.Command(goExe, "build", fmt.Sprintf("-ldflags=%s", ldFlags), "-o", absOutput, ".")
-		buildCmd.Dir = tempDir
-		buildOutput, err := buildCmd.CombinedOutput()
-		if err == nil {
-			fmt.Printf("Berhasil mengompilasi '%s' -> '%s' (Biner Mandiri Bahasa Ku)! 🎉\n", source, outputExe)
-			return
-		}
-		fmt.Printf("Gagal metode bundler: %s\n", string(buildOutput))
-	}
-
-	// Metode 2: Self-Contained Binary Bundling Fallback (100% mandiri tanpa butuh CWD go.mod)
-	if selfExe, err := os.Executable(); err == nil {
-		if baseBin, err := os.ReadFile(selfExe); err == nil {
-			if idx := bytes.LastIndex(baseBin, embeddedMarker); idx != -1 {
-				baseBin = baseBin[:idx]
-			}
-			var bundled bytes.Buffer
-			bundled.Write(baseBin)
-			bundled.Write(embeddedMarker)
-			bundled.Write(content)
-			bundled.Write(embeddedEndMarker)
-			if err := os.WriteFile(absOutput, bundled.Bytes(), 0755); err == nil {
-				fmt.Printf("Berhasil mengompilasi '%s' -> '%s' (Biner Mandiri Portabel Bahasa Ku)! 🎉\n", source, outputExe)
+			buildCmd := exec.Command(goExe, "build", fmt.Sprintf("-ldflags=%s", ldFlags), "-o", absOutput, ".")
+			buildCmd.Dir = tempDir
+			buildOutput, err := buildCmd.CombinedOutput()
+			if err == nil {
+				fmt.Printf("Berhasil mengompilasi '%s' -> '%s' (Biner Native Bahasa Ku)! 🎉\n", source, outputExe)
 				return
 			}
+			fmt.Printf("Gagal metode bundler: %s\n", string(buildOutput))
 		}
 	}
 
-	// Metode 3: Fallback ke transpiler Go native
+	// METODE TERAKHIR: Fallback ke transpiler Go native
 	tr := transpiler.New()
 	goCode := tr.Transpile(prog)
 
@@ -594,7 +651,6 @@ replace github.com/zufarrizal/bahasa-ku => %q
 	goModCmd.Dir = tempDir2
 	_ = goModCmd.Run()
 
-	// Pastikan ku.syso juga ditulis di tempDir2 pada Metode 3
 	if runtime.GOOS == "windows" {
 		if len(defaultSysoBytes) > 0 {
 			_ = os.WriteFile(filepath.Join(tempDir2, "ku.syso"), defaultSysoBytes, 0644)
