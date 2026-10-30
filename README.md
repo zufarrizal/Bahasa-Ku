@@ -1,8 +1,13 @@
 # Bahasa Ku
 
-Bahasa pemrograman bernuansa Go (*Go-flavored*) dengan sintaks murni berbahasa Indonesia, dirancang agar ramah dan mudah dipelajari oleh penutur bahasa Indonesia.
+<p align="center">
+  <img src="aset/logo.svg" alt="Logo Bahasa Ku" width="180" height="180" />
+</p>
 
-Compiler dan runtime **Bahasa Ku** dibangun secara native menggunakan **Go Murni** sehingga menghasilkan file executable mandiri (`ku.exe` di Windows, `ku` di Linux/macOS) tanpa dependensi eksternal.
+<p align="center">
+  <b>Bahasa pemrograman bernuansa Go dengan sintaks murni berbahasa Indonesia.</b><br>
+  <i>Cepat, Modern, Multiplatform, dan Mudah Dipahami.</i>
+</p>
 
 ---
 

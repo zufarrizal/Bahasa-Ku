@@ -21,6 +21,10 @@
         "extensions": [
           ".ku"
         ],
+        "icon": {
+          "light": "./icons/ku-icon.svg",
+          "dark": "./icons/ku-icon.svg"
+        },
         "configuration": "./language-configuration.json"
       }
     ],
