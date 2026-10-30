@@ -723,6 +723,40 @@ func InitGlobalEnvironment() *Environment {
 			return &Array{Elements: res}
 		},
 	}
+	berkasMap.Pairs["cariPola"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &Array{Elements: []Object{}}
+			}
+			pola := args[0].Inspect()
+			matches, err := filepath.Glob(pola)
+			if err != nil {
+				return &Array{Elements: []Object{}}
+			}
+			res := make([]Object, len(matches))
+			for i, m := range matches {
+				res[i] = &String{Value: filepath.ToSlash(m)}
+			}
+			return &Array{Elements: res}
+		},
+	}
+	berkasMap.Pairs["bersihkan"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return FALSE
+			}
+			dir := args[0].Inspect()
+			entries, err := os.ReadDir(dir)
+			if err != nil {
+				return FALSE
+			}
+			for _, e := range entries {
+				itemPath := filepath.Join(dir, e.Name())
+				os.RemoveAll(itemPath)
+			}
+			return TRUE
+		},
+	}
 	berkasMap.Pairs["ukuran"] = &Builtin{
 		Fn: func(args ...Object) Object {
 			if len(args) < 1 {
@@ -1559,6 +1593,23 @@ func InitGlobalEnvironment() *Environment {
 			return &String{Value: hex.EncodeToString(h[:])}
 		},
 	}
+	kriptoMap.Pairs["sha256Berkas"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			f, err := os.Open(args[0].Inspect())
+			if err != nil {
+				return &String{Value: ""}
+			}
+			defer f.Close()
+			h := sha256.New()
+			if _, err := io.Copy(h, f); err != nil {
+				return &String{Value: ""}
+			}
+			return &String{Value: hex.EncodeToString(h.Sum(nil))}
+		},
+	}
 	kriptoMap.Pairs["md5"] = &Builtin{
 		Fn: func(args ...Object) Object {
 			if len(args) < 1 {
@@ -1566,6 +1617,23 @@ func InitGlobalEnvironment() *Environment {
 			}
 			h := md5.Sum([]byte(args[0].Inspect()))
 			return &String{Value: hex.EncodeToString(h[:])}
+		},
+	}
+	kriptoMap.Pairs["md5Berkas"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			f, err := os.Open(args[0].Inspect())
+			if err != nil {
+				return &String{Value: ""}
+			}
+			defer f.Close()
+			h := md5.New()
+			if _, err := io.Copy(h, f); err != nil {
+				return &String{Value: ""}
+			}
+			return &String{Value: hex.EncodeToString(h.Sum(nil))}
 		},
 	}
 	kriptoMap.Pairs["base64Encode"] = &Builtin{
@@ -2323,6 +2391,73 @@ func InitGlobalEnvironment() *Environment {
 			slug := reg.ReplaceAllString(s, "-")
 			slug = strings.Trim(slug, "-")
 			return &String{Value: slug}
+		},
+	}
+	teksMap.Pairs["keJudul"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			words := strings.Fields(args[0].Inspect())
+			for i, w := range words {
+				r := []rune(w)
+				if len(r) > 0 {
+					r[0] = unicode.ToUpper(r[0])
+					words[i] = string(r)
+				}
+			}
+			return &String{Value: strings.Join(words, " ")}
+		},
+	}
+	teksMap.Pairs["keCamelCase"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			s := args[0].Inspect()
+			reg := regexp.MustCompile(`[^a-zA-Z0-9]+`)
+			parts := reg.Split(s, -1)
+			var sb strings.Builder
+			count := 0
+			for _, p := range parts {
+				if p == "" {
+					continue
+				}
+				p = strings.ToLower(p)
+				if count == 0 {
+					sb.WriteString(p)
+				} else {
+					r := []rune(p)
+					r[0] = unicode.ToUpper(r[0])
+					sb.WriteString(string(r))
+				}
+				count++
+			}
+			return &String{Value: sb.String()}
+		},
+	}
+	teksMap.Pairs["keSnakeCase"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			s := args[0].Inspect()
+			var sb strings.Builder
+			for i, r := range s {
+				if unicode.IsUpper(r) {
+					if i > 0 && s[i-1] != '_' && s[i-1] != '-' && s[i-1] != ' ' {
+						sb.WriteByte('_')
+					}
+					sb.WriteRune(unicode.ToLower(r))
+				} else if r == ' ' || r == '-' {
+					sb.WriteByte('_')
+				} else {
+					sb.WriteRune(r)
+				}
+			}
+			reg := regexp.MustCompile(`_+`)
+			res := reg.ReplaceAllString(sb.String(), "_")
+			return &String{Value: strings.Trim(res, "_")}
 		},
 	}
 	env.Set("teks", teksMap)
@@ -3385,13 +3520,41 @@ func InitGlobalEnvironment() *Environment {
 	masukanMap.Pairs["tanya"] = &Builtin{
 		Fn: func(args ...Object) Object {
 			if len(args) >= 1 {
-				fmt.Print(args[0].Inspect())
+				prompt := args[0].Inspect()
+				if len(args) >= 2 {
+					prompt = fmt.Sprintf("%s [%s]: ", strings.TrimRight(prompt, " :"), args[1].Inspect())
+				}
+				fmt.Print(prompt)
 			}
 			scanner := bufio.NewScanner(os.Stdin)
 			if scanner.Scan() {
-				return &String{Value: scanner.Text()}
+				input := strings.TrimRight(scanner.Text(), "\r\n")
+				if input == "" && len(args) >= 2 {
+					return &String{Value: args[1].Inspect()}
+				}
+				return &String{Value: input}
+			}
+			if len(args) >= 2 {
+				return &String{Value: args[1].Inspect()}
 			}
 			return &String{Value: ""}
+		},
+	}
+	masukanMap.Pairs["konfirmasi"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			prompt := "Apakah Anda yakin? (y/n): "
+			if len(args) >= 1 {
+				prompt = fmt.Sprintf("%s (y/n): ", strings.TrimRight(args[0].Inspect(), " :?"))
+			}
+			fmt.Print(prompt)
+			scanner := bufio.NewScanner(os.Stdin)
+			if scanner.Scan() {
+				ans := strings.ToLower(strings.TrimSpace(scanner.Text()))
+				if ans == "y" || ans == "ya" || ans == "yes" || ans == "benar" || ans == "1" {
+					return TRUE
+				}
+			}
+			return FALSE
 		},
 	}
 	masukanMap.Pairs["rahasia"] = &Builtin{

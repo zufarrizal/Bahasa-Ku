@@ -333,6 +333,7 @@
               <li><a href="#modul-waktu">`waktu` & Pewaktu</a></li>
               <li><a href="#modul-catatan">`catatan` (Logging)</a></li>
               <li><a href="#modul-terminal">`terminal` (CLI Warna)</a></li>
+              <li><a href="#modul-masukan">`masukan` (Prompt CLI)</a></li>
             </ul>
           </div>
 
@@ -751,6 +752,9 @@ cetak.tulis("Hasil hitungan aman:", hitungan)</code></pre>
             <tr><td><code>teks.padKiri(str, panjang, pad)</code></td><td>Menambahkan karakter padding di sebelah kiri string (contoh: <code>00042</code>)</td></tr>
             <tr><td><code>teks.padKanan(str, panjang, pad)</code></td><td>Menambahkan karakter padding di sebelah kanan string</td></tr>
             <tr><td><code>teks.kapitalkan(str)</code></td><td>Mengubah huruf pertama string menjadi huruf kapital</td></tr>
+            <tr><td><code>teks.keJudul(str)</code></td><td>Mengubah huruf awal setiap kata menjadi huruf kapital (*Title Case*)</td></tr>
+            <tr><td><code>teks.keCamelCase(str)</code></td><td>Mengubah teks menjadi format camelCase (contoh: <code>"halo dunia" -> "haloDunia"</code>)</td></tr>
+            <tr><td><code>teks.keSnakeCase(str)</code></td><td>Mengubah teks menjadi format snake_case (contoh: <code>"HaloDunia" -> "halo_dunia"</code>)</td></tr>
             <tr><td><code>teks.slug(str)</code></td><td>Mengubah teks menjadi slug URL bersih yang aman (contoh: <code>"Halo Dunia!" -> "halo-dunia"</code>)</td></tr>
             <tr><td><code>teks.karakter(str, indeks)</code></td><td>Mengambil satu karakter pada indeks tertentu sebagai string</td></tr>
             <tr><td><code>teks.apakahKosong(s)</code></td><td>Memeriksa apakah string kosong atau hanya berisi spasi (boolean)</td></tr>
@@ -1045,6 +1049,8 @@ var apakahDir = berkas.apakahFolder("data/arsip") // true
 var apakahFile = berkas.apakahBerkas("arsip.txt")  // true
 var izinBerkas = berkas.izin("arsip.txt")         // -rw-r--r--
 berkas.salinFolder("data/arsip", "backup/arsip")  // rekursif salin direktori
+var berkasKu = berkas.cariPola("data/*.ku")       // pencarian wildcard glob
+berkas.bersihkan("cache/")                        // bersihkan folder tanpa hapus direktori induk
 
 // Pintasan Jalur Berkas:
 var pathLengkap = berkas.gabungJalur("folder", "sub", "file.ku")
@@ -1207,6 +1213,27 @@ terminal.tabel(["ID", "Nama", "Peran"], [
 terminal.progres(50, 100, 30) // [===============>...............] 50% (50/100)</code></pre>
       </section>
 
+<section id="modul-masukan" class="docs-section">
+        <h2>Modul `masukan` (Prompt & Interaksi Pengguna)</h2>
+        <p>Interaksi CLI dengan pengguna, membaca input teks, konfirmasi interaktif, dan input sandi:</p>
+        <table>
+          <thead>
+            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>masukan.baca()</code></td><td>Membaca satu baris input dari terminal</td></tr>
+            <tr><td><code>masukan.tanya(pertanyaan, [bawaan])</code></td><td>Mencetak prompt pertanyaan ke pengguna dan mengembalikan input (dengan nilai bawaan opsional)</td></tr>
+            <tr><td><code>masukan.konfirmasi(pertanyaan)</code></td><td>Meminta konfirmasi ya/tidak (y/n) dan mengembalikan boolean <code>benar</code> / <code>salah</code></td></tr>
+            <tr><td><code>masukan.rahasia(prompt)</code></td><td>Membaca input sandi pengguna dari terminal</td></tr>
+          </tbody>
+        </table>
+        <pre><code>var nama = masukan.tanya("Masukkan nama Anda", "Tamu")
+var lanjut = masukan.konfirmasi("Apakah ingin melanjutkan instalasi?")
+jika lanjut {
+    cetak.tulis("Memulai instalasi untuk:", nama)
+}</code></pre>
+      </section>
+
       <!-- SUB-KATEGORI D: JARINGAN & KEAMANAN -->
       <div class="category-divider" style="background: linear-gradient(90deg, rgba(239, 68, 68, 0.12) 0%, rgba(0, 240, 255, 0.03) 100%); border-left-color: #ef4444;">
         <h2>Sub-Kategori D: Jaringan, Keamanan & Ekosistem</h2>
@@ -1220,7 +1247,9 @@ terminal.progres(50, 100, 30) // [===============>...............] 50% (50/100)<
           </thead>
           <tbody>
             <tr><td><code>kripto.sha256(teks)</code></td><td>Hasing teks dengan algoritma SHA-256</td></tr>
+            <tr><td><code>kripto.sha256Berkas(jalur)</code></td><td>Menghitung hash SHA-256 dari berkas fisik secara efisien tanpa membebani memori</td></tr>
             <tr><td><code>kripto.md5(teks)</code></td><td>Hashing teks dengan algoritma MD5</td></tr>
+            <tr><td><code>kripto.md5Berkas(jalur)</code></td><td>Menghitung hash MD5 dari berkas fisik</td></tr>
             <tr><td><code>kripto.hmacSha256(kunci, pesan)</code></td><td>Menghasilkan tanda tangan HMAC berbasis SHA-256</td></tr>
             <tr><td><code>kripto.uuid()</code></td><td>Menghasilkan string ID unik global UUID v4 standar RFC 4122</td></tr>
             <tr><td><code>kripto.tokenAcak(panjang)</code></td><td>Menghasilkan string heksadesimal acak kriptografis</td></tr>

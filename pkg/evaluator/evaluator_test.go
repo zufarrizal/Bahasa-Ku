@@ -581,3 +581,51 @@ Siti,22"
 		t.Errorf("Diharapkan 300, didapat %d", intVal.Value)
 	}
 }
+
+func TestCariPolaHashBerkasDanTransformasiTeks(t *testing.T) {
+	input := `
+paket utama
+fungsi utama() {
+    // 1. Uji berkas.cariPola & berkas.bersihkan
+    var daftar = berkas.cariPola("*.go")
+    jika panjang(daftar) < 0 {
+        kembalikan 1
+    }
+
+    // 2. Uji kripto.sha256Berkas & md5Berkas
+    berkas.tulis("temp_hash.txt", "Bahasa Ku 2026")
+    var sha = kripto.sha256Berkas("temp_hash.txt")
+    var md5Val = kripto.md5Berkas("temp_hash.txt")
+    berkas.hapus("temp_hash.txt")
+    jika sha == "" || md5Val == "" {
+        kembalikan 2
+    }
+
+    // 3. Uji transformasi teks (keJudul, keCamelCase, keSnakeCase)
+    var jdl = teks.keJudul("bahasa ku modern")
+    jika jdl != "Bahasa Ku Modern" {
+        kembalikan 3
+    }
+
+    var camel = teks.keCamelCase("halo dunia_keren-2026")
+    jika camel != "haloDuniaKeren2026" {
+        kembalikan 4
+    }
+
+    var snake = teks.keSnakeCase("HaloDuniaKeren")
+    jika snake != "halo_dunia_keren" {
+        kembalikan 5
+    }
+
+    kembalikan 400
+}
+`
+	val := runKuCode(input)
+	intVal, ok := val.(*evaluator.Integer)
+	if !ok {
+		t.Fatalf("Nilai bukan Integer: %v", val)
+	}
+	if intVal.Value != 400 {
+		t.Errorf("Diharapkan 400, didapat %d", intVal.Value)
+	}
+}
