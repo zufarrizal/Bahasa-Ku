@@ -14,9 +14,12 @@
 ## 🚀 Fitur Utama
 
 - **Native Binary Mandiri:** Dijalankan langsung melalui file biner tanpa perlu runtime tambahan.
+- **Kompilasi Langsung ke Biner (`ku kompilasi`):** Mengubah file `.ku` langsung menjadi biner `.exe` mandiri.
+- **Generator Proyek Otomatis (`ku inisiasi`):** Menyiapkan kerangka kerja proyek baru (`web`, `desktop`, `cli`) secara instan.
 - **Sintaks Berbahasa Indonesia:** Kata kunci natural seperti `paket`, `fungsi`, `var`, `jika`, `lainnya`, `untuk`, `pilih`, `kembalikan`, dan `tunda`.
 - **Dukungan Server Web HTTP & REST API (`web`):** Siap digunakan untuk membuat web server dan API JSON.
 - **Dukungan Aplikasi Desktop GUI (`jendela`):** Membuka dialog native dan jendela aplikasi desktop modern tanpa Electron.
+- **Dukungan I/O Berkas & Sistem (`berkas` & `sistem`):** Membaca/menulis file lokal dan mengakses environment OS.
 - **Dukungan Database MySQL (`basisdata`):** Terhubung ke database MySQL secara native dengan operasi `kueri` dan `eksekusi`.
 - **Transpiler ke Go Murni:** Menerjemahkan file `.ku` menjadi kode `.go` standar untuk dikompilasi ke file biner native.
 
@@ -42,14 +45,22 @@ go install github.com/zufarrizal/bahasa-ku/cmd/ku@latest
 ## 🛠️ Menjalankan Program dengan CLI `ku`
 
 ```bash
-# Membuka REPL Terminal Interaktif (ketik langsung tanpa berkas)
+# Membuka REPL Terminal Interaktif
 ku
 
 # Menjalankan program berkas .ku
 ku jalankan contoh/halo.ku
-ku jalankan contoh/logika.ku
 ku jalankan contoh/server_web.ku
 ku jalankan contoh/aplikasi_desktop.ku
+ku jalankan contoh/berkas_sistem.ku
+
+# Mengompilasi langsung berkas .ku menjadi biner mandiri (.exe)
+ku kompilasi contoh/halo.ku -o ProgramHalo.exe
+
+# Membuat kerangka kerja proyek baru secara instan
+ku inisiasi web my-api
+ku inisiasi desktop my-gui
+ku inisiasi cli my-tool
 
 # Mengonversi berkas .ku ke kode Go murni (.go)
 ku buat contoh/tunda.ku hasil.go

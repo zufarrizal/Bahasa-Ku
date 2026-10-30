@@ -66,6 +66,8 @@ func (t *Transpiler) Transpile(node ast.Node) string {
 		name := n.Name.Value
 		if name == "utama" {
 			name = "main"
+			out := fmt.Sprintf("func main() %s\n", t.Transpile(n.Body))
+			return out
 		}
 		params := []string{}
 		for _, p := range n.Parameters {

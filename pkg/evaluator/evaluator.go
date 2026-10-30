@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/zufarrizal/bahasa-ku/pkg/ast"
@@ -428,6 +429,106 @@ func InitGlobalEnvironment() *Environment {
 		},
 	}
 	env.Set("basisdata", basisdataMap)
+
+	// Modul berkas (File I/O)
+	berkasMap := &Map{Pairs: make(map[string]Object)}
+	berkasMap.Pairs["baca"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return NIL
+			}
+			pathStr := args[0].Inspect()
+			data, err := os.ReadFile(pathStr)
+			if err != nil {
+				return NIL
+			}
+			return &String{Value: string(data)}
+		},
+	}
+	berkasMap.Pairs["tulis"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return FALSE
+			}
+			pathStr := args[0].Inspect()
+			content := args[1].Inspect()
+			err := os.WriteFile(pathStr, []byte(content), 0644)
+			if err != nil {
+				return FALSE
+			}
+			return TRUE
+		},
+	}
+	berkasMap.Pairs["tambah"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return FALSE
+			}
+			pathStr := args[0].Inspect()
+			content := args[1].Inspect()
+			f, err := os.OpenFile(pathStr, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+			if err != nil {
+				return FALSE
+			}
+			defer f.Close()
+			_, err = f.WriteString(content)
+			return &Boolean{Value: err == nil}
+		},
+	}
+	berkasMap.Pairs["ada"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return FALSE
+			}
+			pathStr := args[0].Inspect()
+			_, err := os.Stat(pathStr)
+			if err == nil {
+				return TRUE
+			}
+			return FALSE
+		},
+	}
+	berkasMap.Pairs["hapus"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return FALSE
+			}
+			pathStr := args[0].Inspect()
+			err := os.Remove(pathStr)
+			if err == nil {
+				return TRUE
+			}
+			return FALSE
+		},
+	}
+	env.Set("berkas", berkasMap)
+
+	// Modul sistem (OS, Env, Argumen, Waktu)
+	sistemMap := &Map{Pairs: make(map[string]Object)}
+	sistemMap.Pairs["lingkungan"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			key := args[0].Inspect()
+			return &String{Value: os.Getenv(key)}
+		},
+	}
+	sistemMap.Pairs["waktu"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			return &String{Value: time.Now().Format("2006-01-02 15:04:05")}
+		},
+	}
+	sistemMap.Pairs["argumen"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			arr := &Array{Elements: []Object{}}
+			for _, a := range os.Args {
+				arr.Elements = append(arr.Elements, &String{Value: a})
+			}
+			return arr
+		},
+	}
+	env.Set("sistem", sistemMap)
 
 	// Bawaan: panjang & tambah
 	env.Set("panjang", &Builtin{

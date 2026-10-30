@@ -1,0 +1,30 @@
+paket utama
+
+pakai "cetak"
+pakai "berkas"
+pakai "sistem"
+
+fungsi utama() {
+    cetak.tulis("=== Uji Coba Modul Berkas & Sistem ===")
+
+    var namaBerkas = "tes_catatan.txt"
+
+    // 1. Menulis berkas
+    berkas.tulis(namaBerkas, "Baris 1: Ditulis dengan Bahasa Ku.\n")
+    cetak.tulis("Apakah berkas berhasil dibuat?", berkas.ada(namaBerkas))
+
+    // 2. Menambah isi berkas (append)
+    berkas.tambah(namaBerkas, "Baris 2: Tambahan baris baru.\n")
+
+    // 3. Membaca isi berkas
+    var isi = berkas.baca(namaBerkas)
+    cetak.tulis("Isi berkas saat ini:\n" + isi)
+
+    // 4. Modul sistem
+    cetak.tulis("Waktu lokal sistem:", sistem.waktu())
+    cetak.tulis("OS Username:", sistem.lingkungan("USERNAME"))
+
+    // 5. Membersihkan berkas tes
+    berkas.hapus(namaBerkas)
+    cetak.tulis("Apakah berkas sudah terhapus?", !berkas.ada(namaBerkas))
+}
