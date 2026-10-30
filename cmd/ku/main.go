@@ -19,7 +19,7 @@ import (
 	"github.com/zufarrizal/bahasa-ku/pkg/transpiler"
 )
 
-const version = "0.3.0 (Go Native Edition)"
+const version = "0.3.1 (Go Native Edition)"
 
 func init() {
 	evaluator.RegisterSubFileEvaluator(func(path string, env *evaluator.Environment) {
@@ -120,15 +120,35 @@ func main() {
 	case "kompilasi", "build":
 		if len(args) < 2 {
 			fmt.Println("Galat: Harap tentukan nama berkas .ku yang ingin dikompilasi.")
+			fmt.Println("Contoh: ku kompilasi [-gui] app.ku [-o app.exe]")
 			os.Exit(1)
 		}
+		isGUI := false
+		sourceFile := ""
 		outputExe := ""
-		if len(args) >= 4 && (args[2] == "-o" || args[2] == "--output") {
-			outputExe = args[3]
-		} else if len(args) >= 3 && args[2] != "-o" {
-			outputExe = args[2]
+
+		for i := 1; i < len(args); i++ {
+			arg := args[i]
+			if arg == "-gui" || arg == "--gui" || arg == "-app" {
+				isGUI = true
+			} else if (arg == "-o" || arg == "--output") && i+1 < len(args) {
+				outputExe = args[i+1]
+				i++
+			} else if strings.HasPrefix(arg, "-") {
+				// Abaikan flag lain atau tangani jika ada
+			} else if sourceFile == "" {
+				sourceFile = arg
+			} else if outputExe == "" {
+				outputExe = arg
+			}
 		}
-		compileDirectToBinary(args[1], outputExe)
+
+		if sourceFile == "" {
+			fmt.Println("Galat: Berkas sumber .ku tidak ditentukan.")
+			os.Exit(1)
+		}
+
+		compileDirectToBinary(sourceFile, outputExe, isGUI)
 
 	case "inisiasi", "init", "inisialisasi":
 		if len(args) < 2 {
@@ -268,14 +288,22 @@ func transpileFile(source, target string) {
 	fmt.Printf("Berhasil mentranspilasi '%s' -> '%s'! ✨\n", source, target)
 }
 
-func compileDirectToBinary(source, outputExe string) {
+func compileDirectToBinary(source, outputExe string, isGUI bool) {
 	content, err := os.ReadFile(source)
 	if err != nil {
 		fmt.Printf("Galat membaca berkas: %v\n", err)
 		os.Exit(1)
 	}
 
-	l := lexer.New(string(content))
+	// Deteksi otomatis jika skrip menggunakan modul jendela/desktop, anggap butuh GUI jika di Windows
+	strContent := string(content)
+	if !isGUI && runtime.GOOS == "windows" {
+		if strings.Contains(strContent, "pakai \"jendela\"") || strings.Contains(strContent, "pakai \"desktop\"") || strings.Contains(strContent, "jendela.buka") {
+			isGUI = true
+		}
+	}
+
+	l := lexer.New(strContent)
 	p := parser.New(l)
 	prog := p.ParseProgram()
 
@@ -297,6 +325,12 @@ func compileDirectToBinary(source, outputExe string) {
 	}
 
 	absOutput, _ := filepath.Abs(outputExe)
+
+	// Tentukan ldflags (hilangkan konsol CMD di Windows jika isGUI aktif)
+	ldFlags := "-s -w"
+	if isGUI && runtime.GOOS == "windows" {
+		ldFlags = "-s -w -H windowsgui"
+	}
 
 	// Metode 1: Kompilasi mandiri via Go Toolchain resmi dengan embedding runner runtime
 	// Menghasilkan executable biner asli OS yang 100% valid, mandiri, dan bebas error antarmuka Windows PE
@@ -346,20 +380,89 @@ func main() {
 		tempGoFile := filepath.Join(tempDir, "main.go")
 		_ = os.WriteFile(tempGoFile, []byte(runnerCode), 0644)
 
-		// Susun go.mod sementara yang me-replace github.com/zufarrizal/bahasa-ku ke repositori lokal
+		// Cari root folder proyek repositori Bahasa Ku yang memiliki go.mod
+		projRoot := ""
+
+		// Cek 1: Apakah direktori kerja saat ini atau parent-nya memiliki go.mod Bahasa Ku
 		cwd, _ := os.Getwd()
 		absCwd, _ := filepath.Abs(cwd)
-		// Cari root folder proyek yang memiliki go.mod
-		projRoot := absCwd
+		curr := absCwd
 		for {
-			if _, err := os.Stat(filepath.Join(projRoot, "go.mod")); err == nil {
+			modPath := filepath.Join(curr, "go.mod")
+			if modData, err := os.ReadFile(modPath); err == nil {
+				if strings.Contains(string(modData), "github.com/zufarrizal/bahasa-ku") {
+					projRoot = curr
+					break
+				}
+			}
+			parent := filepath.Dir(curr)
+			if parent == curr {
 				break
 			}
-			parent := filepath.Dir(projRoot)
-			if parent == projRoot {
-				break
+			curr = parent
+		}
+
+		// Cek 2: Jika tidak ditemukan dari CWD (misal user menjalankan ku di folder sembarang/temp),
+		// cari dari lokasi biner ku.exe berada
+		if projRoot == "" {
+			if selfExe, err := os.Executable(); err == nil {
+				curr = filepath.Dir(selfExe)
+				for {
+					modPath := filepath.Join(curr, "go.mod")
+					if modData, err := os.ReadFile(modPath); err == nil {
+						if strings.Contains(string(modData), "github.com/zufarrizal/bahasa-ku") {
+							projRoot = curr
+							break
+						}
+					}
+					parent := filepath.Dir(curr)
+					if parent == curr {
+						break
+					}
+					curr = parent
+				}
 			}
-			projRoot = parent
+		}
+
+		// Cek 3: Fallback ke GOPATH sumber repositori jika terpasang
+		if projRoot == "" {
+			gopath := os.Getenv("GOPATH")
+			if gopath == "" {
+				gopath = filepath.Join(os.Getenv("USERPROFILE"), "go")
+			}
+			candidates := []string{
+				filepath.Join(os.Getenv("USERPROFILE"), "Documents", "Github", "Bahasa Ku"),
+				filepath.Join(gopath, "src", "github.com", "zufarrizal", "bahasa-ku"),
+			}
+			for _, cand := range candidates {
+				if _, err := os.Stat(filepath.Join(cand, "go.mod")); err == nil {
+					projRoot = cand
+					break
+				}
+			}
+		}
+
+		// Cek 4: Self-Contained Embedding Bundling (Zero-Dependency Compiler)
+		// Jika Go toolchain tidak menemukan source tree atau Go compiler gagal,
+		// kita bundel langsung ke biner mandiri menggunakan engine ku.exe
+		if projRoot == "" {
+			// Bundling langsung payload skrip ke dalam template ku.exe
+			if selfExe, err := os.Executable(); err == nil {
+				if baseBin, err := os.ReadFile(selfExe); err == nil {
+					// Hapus payload lama jika ada
+					if idx := bytes.LastIndex(baseBin, embeddedMarker); idx != -1 {
+						baseBin = baseBin[:idx]
+					}
+					var bundled bytes.Buffer
+					bundled.Write(baseBin)
+					bundled.Write(embeddedMarker)
+					bundled.Write(content)
+					if err := os.WriteFile(absOutput, bundled.Bytes(), 0755); err == nil {
+						fmt.Printf("Berhasil mengompilasi '%s' -> '%s' (Biner Mandiri Portabel Bahasa Ku)! 🎉\n", source, outputExe)
+						return
+					}
+				}
+			}
 		}
 
 		goModContent := fmt.Sprintf(`module kuapp
@@ -378,7 +481,7 @@ replace github.com/zufarrizal/bahasa-ku => %q
 		tidyCmd.Dir = tempDir
 		_ = tidyCmd.Run()
 
-		buildCmd := exec.Command(goExe, "build", "-ldflags=-s -w", "-o", absOutput, "main.go")
+		buildCmd := exec.Command(goExe, "build", fmt.Sprintf("-ldflags=%s", ldFlags), "-o", absOutput, "main.go")
 		buildCmd.Dir = tempDir
 		buildOutput, err := buildCmd.CombinedOutput()
 		if err == nil {
@@ -388,7 +491,24 @@ replace github.com/zufarrizal/bahasa-ku => %q
 		fmt.Printf("Gagal metode bundler: %s\n", string(buildOutput))
 	}
 
-	// Metode 2: Fallback ke transpiler Go native
+	// Metode 2: Self-Contained Binary Bundling Fallback (100% mandiri tanpa butuh CWD go.mod)
+	if selfExe, err := os.Executable(); err == nil {
+		if baseBin, err := os.ReadFile(selfExe); err == nil {
+			if idx := bytes.LastIndex(baseBin, embeddedMarker); idx != -1 {
+				baseBin = baseBin[:idx]
+			}
+			var bundled bytes.Buffer
+			bundled.Write(baseBin)
+			bundled.Write(embeddedMarker)
+			bundled.Write(content)
+			if err := os.WriteFile(absOutput, bundled.Bytes(), 0755); err == nil {
+				fmt.Printf("Berhasil mengompilasi '%s' -> '%s' (Biner Mandiri Portabel Bahasa Ku)! 🎉\n", source, outputExe)
+				return
+			}
+		}
+	}
+
+	// Metode 3: Fallback ke transpiler Go native
 	tr := transpiler.New()
 	goCode := tr.Transpile(prog)
 
@@ -410,7 +530,7 @@ replace github.com/zufarrizal/bahasa-ku => %q
 	goModCmd.Dir = tempDir2
 	_ = goModCmd.Run()
 
-	buildCmd := exec.Command(goExe, "build", "-ldflags=-s -w", "-o", absOutput, "main.go")
+	buildCmd := exec.Command(goExe, "build", fmt.Sprintf("-ldflags=%s", ldFlags), "-o", absOutput, "main.go")
 	buildCmd.Dir = tempDir2
 	buildOutput, err := buildCmd.CombinedOutput()
 

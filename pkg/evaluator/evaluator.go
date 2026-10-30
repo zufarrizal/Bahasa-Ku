@@ -845,6 +845,15 @@ func InitGlobalEnvironment() *Environment {
 			ipcServerPort = listener.Addr().(*net.TCPAddr).Port
 
 			mux := http.NewServeMux()
+			mux.HandleFunc("/ku_tutup", func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Access-Control-Allow-Origin", "*")
+				w.WriteHeader(http.StatusOK)
+				go func() {
+					time.Sleep(100 * time.Millisecond)
+					os.Exit(0)
+				}()
+			})
+
 			mux.HandleFunc("/ku_ipc", func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Access-Control-Allow-Origin", "*")
 				w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
@@ -1030,9 +1039,19 @@ window.ku = {
     const data = await res.json();
     if (data.galat) throw new Error(data.galat);
     return data.hasil;
+  },
+  tutup: function() {
+    try {
+      navigator.sendBeacon("http://127.0.0.1:%d/ku_tutup");
+    } catch (e) {
+      fetch("http://127.0.0.1:%d/ku_tutup", { method: "POST", mode: "no-cors" });
+    }
   }
 };
-</script>`, port)
+window.addEventListener("beforeunload", function() {
+  window.ku.tutup();
+});
+</script>`, port, port, port)
 
 				htmlContent := fmt.Sprintf(`<!DOCTYPE html>
 <html>
@@ -1055,14 +1074,46 @@ window.ku = {
 
 			if runtime.GOOS == "windows" {
 				// Membuka jendela webview mandiri menggunakan browser app mode
-				edgePath := filepath.Join(os.Getenv("ProgramFiles(x86)"), "Microsoft", "Edge", "Application", "msedge.exe")
-				if _, err := os.Stat(edgePath); err == nil {
-					cmd := exec.Command(edgePath, fmt.Sprintf("--app=%s", url), fmt.Sprintf("--window-size=%d,%d", lebar, tinggi))
-					_ = cmd.Start()
-					return NIL
+				// Gunakan user-data-dir terisolasi agar Edge/Chrome membuka instance window terpisah
+				userDataDir := filepath.Join(os.TempDir(), "ku_webview_profile")
+
+				browserCandidates := []string{
+					filepath.Join(os.Getenv("ProgramFiles(x86)"), "Microsoft", "Edge", "Application", "msedge.exe"),
+					filepath.Join(os.Getenv("ProgramFiles"), "Microsoft", "Edge", "Application", "msedge.exe"),
+					filepath.Join(os.Getenv("LocalAppData"), "Microsoft", "Edge", "Application", "msedge.exe"),
+					filepath.Join(os.Getenv("ProgramFiles"), "Google", "Chrome", "Application", "chrome.exe"),
+					filepath.Join(os.Getenv("ProgramFiles(x86)"), "Google", "Chrome", "Application", "chrome.exe"),
+					filepath.Join(os.Getenv("LocalAppData"), "Google", "Chrome", "Application", "chrome.exe"),
 				}
-				// Fallback standar default browser
-				_ = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
+
+				launched := false
+				for _, bPath := range browserCandidates {
+					if _, err := os.Stat(bPath); err == nil {
+						args := []string{
+							fmt.Sprintf("--app=%s", url),
+							fmt.Sprintf("--window-size=%d,%d", lebar, tinggi),
+							fmt.Sprintf("--user-data-dir=%s", userDataDir),
+							"--no-first-run",
+							"--no-default-browser-check",
+						}
+						cmd := exec.Command(bPath, args...)
+						if err := cmd.Start(); err == nil {
+							launched = true
+							// Pantau penutupan proses jendela di latar belakang
+							go func() {
+								_ = cmd.Wait()
+								time.Sleep(100 * time.Millisecond)
+								os.Exit(0)
+							}()
+							break
+						}
+					}
+				}
+
+				if !launched {
+					// Fallback standar default browser jika app mode tidak tersedia
+					_ = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
+				}
 			} else {
 				_ = exec.Command("xdg-open", url).Start()
 			}

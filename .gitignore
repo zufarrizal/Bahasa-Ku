@@ -9,3 +9,5 @@ demo_mysql/
 demo_sqlite/
 *.db
 *.env
+masalah/
+*.vsix
