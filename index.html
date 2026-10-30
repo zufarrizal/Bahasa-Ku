@@ -185,7 +185,26 @@ fungsi utama() {
     <p style="margin-top: 6px;">Proyek edukatif independen yang terinspirasi oleh filosofi dan kesederhanaan bahasa Go (The Go Authors / Google LLC).</p>
   </footer>
 
+  <!-- WebAssembly Go Runtime Resmi -->
+  <script src="wasm_exec.js"></script>
   <script>
+    let wasmReady = false;
+    const go = new Go();
+
+    // Memuat WebAssembly Compiler Asli Bahasa Ku
+    WebAssembly.instantiateStreaming(fetch("ku.wasm"), go.importObject)
+      .then((result) => {
+        go.run(result.instance);
+        wasmReady = true;
+        const out = document.getElementById("output");
+        if (out.textContent.includes("Memuat engine")) {
+          out.textContent = "Engine Go WebAssembly siap! Tekan '▶ Jalankan' untuk mencoba.";
+        }
+      })
+      .catch((err) => {
+        console.error("Gagal memuat WebAssembly:", err);
+      });
+
     function copyInstall() {
       const text = "irm https://raw.githubusercontent.com/zufarrizal/Bahasa-Ku/main/pasang.ps1 | iex";
       navigator.clipboard.writeText(text);
@@ -196,48 +215,22 @@ fungsi utama() {
       document.getElementById("output").textContent = "";
     }
 
-    // Mini Browser Runner untuk Playground Ku
+    // Jalankan menggunakan Engine Asli Go di Browser (100% Go via WebAssembly)
     function jalankanPlayground() {
       const kode = document.getElementById("editor").value;
       const outputElem = document.getElementById("output");
-      outputElem.textContent = "Menjalankan program...";
 
-      const logs = [];
-      const cetak = {
-        tulis: (...args) => {
-          logs.push(args.join(" "));
-        }
-      };
+      if (!wasmReady || typeof window.jalankanEngineKuAsli !== "function") {
+        outputElem.textContent = "Sedang memuat engine Go WebAssembly, silakan coba beberapa detik lagi...";
+        return;
+      }
 
+      outputElem.textContent = "Menjalankan program di engine Go WebAssembly...";
       try {
-        // Simulasi parser & evaluator bahasa Ku di web browser
-        let jsCode = kode;
-
-        // Bersihkan deklarasi paket & pakai
-        jsCode = jsCode.replace(/paket\s+\w+/g, "");
-        jsCode = jsCode.replace(/pakai\s+["'][^"']+["']/g, "");
-
-        // Ubah kata kunci Ku ke JS runtime sandbox
-        jsCode = jsCode.replace(/\bfungsi\s+(\w+)\s*\(([^)]*)\)/g, "function $1($2)");
-        jsCode = jsCode.replace(/\bvar\s+/g, "let ");
-        jsCode = jsCode.replace(/\b([a-zA-Z_][a-zA-Z0-9_]*)\s*:=\s*/g, "let $1 = ");
-        jsCode = jsCode.replace(/\bjika\b/g, "if");
-        jsCode = jsCode.replace(/\blainnya\b/g, "else");
-        jsCode = jsCode.replace(/\buntuk\b/g, "for");
-        jsCode = jsCode.replace(/\bkembalikan\b/g, "return");
-        jsCode = jsCode.replace(/\bbenar\b/g, "true");
-        jsCode = jsCode.replace(/\bsalah\b/g, "false");
-        jsCode = jsCode.replace(/\bkosong\b/g, "null");
-
-        // Panggil fungsi utama() jika ada
-        jsCode += "\nif (typeof utama === 'function') { utama(); }";
-
-        const runner = new Function("cetak", jsCode);
-        runner(cetak);
-
-        outputElem.textContent = logs.join("\n") || "(Program selesai tanpa output)";
+        const hasil = window.jalankanEngineKuAsli(kode);
+        outputElem.textContent = hasil;
       } catch (err) {
-        outputElem.textContent = "Galat Eksekusi:\n" + err.message;
+        outputElem.textContent = "Galat Runtime:\n" + err.message;
       }
     }
   </script>
