@@ -298,6 +298,7 @@
               <li><a href="#modul-pola">`pola` (Regex)</a></li>
               <li><a href="#modul-konversi">`konversi` (Tipe Data)</a></li>
               <li><a href="#modul-json">`json` (Format Objek)</a></li>
+              <li><a href="#modul-csv">`csv` (Data Tabular CSV)</a></li>
               <li><a href="#modul-validasi">`validasi` (Format Data)</a></li>
             </ul>
           </div>
@@ -800,6 +801,8 @@ var sensor = pola.ganti("[0-9]", "Kode PIN: 8492", "*") // Kode PIN: ****</code>
             <tr><td><code>konversi.apakahPeta(val)</code></td><td>Memeriksa apakah bertipe peta map (boolean)</td></tr>
             <tr><td><code>konversi.apakahKosong(val)</code></td><td>Memeriksa apakah bernilai kosong / nihil (boolean)</td></tr>
             <tr><td><code>konversi.formatBita(bytes)</code></td><td>Format ukuran byte menjadi string yang mudah dibaca manusia (contoh: <code>1024 -> "1.00 KB"</code>)</td></tr>
+            <tr><td><code>konversi.formatUang(angka, [simbol])</code></td><td>Format angka menjadi format mata uang dengan pemisah ribuan titik (contoh: <code>1500000 -> "Rp 1.500.000"</code>)</td></tr>
+            <tr><td><code>konversi.formatAngka(angka, [desimal])</code></td><td>Format angka dengan pembatasan digit desimal tetap (contoh: <code>3.14159, 2 -> "3.14"</code>)</td></tr>
           </tbody>
         </table>
       </section>
@@ -826,6 +829,23 @@ jika json.valid(teksJSON) {
     var data = json.urai(teksJSON)
     cetak.tulis("Status:", data["status"])
 }</code></pre>
+      </section>
+
+<section id="modul-csv" class="docs-section">
+        <h2>Modul `csv` (Manipulasi & Serialisasi CSV)</h2>
+        <p>Pengolahan data tabular comma-separated values (CSV) menjadi larik 2D atau sebaliknya:</p>
+        <table>
+          <thead>
+            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>csv.urai(teksCSV)</code></td><td>Membaca teks CSV menjadi larik 2 dimensi (baris dan kolom)</td></tr>
+            <tr><td><code>csv.buat(larik2D)</code></td><td>Mengonversi larik 2 dimensi menjadi string teks CSV standar</td></tr>
+          </tbody>
+        </table>
+        <pre><code>var teks = "Nama,Umur\nBudi,20\nSiti,22"
+var baris = csv.urai(teks) // [["Nama", "Umur"], ["Budi", "20"], ["Siti", "22"]]
+var hasilCsv = csv.buat([["ID", "Nilai"], ["1", "90"]])</code></pre>
       </section>
 
 <section id="modul-validasi" class="docs-section">
@@ -870,6 +890,8 @@ jika validasi.apakahIP("192.168.1.1") {
             <tr><td><code>larik.acak(arr)</code></td><td>Mengocok urutan larik secara acak (shuffle)</td></tr>
             <tr><td><code>larik.unik(arr)</code></td><td>Menghilangkan duplikat elemen larik (deduplikasi)</td></tr>
             <tr><td><code>larik.irisan(arr1, arr2)</code></td><td>Mencari perpotongan elemen yang ada di kedua larik (intersection)</td></tr>
+            <tr><td><code>larik.selisih(arr1, arr2)</code></td><td>Mencari selisih elemen yang ada di larik pertama namun tidak ada di larik kedua (difference)</td></tr>
+            <tr><td><code>larik.apakahSama(arr1, arr2)</code></td><td>Memeriksa apakah seluruh elemen kedua larik identik sama urutan dan nilainya (boolean)</td></tr>
             <tr><td><code>larik.gabungan(arr1, arr2)</code></td><td>Menggabungkan dua larik menjadi himpunan unik (union)</td></tr>
             <tr><td><code>larik.iris(arr, mulai, selesai)</code></td><td>Memotong larik pada rentang indeks tertentu (slice)</td></tr>
             <tr><td><code>larik.mengandung(arr, nilai)</code></td><td>Memeriksa apakah elemen ada di dalam larik (boolean)</td></tr>
@@ -1087,7 +1109,8 @@ var envVal = sistem.lingkungan("APLIKASI_ENV")
 var cwd = sistem.folderKerja() // current directory
 var args = sistem.argumen() // argumen baris perintah CLI
 var cmp = sistem.bandingkanVersi("v1.2.0", "v1.1.5") // 1 (lebih baru), 0 (sama), -1 (lebih lama)
-var info = sistem.perintah("git", "--version") // eksekusi subprocess shell
+var eksekusi = sistem.eksekusi("git", "--version") // res: sukses, kode, stdout, stderr
+var info = sistem.perintah("git", "--version") // eksekusi subprocess shell (keluaran gabungan)
 cetak.tulis("Output:", info["keluaran"])
 var mem = sistem.memori() // monitoring alokasi RAM (alokasiMB, dll)
 var cpu = sistem.jumlahCPU() // total logical CPU cores

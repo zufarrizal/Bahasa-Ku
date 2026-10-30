@@ -516,3 +516,68 @@ fungsi utama() {
 		t.Errorf("Diharapkan 200, didapat %d", intVal.Value)
 	}
 }
+
+func TestEksekusiUangCsvDanSelisih(t *testing.T) {
+	input := `
+paket utama
+fungsi utama() {
+    // 1. Uji sistem.eksekusi
+    var res = sistem.eksekusi("go", "version")
+    jika res["sukses"] != benar || res["kode"] != 0 {
+        kembalikan 1
+    }
+
+    // 2. Uji konversi.formatUang & konversi.formatAngka
+    var rp = konversi.formatUang(1500000)
+    jika rp != "Rp 1.500.000" {
+        kembalikan 2
+    }
+    var des = konversi.formatAngka(3.14159, 2)
+    jika des != "3.14" {
+        kembalikan 3
+    }
+
+    // 3. Uji csv (urai & buat)
+    var dataCsv = "Nama,Umur
+Budi,20
+Siti,22"
+    var rows = csv.urai(dataCsv)
+    jika panjang(rows) != 3 {
+        kembalikan 4
+    }
+    jika rows[1][0] != "Budi" || rows[2][1] != "22" {
+        kembalikan 5
+    }
+    var csvText = csv.buat([["A", "B"], ["1", "2"]])
+    jika csvText != "A,B
+1,2" {
+        kembalikan 6
+    }
+
+    // 4. Uji larik.selisih & larik.apakahSama
+    var s1 = [1, 2, 3, 4]
+    var s2 = [2, 4]
+    var beda = larik.selisih(s1, s2)
+    jika panjang(beda) != 2 || beda[0] != 1 || beda[1] != 3 {
+        kembalikan 7
+    }
+
+    jika !larik.apakahSama([1, 2, 3], [1, 2, 3]) {
+        kembalikan 8
+    }
+    jika larik.apakahSama([1, 2], [1, 3]) == benar {
+        kembalikan 9
+    }
+
+    kembalikan 300
+}
+`
+	val := runKuCode(input)
+	intVal, ok := val.(*evaluator.Integer)
+	if !ok {
+		t.Fatalf("Nilai bukan Integer: %v", val)
+	}
+	if intVal.Value != 300 {
+		t.Errorf("Diharapkan 300, didapat %d", intVal.Value)
+	}
+}

@@ -1080,6 +1080,44 @@ func InitGlobalEnvironment() *Environment {
 			return resMap
 		},
 	}
+	sistemMap.Pairs["eksekusi"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			resMap := &Map{Pairs: make(map[string]Object)}
+			if len(args) < 1 {
+				resMap.Pairs["sukses"] = FALSE
+				resMap.Pairs["kode"] = &Integer{Value: 1}
+				resMap.Pairs["stdout"] = &String{Value: ""}
+				resMap.Pairs["stderr"] = &String{Value: "nama perintah tidak ditentukan"}
+				return resMap
+			}
+			cmdName := args[0].Inspect()
+			cmdArgs := []string{}
+			for _, a := range args[1:] {
+				cmdArgs = append(cmdArgs, a.Inspect())
+			}
+			cmd := exec.Command(cmdName, cmdArgs...)
+			var stdoutBuf, stderrBuf bytes.Buffer
+			cmd.Stdout = &stdoutBuf
+			cmd.Stderr = &stderrBuf
+
+			err := cmd.Run()
+			exitCode := int64(0)
+			if err != nil {
+				if exitErr, ok := err.(*exec.ExitError); ok {
+					exitCode = int64(exitErr.ExitCode())
+				} else {
+					exitCode = 1
+				}
+				resMap.Pairs["sukses"] = FALSE
+			} else {
+				resMap.Pairs["sukses"] = TRUE
+			}
+			resMap.Pairs["kode"] = &Integer{Value: exitCode}
+			resMap.Pairs["stdout"] = &String{Value: strings.TrimRight(stdoutBuf.String(), "\r\n")}
+			resMap.Pairs["stderr"] = &String{Value: strings.TrimRight(stderrBuf.String(), "\r\n")}
+			return resMap
+		},
+	}
 	sistemMap.Pairs["memori"] = &Builtin{
 		Fn: func(args ...Object) Object {
 			var m runtime.MemStats
@@ -2477,6 +2515,63 @@ func InitGlobalEnvironment() *Environment {
 			return &String{Value: fmt.Sprintf("%.2f %s", b, units[idx])}
 		},
 	}
+	konversiMap.Pairs["formatAngka"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: "0"}
+			}
+			var val float64
+			if i, ok := args[0].(*Integer); ok {
+				val = float64(i.Value)
+			} else if f, ok := args[0].(*Float); ok {
+				val = f.Value
+			}
+			des := 2
+			if len(args) >= 2 {
+				if d, ok := args[1].(*Integer); ok {
+					des = int(d.Value)
+				}
+			}
+			formatStr := fmt.Sprintf("%%.%df", des)
+			return &String{Value: fmt.Sprintf(formatStr, val)}
+		},
+	}
+	konversiMap.Pairs["formatUang"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: "Rp 0"}
+			}
+			var n int64
+			if i, ok := args[0].(*Integer); ok {
+				n = i.Value
+			} else if f, ok := args[0].(*Float); ok {
+				n = int64(f.Value)
+			}
+			simbol := "Rp "
+			if len(args) >= 2 {
+				simbol = args[1].Inspect()
+			}
+			neg := false
+			if n < 0 {
+				neg = true
+				n = -n
+			}
+			str := strconv.FormatInt(n, 10)
+			var sb strings.Builder
+			l := len(str)
+			for idx, r := range str {
+				sb.WriteRune(r)
+				if (l-idx-1)%3 == 0 && idx != l-1 {
+					sb.WriteByte('.')
+				}
+			}
+			hasil := simbol + sb.String()
+			if neg {
+				hasil = "-" + hasil
+			}
+			return &String{Value: hasil}
+		},
+	}
 	env.Set("konversi", konversiMap)
 
 	// Modul bita (Manipulasi Byte Array & Buffer Biner)
@@ -2726,6 +2821,55 @@ func InitGlobalEnvironment() *Environment {
 		},
 	}
 	env.Set("json", jsonMap)
+
+	// Modul csv (Manipulasi dan Serialisasi Data CSV)
+	csvMap := &Map{Pairs: make(map[string]Object)}
+	csvMap.Pairs["urai"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &Array{Elements: []Object{}}
+			}
+			reader := csv.NewReader(strings.NewReader(args[0].Inspect()))
+			records, err := reader.ReadAll()
+			if err != nil {
+				return &Array{Elements: []Object{}}
+			}
+			outer := make([]Object, len(records))
+			for i, row := range records {
+				inner := make([]Object, len(row))
+				for j, cell := range row {
+					inner[j] = &String{Value: cell}
+				}
+				outer[i] = &Array{Elements: inner}
+			}
+			return &Array{Elements: outer}
+		},
+	}
+	csvMap.Pairs["buat"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			arr, isArr := args[0].(*Array)
+			if !isArr {
+				return &String{Value: ""}
+			}
+			var buf bytes.Buffer
+			writer := csv.NewWriter(&buf)
+			for _, rowObj := range arr.Elements {
+				if rowArr, ok := rowObj.(*Array); ok {
+					record := make([]string, len(rowArr.Elements))
+					for j, cell := range rowArr.Elements {
+						record[j] = cell.Inspect()
+					}
+					writer.Write(record)
+				}
+			}
+			writer.Flush()
+			return &String{Value: strings.TrimRight(buf.String(), "\r\n")}
+		},
+	}
+	env.Set("csv", csvMap)
 
 	// Modul validasi (Pemeriksaan Format Data Dasar)
 	validasiMap := &Map{Pairs: make(map[string]Object)}
@@ -3741,6 +3885,53 @@ func InitGlobalEnvironment() *Environment {
 				}
 			}
 			return &Array{Elements: res}
+		},
+	}
+	larikMap.Pairs["selisih"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return &Array{Elements: []Object{}}
+			}
+			arr1, isArr1 := args[0].(*Array)
+			arr2, isArr2 := args[1].(*Array)
+			if !isArr1 || !isArr2 {
+				return &Array{Elements: []Object{}}
+			}
+			map2 := make(map[string]bool)
+			for _, e := range arr2.Elements {
+				map2[e.Inspect()] = true
+			}
+			res := []Object{}
+			seen := make(map[string]bool)
+			for _, e := range arr1.Elements {
+				k := e.Inspect()
+				if !map2[k] && !seen[k] {
+					seen[k] = true
+					res = append(res, e)
+				}
+			}
+			return &Array{Elements: res}
+		},
+	}
+	larikMap.Pairs["apakahSama"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return FALSE
+			}
+			arr1, isArr1 := args[0].(*Array)
+			arr2, isArr2 := args[1].(*Array)
+			if !isArr1 || !isArr2 {
+				return FALSE
+			}
+			if len(arr1.Elements) != len(arr2.Elements) {
+				return FALSE
+			}
+			for i := range arr1.Elements {
+				if !objectsEqual(arr1.Elements[i], arr2.Elements[i]) {
+					return FALSE
+				}
+			}
+			return TRUE
 		},
 	}
 	larikMap.Pairs["gabungan"] = &Builtin{
