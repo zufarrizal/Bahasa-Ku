@@ -73,12 +73,11 @@ ku versi
 
 ## 🎨 Dukungan Editor VS Code (Syntax Highlighting)
 
-Agar penulisan kode `.ku` memiliki warna sintaksis (*syntax highlighting*) dan pelengkap otomatis di Visual Studio Code:
-1. Buka folder `ekstensi-vscode` di proyek ini.
-2. Salin folder tersebut ke direktori ekstensi VS Code Anda:
-   - **Windows:** `%USERPROFILE%\.vscode\extensions\bahasa-ku`
-   - **Linux/macOS:** `~/.vscode/extensions/bahasa-ku`
-3. Buka berkas `.ku` apa pun di VS Code, maka seluruh kata kunci, teks, fungsi, dan komentar akan otomatis berwarna indah!
+Agar penulisan kode `.ku` memiliki warna sintaksis (*syntax highlighting*) dan ikon resmi di Visual Studio Code:
+1. Unduh file paket ekstensi **`bahasa-ku-vscode-0.1.0.vsix`** dari halaman **[Rilis GitHub](https://github.com/zufarrizal/Bahasa-Ku/releases/tag/v0.2.0)**.
+2. Buka Visual Studio Code.
+3. Masuk ke menu **Extensions** (`Ctrl+Shift+X`), klik tanda titik tiga (`...`) di sudut kanan atas panel ekstensi, lalu pilih **"Install from VSIX..."**.
+4. Pilih file `bahasa-ku-vscode-0.1.0.vsix`. Selesai! Seluruh kode `.ku` akan langsung berwarna rapi dan memiliki ikon resmi.
 
 ---
 
