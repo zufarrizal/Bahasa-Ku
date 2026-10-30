@@ -728,9 +728,11 @@ func InitGlobalEnvironment() *Environment {
 			}
 			addr := args[0].Inspect()
 			if i, ok := args[0].(*Integer); ok {
-				addr = fmt.Sprintf(":%d", i.Value)
+				addr = fmt.Sprintf("127.0.0.1:%d", i.Value)
 			} else if !strings.Contains(addr, ":") {
-				addr = ":" + addr
+				addr = "127.0.0.1:" + addr
+			} else if strings.HasPrefix(addr, ":") {
+				addr = "127.0.0.1" + addr
 			}
 			err := http.ListenAndServe(addr, webHandler)
 			if err != nil {
