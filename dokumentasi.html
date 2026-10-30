@@ -588,6 +588,8 @@ var sensor = pola.ganti("[0-9]", "Kode PIN: 8492", "*") // Kode PIN: ****</code>
             <tr><td><code>larik.iris(arr, mulai, selesai)</code></td><td>Memotong larik pada rentang indeks tertentu (slice)</td></tr>
             <tr><td><code>larik.mengandung(arr, nilai)</code></td><td>Memeriksa apakah elemen ada di dalam larik (boolean)</td></tr>
             <tr><td><code>larik.indeks(arr, nilai)</code></td><td>Mencari indeks posisi kemunculan pertama elemen (-1 jika nihil)</td></tr>
+            <tr><td><code>larik.ambilAcak(arr, n)</code></td><td>Mengambil n sampel acak dari elemen larik (random sampling)</td></tr>
+            <tr><td><code>larik.pecah(arr, ukuran)</code></td><td>Memecah larik menjadi kelompok-kelompok kecil berukuran n (chunking)</td></tr>
             <tr><td><code>larik.rentang(akhir)</code> / <code>rentang(awal, akhir, [langkah])</code></td><td>Membangkitkan deret rentang bilangan berurutan (misal: <code>rentang(0, 10, 2)</code>)</td></tr>
             <tr><td><code>larik.gabungSemua(...larik)</code></td><td>Menggabungkan banyak larik menjadi satu</td></tr>
             <tr><td><code>larik.rata(larik2D)</code></td><td>Meratakan struktur larik bertingkat / bersarang 2D menjadi 1D (flatten)</td></tr>
@@ -614,6 +616,8 @@ var irisan = larik.irisan(unik, [4, 5, 6]) // [4, 5]</code></pre>
             <tr><td><code>peta.kunci(map)</code></td><td>Mengembalikan larik dari seluruh kunci yang terdaftar</td></tr>
             <tr><td><code>peta.nilai(map)</code></td><td>Mengembalikan larik dari seluruh nilai yang ada</td></tr>
             <tr><td><code>peta.ada(map, kunci)</code></td><td>Memeriksa apakah sebuah kunci ada dalam peta (boolean)</td></tr>
+            <tr><td><code>peta.salin(map)</code></td><td>Menduplikasi / membuat salinan mandiri dari peta (clone)</td></tr>
+            <tr><td><code>peta.ambil(map, kunci, [bawaan])</code></td><td>Mengambil nilai kunci dengan opsi nilai bawaan (fallback) jika kunci nihil</td></tr>
             <tr><td><code>peta.gabung(...peta)</code></td><td>Menggabungkan beberapa objek kamus/peta menjadi satu</td></tr>
           </tbody>
         </table>
@@ -675,6 +679,7 @@ cetak.tulis("Ekstensi:", jalur.ekstensi(lokasi)) // .ku</code></pre>
             <tr><td><code>enkoding.dekodekanURL(teks)</code></td><td>Men-decode format URL kembali ke teks asli</td></tr>
             <tr><td><code>enkoding.kodekanHeksa(teks)</code></td><td>Mengonversi teks string ke string heksadesimal biner</td></tr>
             <tr><td><code>enkoding.dekodekanHeksa(heksaStr)</code></td><td>Mendekode string heksadesimal biner ke teks asli</td></tr>
+            <tr><td><code>enkoding.bangunQuery(peta)</code></td><td>Mengubah objek kamus parameter menjadi URL Query String otomatis ter-escape</td></tr>
           </tbody>
         </table>
         <pre><code>var csvData = "nama,skor\nBudi,95"
@@ -734,6 +739,9 @@ var token = acak.teks(16) // Token unik acak</code></pre>
             <tr><td><code>teks.awalan(str, prefix)</code></td><td>Memeriksa apakah teks diawali substring tertentu</td></tr>
             <tr><td><code>teks.akhiran(str, suffix)</code></td><td>Memeriksa apakah teks diakhiri substring tertentu</td></tr>
             <tr><td><code>teks.indeks(str, sub)</code></td><td>Mengembalikan posisi indeks kemunculan pertama substring</td></tr>
+            <tr><td><code>teks.indeksTerakhir(str, sub)</code></td><td>Mencari posisi indeks kemunculan terakhir substring (dari kanan)</td></tr>
+            <tr><td><code>teks.pangkasKiri(str, [cutset])</code></td><td>Menghapus karakter di awal string yang ditentukan</td></tr>
+            <tr><td><code>teks.pangkasKanan(str, [cutset])</code></td><td>Menghapus karakter di akhir string yang ditentukan</td></tr>
             <tr><td><code>teks.padKiri(str, panjang, pad)</code></td><td>Menambahkan karakter padding di sebelah kiri string (contoh: <code>00042</code>)</td></tr>
             <tr><td><code>teks.padKanan(str, panjang, pad)</code></td><td>Menambahkan karakter padding di sebelah kanan string</td></tr>
             <tr><td><code>teks.karakter(str, indeks)</code></td><td>Mengambil satu karakter pada indeks tertentu sebagai string</td></tr>
@@ -800,6 +808,8 @@ cetak.tulis("Status:", objek["status"])</code></pre>
             <tr><td><code>matematika.log(x)</code></td><td>Logaritma natural Ln(x)</td></tr>
             <tr><td><code>matematika.log10(x)</code></td><td>Logaritma basis 10</td></tr>
             <tr><td><code>matematika.hipot(x, y)</code></td><td>Panjang hipotenusa garis miring Pythagoras</td></tr>
+            <tr><td><code>matematika.jepit(v, min, max)</code></td><td>Membatasi nilai agar selalu di antara batas bawah dan batas atas (clamp)</td></tr>
+            <tr><td><code>matematika.tanda(x)</code></td><td>Mengembalikan tanda bilangan (-1 jika negatif, 1 jika positif, 0 jika nol)</td></tr>
             <tr><td><code>matematika.acak(min, max)</code></td><td>Menghasilkan bilangan acak rentang min..max</td></tr>
           </tbody>
         </table>

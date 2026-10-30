@@ -1261,6 +1261,53 @@ func InitGlobalEnvironment() *Environment {
 			return &Float{Value: math.Hypot(x, y)}
 		},
 	}
+	matematikaMap.Pairs["jepit"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 3 {
+				return args[0]
+			}
+			getVal := func(o Object) float64 {
+				if i, ok := o.(*Integer); ok {
+					return float64(i.Value)
+				} else if f, ok := o.(*Float); ok {
+					return f.Value
+				}
+				return 0
+			}
+			v := getVal(args[0])
+			minVal := getVal(args[1])
+			maxVal := getVal(args[2])
+			if v < minVal {
+				v = minVal
+			}
+			if v > maxVal {
+				v = maxVal
+			}
+			if _, ok := args[0].(*Integer); ok {
+				return &Integer{Value: int64(v)}
+			}
+			return &Float{Value: v}
+		},
+	}
+	matematikaMap.Pairs["tanda"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &Integer{Value: 0}
+			}
+			var v float64
+			if i, ok := args[0].(*Integer); ok {
+				v = float64(i.Value)
+			} else if f, ok := args[0].(*Float); ok {
+				v = f.Value
+			}
+			if v > 0 {
+				return &Integer{Value: 1}
+			} else if v < 0 {
+				return &Integer{Value: -1}
+			}
+			return &Integer{Value: 0}
+		},
+	}
 	env.Set("matematika", matematikaMap)
 
 	// Modul teks (Manipulasi String)
@@ -1492,6 +1539,38 @@ func InitGlobalEnvironment() *Environment {
 				}
 			}
 			return TRUE
+		},
+	}
+	teksMap.Pairs["indeksTerakhir"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return &Integer{Value: -1}
+			}
+			return &Integer{Value: int64(strings.LastIndex(args[0].Inspect(), args[1].Inspect()))}
+		},
+	}
+	teksMap.Pairs["pangkasKiri"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			cutset := " \t\r\n"
+			if len(args) >= 2 {
+				cutset = args[1].Inspect()
+			}
+			return &String{Value: strings.TrimLeft(args[0].Inspect(), cutset)}
+		},
+	}
+	teksMap.Pairs["pangkasKanan"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			cutset := " \t\r\n"
+			if len(args) >= 2 {
+				cutset = args[1].Inspect()
+			}
+			return &String{Value: strings.TrimRight(args[0].Inspect(), cutset)}
 		},
 	}
 	env.Set("teks", teksMap)
@@ -1831,6 +1910,22 @@ func InitGlobalEnvironment() *Environment {
 			return &String{Value: string(data)}
 		},
 	}
+	enkodingMap.Pairs["bangunQuery"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			m, isMap := args[0].(*Map)
+			if !isMap {
+				return &String{Value: ""}
+			}
+			vals := url.Values{}
+			for k, v := range m.Pairs {
+				vals.Set(k, v.Inspect())
+			}
+			return &String{Value: vals.Encode()}
+		},
+	}
 	env.Set("enkoding", enkodingMap)
 
 	// Modul catatan (Logging Terstruktur dengan Timestamp)
@@ -1978,6 +2073,41 @@ func InitGlobalEnvironment() *Environment {
 				}
 			}
 			return newMap
+		},
+	}
+	petaMap.Pairs["salin"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &Map{Pairs: make(map[string]Object)}
+			}
+			m, isMap := args[0].(*Map)
+			if !isMap {
+				return args[0]
+			}
+			newMap := &Map{Pairs: make(map[string]Object)}
+			for k, v := range m.Pairs {
+				newMap.Pairs[k] = v
+			}
+			return newMap
+		},
+	}
+	petaMap.Pairs["ambil"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return NIL
+			}
+			m, isMap := args[0].(*Map)
+			if !isMap {
+				return NIL
+			}
+			key := args[1].Inspect()
+			if val, exists := m.Pairs[key]; exists {
+				return val
+			}
+			if len(args) >= 3 {
+				return args[2]
+			}
+			return NIL
 		},
 	}
 	env.Set("peta", petaMap)
@@ -2544,6 +2674,57 @@ func InitGlobalEnvironment() *Environment {
 				}
 			}
 			return &Array{Elements: res}
+		},
+	}
+	larikMap.Pairs["ambilAcak"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &Array{Elements: []Object{}}
+			}
+			arr, ok := args[0].(*Array)
+			if !ok || len(arr.Elements) == 0 {
+				return &Array{Elements: []Object{}}
+			}
+			count := 1
+			if len(args) >= 2 {
+				if i, isInt := args[1].(*Integer); isInt && i.Value > 0 {
+					count = int(i.Value)
+				}
+			}
+			if count > len(arr.Elements) {
+				count = len(arr.Elements)
+			}
+			indices := mrand.Perm(len(arr.Elements))[:count]
+			res := make([]Object, count)
+			for i, idx := range indices {
+				res[i] = arr.Elements[idx]
+			}
+			return &Array{Elements: res}
+		},
+	}
+	larikMap.Pairs["pecah"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return args[0]
+			}
+			arr, ok := args[0].(*Array)
+			if !ok {
+				return args[0]
+			}
+			size := int64(1)
+			if i, isInt := args[1].(*Integer); isInt && i.Value > 0 {
+				size = i.Value
+			}
+			chunks := []Object{}
+			n := int64(len(arr.Elements))
+			for i := int64(0); i < n; i += size {
+				end := i + size
+				if end > n {
+					end = n
+				}
+				chunks = append(chunks, &Array{Elements: arr.Elements[i:end]})
+			}
+			return &Array{Elements: chunks}
 		},
 	}
 	env.Set("larik", larikMap)

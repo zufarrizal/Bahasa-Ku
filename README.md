@@ -701,6 +701,41 @@ fungsi utama() {
 }
 ```
 
+### 19. Pembatas Nilai (`jepit`), Indeks Terakhir, Builder URL Query, & Chunking Larik (`contoh/dasar_jepit_query.ku`)
+```ku
+paket utama
+
+pakai "cetak"
+pakai "matematika"
+pakai "teks"
+pakai "enkoding"
+pakai "peta"
+pakai "larik"
+
+fungsi utama() {
+    // 1. Pembatasan Nilai Numerik (Clamp)
+    cetak.tulis("Jepit 150 (rentang 0..100):", matematika.jepit(150, 0, 100)) // 100
+    cetak.tulis("Tanda bilangan:", matematika.tanda(-50)) // -1
+
+    // 2. Teks Indeks Terakhir & Pangkas Kiri/Kanan
+    var jalur = "modul/sumber/modul/app.ku"
+    cetak.tulis("Indeks terakhir:", teks.indeksTerakhir(jalur, "modul")) // 13
+    cetak.tulis("Pangkas kustom:", teks.pangkasKiri(">>> Data", "> ")) // "Data"
+
+    // 3. HTTP URL Query Builder
+    var query = enkoding.bangunQuery({"q": "bahasa ku", "halaman": "1"}) // "halaman=1&q=bahasa+ku"
+
+    // 4. Salin & Nilai Bawaan Kamus
+    var setting = {"mode": "rilis"}
+    var port = peta.ambil(setting, "port", 8080) // 8080 (fallback default)
+
+    // 5. Pembagian Kelompok Larik (Chunking) & Sampel Acak
+    var daftar = [1, 2, 3, 4, 5, 6]
+    var bagian = larik.pecah(daftar, 2) // [[1, 2], [3, 4], [5, 6]]
+    var acak3 = larik.ambilAcak(daftar, 3)
+}
+```
+
 ---
 
 ## 📂 Struktur Proyek

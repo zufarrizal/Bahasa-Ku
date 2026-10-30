@@ -1,0 +1,51 @@
+paket utama
+
+pakai "cetak"
+pakai "matematika"
+pakai "teks"
+pakai "enkoding"
+pakai "peta"
+pakai "larik"
+
+fungsi utama() {
+    cetak.tulis("=== 1. MATEMATIKA: JEPIT & TANDA ===")
+    cetak.tulis("Jepit 150 (rentang 0..100):", matematika.jepit(150, 0, 100))
+    cetak.tulis("Jepit -25 (rentang 0..100):", matematika.jepit(-25, 0, 100))
+    cetak.tulis("Jepit 75 (rentang 0..100):", matematika.jepit(75, 0, 100))
+    cetak.tulis("Tanda bilangan (-99):", matematika.tanda(-99))
+    cetak.tulis("Tanda bilangan (45):", matematika.tanda(45))
+    cetak.tulis("Tanda bilangan (0):", matematika.tanda(0))
+
+    cetak.tulis("\n=== 2. TEKS: INDEKS TERAKHIR & PANGKAS KUSTOM ===")
+    var path = "sumber/modul/utama/modul/berkas.ku"
+    cetak.tulis("Indeks awal 'modul':", teks.indeks(path, "modul"))
+    cetak.tulis("Indeks terakhir 'modul':", teks.indeksTerakhir(path, "modul"))
+
+    var label = "### Judul Laporan ###"
+    cetak.tulis("Pangkas kiri '#':", teks.pangkasKiri(label, "# "))
+    cetak.tulis("Pangkas kanan '#':", teks.pangkasKanan(label, "# "))
+
+    cetak.tulis("\n=== 3. ENKODING: BUILDER URL QUERY ===")
+    var parameterHTTP = {
+        "cari": "bahasa ku",
+        "halaman": "1",
+        "kategori": "komputasi"
+    }
+    var queryURL = enkoding.bangunQuery(parameterHTTP)
+    cetak.tulis("Hasil Query String URL:", queryURL)
+
+    cetak.tulis("\n=== 4. PETA: SALIN & AMBIL DENGAN NILAI BAWAAN ===")
+    var konfigurasi = {"port": 8080, "host": "localhost"}
+    var klonKonfig = peta.salin(konfigurasi)
+    klonKonfig["port"] = 9000
+    cetak.tulis("Konfig asal port:", konfigurasi["port"])
+    cetak.tulis("Klon konfig port:", klonKonfig["port"])
+    cetak.tulis("Ambil 'timeout' (fallback 30s):", peta.ambil(konfigurasi, "timeout", 30))
+
+    cetak.tulis("\n=== 5. LARIK: SAMPEL ACAK & PECAH KELOMPOK (CHUNK) ===")
+    var angka = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    var sampel = larik.ambilAcak(angka, 3)
+    cetak.tulis("3 sampel acak:", sampel)
+    var kelompok = larik.pecah(angka, 3)
+    cetak.tulis("Larik dipecah per-3:", kelompok)
+}
