@@ -688,6 +688,8 @@ func (p *Parser) parsePrefix() ast.Expression {
 		return &ast.BooleanLiteral{Token: p.curToken, Value: false}
 	case token.KOSONG:
 		return &ast.NilLiteral{Token: p.curToken}
+	case token.CACAH:
+		return &ast.CacahLiteral{Token: p.curToken}
 	case token.FUNGSI:
 		return p.parseFunctionLiteral()
 	case token.BANG, token.MINUS:

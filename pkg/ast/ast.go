@@ -248,6 +248,13 @@ type NilLiteral struct {
 func (n *NilLiteral) expressionNode()      {}
 func (n *NilLiteral) TokenLiteral() string { return n.Token.Literal }
 
+type CacahLiteral struct {
+	Token token.Token
+}
+
+func (c *CacahLiteral) expressionNode()      {}
+func (c *CacahLiteral) TokenLiteral() string { return c.Token.Literal }
+
 type PrefixExpression struct {
 	Token    token.Token
 	Operator string

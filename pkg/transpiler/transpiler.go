@@ -291,6 +291,9 @@ func (t *Transpiler) Transpile(node ast.Node) string {
 	case *ast.NilLiteral:
 		return "nil"
 
+	case *ast.CacahLiteral:
+		return "iota"
+
 	case *ast.ArrayLiteral:
 		elems := []string{}
 		for _, e := range n.Elements {

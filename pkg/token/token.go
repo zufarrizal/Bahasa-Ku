@@ -92,6 +92,7 @@ const (
 	BENAR      = "BENAR"
 	SALAH      = "SALAH"
 	KOSONG     = "KOSONG"
+	CACAH      = "CACAH"
 )
 
 var keywords = map[string]TokenType{
@@ -103,6 +104,8 @@ var keywords = map[string]TokenType{
 	"variabel":   VAR,
 	"tetap":      TETAP,
 	"konst":      TETAP,
+	"cacah":      CACAH,
+	"iota":       CACAH,
 	"tipe":       TIPE,
 	"struktur":   STRUKTUR,
 	"jika":       JIKA,

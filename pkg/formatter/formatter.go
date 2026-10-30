@@ -260,6 +260,9 @@ func (f *Formatter) Format(node ast.Node) string {
 	case *ast.NilLiteral:
 		return "kosong"
 
+	case *ast.CacahLiteral:
+		return "cacah"
+
 	case *ast.ArrayLiteral:
 		elems := []string{}
 		for _, e := range n.Elements {

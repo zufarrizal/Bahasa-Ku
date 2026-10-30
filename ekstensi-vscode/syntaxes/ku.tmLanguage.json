@@ -31,11 +31,11 @@
         },
         {
           "name": "constant.language.ku",
-          "match": "\\b(benar|salah|kosong|nihil)\\b"
+          "match": "\\b(benar|salah|kosong|nihil|cacah|iota)\\b"
         },
         {
           "name": "support.class.ku",
-          "match": "\\b(cetak|web|jendela|basisdata|berkas|sistem|jaringan|kripto|matematika|teks|konversi|masukan|panjang|tambah|hapus)\\b"
+          "match": "\\b(cetak|web|jendela|basisdata|berkas|sistem|jaringan|kripto|matematika|teks|konversi|masukan|panjang|tambah|hapus|panik|pulih|uji)\\b"
         }
       ]
     },

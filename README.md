@@ -338,6 +338,42 @@ fungsi utama() {
 }
 ```
 
+### 8. Panik & Pulih (panic & recover) serta Pencacah Otomatis (`contoh/dasar_panik_cacah.ku`)
+```ku
+paket utama
+
+pakai "cetak"
+
+// 1. Pencacah Konstanta Otomatis (cacah / iota)
+tetap STATUS_MENUNGGU = cacah // 0
+tetap STATUS_DIPROSES = cacah // 1
+tetap STATUS_SELESAI  = cacah // 2
+
+// 2. Proteksi Panik & Pulih
+fungsi prosesTransaksi(jumlah) {
+    tunda fungsi() {
+        var err = pulih()
+        jika err != nihil {
+            cetak.tulis("🛡️ [PULIH] Program terselamatkan dari crash:", err)
+        }
+    }()
+
+    jika jumlah <= 0 {
+        panik("jumlah transaksi tidak valid!")
+    }
+    cetak.tulis("Transaksi berhasil diproses!")
+}
+
+fungsi utama() {
+    // Pengujian otomatis internal
+    uji.sama(STATUS_MENUNGGU, 0)
+    uji.sama(STATUS_SELESAI, 2)
+
+    prosesTransaksi(10000)
+    prosesTransaksi(-500) // Memantik panik & tertangkap oleh pulih()
+}
+```
+
 ---
 
 ## 📂 Struktur Proyek

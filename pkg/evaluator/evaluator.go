@@ -43,7 +43,15 @@ const (
 	STRUCT_INST_OBJ  = "STRUCT_INST"
 	BREAK_OBJ        = "BREAK"
 	CONTINUE_OBJ     = "CONTINUE"
+	PANIC_OBJ        = "PANIC"
 )
+
+type PanicObject struct {
+	Value Object
+}
+
+func (p *PanicObject) Type() ObjectType { return PANIC_OBJ }
+func (p *PanicObject) Inspect() string  { return fmt.Sprintf("panik: %s", p.Value.Inspect()) }
 
 type Object interface {
 	Type() ObjectType
@@ -108,18 +116,23 @@ func (r *ReturnValue) Inspect() string {
 }
 
 type Environment struct {
-	store map[string]Object
-	outer *Environment
+	store      map[string]Object
+	outer      *Environment
 	deferStack []func()
+	iotaVal    int64
+	panicVal   Object
 }
 
 func NewEnvironment() *Environment {
-	return &Environment{store: make(map[string]Object), deferStack: []func(){}}
+	return &Environment{store: make(map[string]Object), deferStack: []func(){}, iotaVal: 0, panicVal: nil}
 }
 
 func NewEnclosedEnvironment(outer *Environment) *Environment {
 	env := NewEnvironment()
 	env.outer = outer
+	if outer != nil {
+		env.panicVal = outer.panicVal
+	}
 	return env
 }
 
@@ -145,6 +158,22 @@ func (e *Environment) Update(name string, val Object) bool {
 		return e.outer.Update(name, val)
 	}
 	return false
+}
+
+var globalPanic Object = nil
+
+func SetGlobalPanic(p Object) {
+	globalPanic = p
+}
+
+func ClearGlobalPanic() Object {
+	val := globalPanic
+	globalPanic = nil
+	return val
+}
+
+func GetGlobalPanic() Object {
+	return globalPanic
 }
 
 type BuiltinFunction func(args ...Object) Object
@@ -1032,6 +1061,67 @@ func InitGlobalEnvironment() *Environment {
 		},
 	})
 
+	// Bawaan: panik (panic ala Go)
+	env.Set("panik", &Builtin{
+		Fn: func(args ...Object) Object {
+			var pVal Object = &String{Value: "panik terjadi"}
+			if len(args) > 0 {
+				pVal = args[0]
+			}
+			SetGlobalPanic(pVal)
+			return &PanicObject{Value: pVal}
+		},
+	})
+
+	// Bawaan: pulih (recover ala Go)
+	env.Set("pulih", &Builtin{
+		Fn: func(args ...Object) Object {
+			val := ClearGlobalPanic()
+			if val != nil {
+				return val
+			}
+			return NIL
+		},
+	})
+
+	// Modul uji (Unit Testing Internal)
+	ujiMap := &Map{Pairs: make(map[string]Object)}
+	ujiMap.Pairs["sama"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				fmt.Println("❌ [UJI GAGAL] uji.sama membutuhkan minimal 2 argumen")
+				return FALSE
+			}
+			if objectsEqual(args[0], args[1]) {
+				fmt.Printf("✅ [UJI LULUS] Nilai sesuai: %s\n", args[0].Inspect())
+				return TRUE
+			}
+			fmt.Printf("❌ [UJI GAGAL] Diharapkan %s, tetapi didapat %s\n", args[1].Inspect(), args[0].Inspect())
+			return FALSE
+		},
+	}
+	ujiMap.Pairs["benar"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) > 0 && isTruthy(args[0]) {
+				fmt.Println("✅ [UJI LULUS] Kondisi benar")
+				return TRUE
+			}
+			fmt.Println("❌ [UJI GAGAL] Kondisi tidak benar (salah/kosong)")
+			return FALSE
+		},
+	}
+	ujiMap.Pairs["gagal"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			pesan := "uji gagal"
+			if len(args) > 0 {
+				pesan = args[0].Inspect()
+			}
+			fmt.Printf("❌ [UJI GAGAL] %s\n", pesan)
+			return FALSE
+		},
+	}
+	env.Set("uji", ujiMap)
+
 	return env
 }
 
@@ -1079,13 +1169,20 @@ func Eval(node ast.Node, env *Environment) Object {
 		var result Object = NIL
 		for _, stmt := range n.Statements {
 			result = Eval(stmt, env)
+			if p, ok := result.(*PanicObject); ok {
+				return p
+			}
 			if ret, ok := result.(*ReturnValue); ok {
 				return ret.Value
 			}
 		}
 		if mainFn, ok := env.Get("utama"); ok {
 			if fn, ok := mainFn.(*Function); ok {
-				return applyFunction(fn, []Object{}, env)
+				res := applyFunction(fn, []Object{}, env)
+				if p, ok := res.(*PanicObject); ok {
+					fmt.Println("💥 Galat Panik Tidak Tertangani:", p.Value.Inspect())
+				}
+				return res
 			}
 		}
 		return result
@@ -1252,7 +1349,7 @@ func Eval(node ast.Node, env *Environment) Object {
 			result = Eval(stmt, env)
 			if result != nil {
 				rt := result.Type()
-				if rt == RETURN_VALUE_OBJ || rt == BREAK_OBJ || rt == CONTINUE_OBJ {
+				if rt == RETURN_VALUE_OBJ || rt == BREAK_OBJ || rt == CONTINUE_OBJ || rt == PANIC_OBJ {
 					return result
 				}
 			}
@@ -1415,6 +1512,11 @@ func Eval(node ast.Node, env *Environment) Object {
 
 	case *ast.NilLiteral:
 		return NIL
+
+	case *ast.CacahLiteral:
+		val := env.iotaVal
+		env.iotaVal++
+		return &Integer{Value: val}
 
 	case *ast.ArrayLiteral:
 		elems := []Object{}
@@ -1606,9 +1708,24 @@ func applyFunction(fn Object, args []Object, outerEnv *Environment) Object {
 
 		res := Eval(f.Body, fnEnv)
 
+		if pObj, isPanic := res.(*PanicObject); isPanic {
+			SetGlobalPanic(pObj.Value)
+		}
+
 		// Eksekusi tunda (defer) LIFO
 		for i := len(fnEnv.deferStack) - 1; i >= 0; i-- {
 			fnEnv.deferStack[i]()
+		}
+
+		// Jika panik telah dipulihkan (pulih())
+		if GetGlobalPanic() == nil {
+			if res != nil && res.Type() == PANIC_OBJ {
+				return NIL
+			}
+		}
+
+		if activePanic := GetGlobalPanic(); activePanic != nil {
+			return &PanicObject{Value: activePanic}
 		}
 
 		if ret, ok := res.(*ReturnValue); ok {

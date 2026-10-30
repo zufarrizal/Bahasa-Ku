@@ -1,0 +1,47 @@
+paket utama
+
+pakai "cetak"
+
+// 1. Konstanta Enum dengan Pencacah Otomatis (cacah / iota)
+tetap STATUS_MENUNGGU = cacah // 0
+tetap STATUS_DIPROSES = cacah // 1
+tetap STATUS_SELESAI  = cacah // 2
+
+// 2. Fungsi yang memicu panik saat ada galat fatal
+fungsi prosesTransaksi(jumlah) {
+    tunda fungsi() {
+        var err = pulih()
+        jika err != nihil {
+            cetak.tulis("🛡️ [PULIH] Transaksi aman dari crash. Alasan panik:", err)
+        }
+    }()
+
+    cetak.tulis("Memulai pemrosesan transaksi sejumlah:", jumlah)
+
+    jika jumlah <= 0 {
+        panik("jumlah transaksi tidak boleh nol atau negatif!")
+    }
+
+    cetak.tulis("Transaksi berhasil diproses!")
+}
+
+fungsi utama() {
+    cetak.tulis("=== Uji Pencacah Konstanta (cacah/iota) & Panik-Pulih (panic-recover) ===")
+
+    // Uji Pencacah (cacah)
+    cetak.tulis("Status Menunggu:", STATUS_MENUNGGU)
+    cetak.tulis("Status Diproses:", STATUS_DIPROSES)
+    cetak.tulis("Status Selesai :", STATUS_SELESAI)
+
+    // Uji Pengujian Bawaan (uji.sama & uji.benar)
+    uji.sama(STATUS_MENUNGGU, 0)
+    uji.sama(STATUS_SELESAI, 2)
+
+    // Uji Transaksi Normal
+    prosesTransaksi(50000)
+
+    // Uji Transaksi dengan Panik & Pulih
+    prosesTransaksi(-1000)
+
+    cetak.tulis("Program tetap berjalan mulus setelah pulih dari panik! ✨")
+}
