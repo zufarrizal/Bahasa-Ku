@@ -358,9 +358,10 @@ func (ce *CallExpression) expressionNode()      {}
 func (ce *CallExpression) TokenLiteral() string { return ce.Token.Literal }
 
 type DotExpression struct {
-	Token    token.Token // DOT
-	Left     Expression
-	Property *Identifier
+	Token      token.Token // DOT atau OPT_DOT
+	Left       Expression
+	Property   *Identifier
+	IsOptional bool
 }
 
 func (de *DotExpression) expressionNode()      {}

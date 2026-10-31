@@ -47,6 +47,7 @@ const (
 	AND    = "&&"
 	OR     = "||"
 	COALESCE = "??"
+	OPT_DOT  = "?."
 
 	// Bitwise Operators
 	BIT_AND = "&"

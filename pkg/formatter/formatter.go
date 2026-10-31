@@ -295,7 +295,11 @@ func (f *Formatter) Format(node ast.Node) string {
 		return fmt.Sprintf("%s%s", n.Operator, f.Format(n.Right))
 
 	case *ast.DotExpression:
-		return fmt.Sprintf("%s.%s", f.Format(n.Left), n.Property.Value)
+		op := "."
+		if n.IsOptional {
+			op = "?."
+		}
+		return fmt.Sprintf("%s%s%s", f.Format(n.Left), op, n.Property.Value)
 
 	case *ast.TypeAssertionExpression:
 		return fmt.Sprintf("%s.(%s)", f.Format(n.Left), n.Type)

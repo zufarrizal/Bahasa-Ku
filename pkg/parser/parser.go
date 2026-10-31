@@ -50,6 +50,7 @@ var precedences = map[token.TokenType]int{
 	token.MOD:       PRODUCT,
 	token.LPAREN:    CALL,
 	token.DOT:       INDEX,
+	token.OPT_DOT:   INDEX,
 	token.LBRACKET:  INDEX,
 }
 
@@ -893,7 +894,10 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 			left = p.parseCallExpression(left)
 		case token.DOT:
 			p.nextToken()
-			left = p.parseDotExpression(left)
+			left = p.parseDotExpression(left, false)
+		case token.OPT_DOT:
+			p.nextToken()
+			left = p.parseDotExpression(left, true)
 		case token.LBRACKET:
 			p.nextToken()
 			left = p.parseIndexExpression(left)
@@ -984,11 +988,11 @@ func (p *Parser) parseCallExpression(fn ast.Expression) ast.Expression {
 	return call
 }
 
-func (p *Parser) parseDotExpression(left ast.Expression) ast.Expression {
+func (p *Parser) parseDotExpression(left ast.Expression, isOptional bool) ast.Expression {
 	tok := p.curToken
 
 	// Cek apakah bentuk Type Assertion atau Type Switch: x.(Tipe) atau x.(tipe)
-	if p.peekTokenIs(token.LPAREN) {
+	if !isOptional && p.peekTokenIs(token.LPAREN) {
 		p.nextToken() // ke '('
 		p.nextToken() // ke identifier tipe atau kata kunci 'tipe'
 		typeName := p.curToken.Literal
@@ -1006,7 +1010,7 @@ func (p *Parser) parseDotExpression(left ast.Expression) ast.Expression {
 
 	p.nextToken()
 	propName := p.curToken.Literal
-	return &ast.DotExpression{Token: tok, Left: left, Property: &ast.Identifier{Token: p.curToken, Value: propName}}
+	return &ast.DotExpression{Token: tok, Left: left, Property: &ast.Identifier{Token: p.curToken, Value: propName}, IsOptional: isOptional}
 }
 
 func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {

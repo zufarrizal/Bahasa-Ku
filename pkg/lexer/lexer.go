@@ -210,6 +210,10 @@ func (l *Lexer) NextToken() token.Token {
 			ch := l.ch
 			l.readChar()
 			tok = token.Token{Type: token.COALESCE, Literal: string(ch) + string(l.ch), Line: curLine, Column: curCol}
+		} else if l.peekChar() == '.' {
+			ch := l.ch
+			l.readChar()
+			tok = token.Token{Type: token.OPT_DOT, Literal: string(ch) + string(l.ch), Line: curLine, Column: curCol}
 		} else {
 			tok = token.Token{Type: token.ILLEGAL, Literal: string(l.ch), Line: curLine, Column: curCol}
 		}
