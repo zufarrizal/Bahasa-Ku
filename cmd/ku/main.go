@@ -275,8 +275,8 @@ func printHelp() {
   ku jalankan <berkas.ku>  Menjalankan berkas kode .ku
   ku uji [berkas/_uji.ku]  Menjalankan pengujian unit test otomatis
   ku tolakUkur [berkas]    Menjalankan pengujian tolok ukur performa (benchmark)
-  ku rapi [-w] <berkas.ku> Merapikan format kode secara otomatis (mirip gofmt)
-  ku kompilasi <berkas.ku> [-gui] [-ikon ikon.ico] [-native] [-o keluar.exe]  Kompilasi langsung ke biner mandiri (.exe)
+  ku rapi [-w] [-c] <berkas|folder> Merapikan format kode (-w: simpan, -c: periksa CI/CD)
+  ku kompilasi <berkas.ku> [-gui] [-ikon ikon.ico] [-native] [-o keluar.exe]  Kompilasi mandiri (.exe)
   ku inisialisasi <nama_folder> [web|desktop|cli]  Membuat proyek baru beserta berkas ku.mod
   ku buat <berkas.ku>      Mengonversi berkas .ku ke .go murni
   ku versi                 Menampilkan versi
@@ -286,6 +286,7 @@ Contoh:
   ku jalankan contoh/halo.ku
   ku uji
   ku rapi -w contoh/halo.ku
+  ku rapi -c .
   ku kompilasi contoh/halo.ku -o HaloApp.exe
   ku kompilasi -gui -ikon aset/ku.ico contoh/desktop_native.ku -o Aplikasi.exe
   ku inisiasi web portal-berita

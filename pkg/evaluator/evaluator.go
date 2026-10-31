@@ -9,6 +9,7 @@ import (
 	"crypto/md5"
 	"crypto/rand"
 	"crypto/sha256"
+	"crypto/sha512"
 	"database/sql"
 	"encoding/base64"
 	"encoding/csv"
@@ -2109,6 +2110,42 @@ func InitGlobalEnvironment() *Environment {
 			return &Integer{Value: 0}
 		},
 	}
+	sistemMap.Pairs["arsitektur"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			return &String{Value: runtime.GOARCH}
+		},
+	}
+	sistemMap.Pairs["sistemOperasi"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			return &String{Value: runtime.GOOS}
+		},
+	}
+	sistemMap.Pairs["namaHost"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			host, err := os.Hostname()
+			if err != nil {
+				return &String{Value: "localhost"}
+			}
+			return &String{Value: host}
+		},
+	}
+	sistemMap.Pairs["pid"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			return &Integer{Value: int64(os.Getpid())}
+		},
+	}
+	sistemMap.Pairs["keluar"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			code := 0
+			if len(args) > 0 {
+				if i, ok := args[0].(*Integer); ok {
+					code = int(i.Value)
+				}
+			}
+			os.Exit(code)
+			return NIL
+		},
+	}
 	env.Set("sistem", sistemMap)
 
 	// Modul jaringan (HTTP Client / Fetch API)
@@ -2455,6 +2492,32 @@ func InitGlobalEnvironment() *Environment {
 			}
 			defer f.Close()
 			h := sha256.New()
+			if _, err := io.Copy(h, f); err != nil {
+				return &String{Value: ""}
+			}
+			return &String{Value: hex.EncodeToString(h.Sum(nil))}
+		},
+	}
+	kriptoMap.Pairs["sha512"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			h := sha512.Sum512([]byte(args[0].Inspect()))
+			return &String{Value: hex.EncodeToString(h[:])}
+		},
+	}
+	kriptoMap.Pairs["sha512Berkas"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			f, err := os.Open(args[0].Inspect())
+			if err != nil {
+				return &String{Value: ""}
+			}
+			defer f.Close()
+			h := sha512.New()
 			if _, err := io.Copy(h, f); err != nil {
 				return &String{Value: ""}
 			}
