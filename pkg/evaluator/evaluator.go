@@ -222,6 +222,7 @@ type Environment struct {
 	deferStack []func()
 	iotaVal    int64
 	panicVal   Object
+	mu         sync.RWMutex
 }
 
 func NewEnvironment() *Environment {
@@ -238,7 +239,9 @@ func NewEnclosedEnvironment(outer *Environment) *Environment {
 }
 
 func (e *Environment) Get(name string) (Object, bool) {
+	e.mu.RLock()
 	obj, ok := e.store[name]
+	e.mu.RUnlock()
 	if !ok && e.outer != nil {
 		obj, ok = e.outer.Get(name)
 	}
@@ -246,15 +249,20 @@ func (e *Environment) Get(name string) (Object, bool) {
 }
 
 func (e *Environment) Set(name string, val Object) Object {
+	e.mu.Lock()
 	e.store[name] = val
+	e.mu.Unlock()
 	return val
 }
 
 func (e *Environment) Update(name string, val Object) bool {
+	e.mu.Lock()
 	if _, ok := e.store[name]; ok {
 		e.store[name] = val
+		e.mu.Unlock()
 		return true
 	}
+	e.mu.Unlock()
 	if e.outer != nil {
 		return e.outer.Update(name, val)
 	}
@@ -262,6 +270,8 @@ func (e *Environment) Update(name string, val Object) bool {
 }
 
 func (e *Environment) GetStore() map[string]Object {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
 	return e.store
 }
 
@@ -4921,7 +4931,171 @@ func InitGlobalEnvironment() *Environment {
 			return FALSE
 		},
 	}
+
+	validasiMap.Pairs["periksa"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			// validasi.periksa(dataMap, aturanMap)
+			// Aturan: "wajib", "email", "min:3", "maks:50", "numerik", "alfabet"
+			if len(args) < 2 {
+				res := &Map{Pairs: make(map[string]Object)}
+				res.Pairs["valid"] = FALSE
+				res.Pairs["galat"] = &Map{Pairs: make(map[string]Object)}
+				return res
+			}
+
+			dataMap, ok1 := args[0].(*Map)
+			aturanMap, ok2 := args[1].(*Map)
+			if !ok1 || !ok2 {
+				res := &Map{Pairs: make(map[string]Object)}
+				res.Pairs["valid"] = FALSE
+				res.Pairs["galat"] = &Map{Pairs: make(map[string]Object)}
+				return res
+			}
+
+			galatMap := &Map{Pairs: make(map[string]Object)}
+			isValid := true
+
+			for fieldName, ruleObj := range aturanMap.Pairs {
+				rulesStr := ruleObj.Inspect()
+				rules := strings.Split(rulesStr, "|")
+
+				valObj, fieldExists := dataMap.Pairs[fieldName]
+				valStr := ""
+				if fieldExists && valObj != nil && valObj != NIL {
+					valStr = valObj.Inspect()
+				}
+
+				for _, r := range rules {
+					r = strings.TrimSpace(r)
+					if r == "wajib" || r == "required" {
+						if !fieldExists || valObj == nil || valObj == NIL || strings.TrimSpace(valStr) == "" {
+							galatMap.Pairs[fieldName] = &String{Value: fmt.Sprintf("%s wajib diisi", fieldName)}
+							isValid = false
+							break
+						}
+					}
+
+					// Jika kosong dan bukan wajib, lewati aturan format berikutnya
+					if (!fieldExists || valObj == nil || valObj == NIL || strings.TrimSpace(valStr) == "") {
+						continue
+					}
+
+					if r == "email" {
+						if !validasiEmailRegex.MatchString(valStr) {
+							galatMap.Pairs[fieldName] = &String{Value: fmt.Sprintf("%s harus berupa format email yang sah", fieldName)}
+							isValid = false
+							break
+						}
+					} else if r == "numerik" {
+						isNum := true
+						for _, ch := range valStr {
+							if !unicode.IsDigit(ch) {
+								isNum = false
+								break
+							}
+						}
+						if !isNum {
+							galatMap.Pairs[fieldName] = &String{Value: fmt.Sprintf("%s harus berupa angka", fieldName)}
+							isValid = false
+							break
+						}
+					} else if r == "alfabet" {
+						isAlpha := true
+						for _, ch := range valStr {
+							if !unicode.IsLetter(ch) {
+								isAlpha = false
+								break
+							}
+						}
+						if !isAlpha {
+							galatMap.Pairs[fieldName] = &String{Value: fmt.Sprintf("%s harus berupa huruf alfabet", fieldName)}
+							isValid = false
+							break
+						}
+					} else if strings.HasPrefix(r, "min:") {
+						minLenStr := strings.TrimPrefix(r, "min:")
+						if minLen, err := strconv.Atoi(minLenStr); err == nil {
+							if len([]rune(valStr)) < minLen {
+								galatMap.Pairs[fieldName] = &String{Value: fmt.Sprintf("%s minimal %d karakter", fieldName, minLen)}
+								isValid = false
+								break
+							}
+						}
+					} else if strings.HasPrefix(r, "maks:") {
+						maxLenStr := strings.TrimPrefix(r, "maks:")
+						if maxLen, err := strconv.Atoi(maxLenStr); err == nil {
+							if len([]rune(valStr)) > maxLen {
+								galatMap.Pairs[fieldName] = &String{Value: fmt.Sprintf("%s maksimal %d karakter", fieldName, maxLen)}
+								isValid = false
+								break
+							}
+						}
+					}
+				}
+			}
+
+			resMap := &Map{Pairs: make(map[string]Object)}
+			resMap.Pairs["valid"] = &Boolean{Value: isValid}
+			resMap.Pairs["galat"] = galatMap
+			return resMap
+		},
+	}
 	env.Set("validasi", validasiMap)
+
+	// Modul pekerja (Worker Pool & Antrean Tugas Paralel)
+	pekerjaMap := &Map{Pairs: make(map[string]Object)}
+	pekerjaMap.Pairs["kolam"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			// pekerja.kolam(jumlahPekerja, fungsiPenangan)
+			if len(args) < 2 {
+				return NIL
+			}
+			numWorkers := 4
+			if i, ok := args[0].(*Integer); ok && i.Value > 0 {
+				numWorkers = int(i.Value)
+			}
+			handlerFn, ok := args[1].(*Function)
+			if !ok {
+				return NIL
+			}
+
+			taskChan := make(chan Object, 1000)
+			var wg sync.WaitGroup
+			var once sync.Once
+
+			// Mulai pool worker
+			for w := 0; w < numWorkers; w++ {
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					for task := range taskChan {
+						applyFunction(handlerFn, []Object{task}, env)
+					}
+				}()
+			}
+
+			poolMap := &Map{Pairs: make(map[string]Object)}
+			poolMap.Pairs["kirim"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					if len(mArgs) > 0 {
+						taskChan <- mArgs[0]
+					}
+					return TRUE
+				},
+			}
+			poolMap.Pairs["tunggu"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					once.Do(func() {
+						close(taskChan)
+					})
+					wg.Wait()
+					return TRUE
+				},
+			}
+			return poolMap
+		},
+	}
+	env.Set("pekerja", pekerjaMap)
 
 	// Modul catatan (Logging Terstruktur dengan Timestamp)
 	catatanMap := &Map{Pairs: make(map[string]Object)}
