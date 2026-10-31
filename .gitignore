@@ -11,4 +11,5 @@ demo_sqlite/
 *.env
 masalah/
 proyek-mvp/
+tampilan/
 *.vsix
