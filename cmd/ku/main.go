@@ -162,7 +162,7 @@ func main() {
 		fmt.Println("Bahasa Ku versi lokal:", version)
 		checkLatestRelease(false)
 
-	case "jalankan":
+	case "jalankan", "j", "run":
 		debugMode := false
 		fileName := ""
 		for _, a := range args[1:] {
@@ -185,7 +185,7 @@ func main() {
 		}
 		runFile(fileName, debugMode)
 
-	case "awasi", "watch":
+	case "awasi", "watch", "a":
 		target := "."
 		if len(args) >= 2 && !strings.HasPrefix(args[1], "-") {
 			target = args[1]
@@ -211,12 +211,7 @@ func main() {
 		}
 		transpileFile(args[1], target)
 
-	case "kompilasi", "build":
-		if len(args) < 2 {
-			fmt.Println("Galat: Harap tentukan nama berkas .ku yang ingin dikompilasi.")
-			fmt.Println("Contoh: ku kompilasi [-gui] [-ikon <ikon.ico>] app.ku [-o app.exe]")
-			os.Exit(1)
-		}
+	case "kompilasi", "build", "k":
 		isGUI := false
 		sourceFile := ""
 		outputExe := ""
@@ -244,9 +239,17 @@ func main() {
 			}
 		}
 
+		// Compact compile: Jika tanpa berkas sumber, otomatis cari utama.ku di direktori aktif
 		if sourceFile == "" {
-			fmt.Println("Galat: Berkas sumber .ku tidak ditentukan.")
-			os.Exit(1)
+			if _, err := os.Stat("utama.ku"); err == nil {
+				sourceFile = "utama.ku"
+			} else if _, err := os.Stat("main.ku"); err == nil {
+				sourceFile = "main.ku"
+			} else {
+				fmt.Println("Galat: Berkas sumber .ku tidak ditentukan (atau jalankan di folder yang memiliki 'utama.ku').")
+				fmt.Println("Contoh: ku kompilasi [-gui] [-ikon <ikon.ico>] [app.ku] [-o app.exe]")
+				os.Exit(1)
+			}
 		}
 
 		compileDirectToBinary(sourceFile, outputExe, isGUI, customIcon, useNative)
@@ -297,7 +300,7 @@ func main() {
 		}
 		formatKuFile(targetFile, writeBack, checkOnly)
 
-	case "uji", "test":
+	case "uji", "test", "u":
 		targetPath := "."
 		if len(args) >= 2 {
 			targetPath = args[1]

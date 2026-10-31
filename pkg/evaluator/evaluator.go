@@ -1196,6 +1196,91 @@ func InitGlobalEnvironment() *Environment {
 			},
 		}
 
+		respMap.Pairs["sukses"] = &Builtin{
+			Fn: func(mArgs ...Object) Object {
+				// respon.sukses([data], [pesan]) -> HTTP 200 JSON { "sukses": benar, "data": ..., "pesan": ... }
+				var dataObj Object = NIL
+				pesan := "Operasi berhasil"
+				if len(mArgs) >= 1 {
+					dataObj = mArgs[0]
+				}
+				if len(mArgs) >= 2 {
+					pesan = mArgs[1].Inspect()
+				}
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				out := map[string]interface{}{
+					"sukses": true,
+					"pesan":  pesan,
+					"data":   convertKuToGoObject(dataObj),
+				}
+				b, _ := json.Marshal(out)
+				w.Write(b)
+				return respMap
+			},
+		}
+
+		respMap.Pairs["gagal"] = &Builtin{
+			Fn: func(mArgs ...Object) Object {
+				// respon.gagal(pesan, [kodeStatus]) -> HTTP 400/500 JSON { "sukses": salah, "galat": ... }
+				pesan := "Terjadi kesalahan"
+				code := http.StatusBadRequest
+				if len(mArgs) >= 1 {
+					pesan = mArgs[0].Inspect()
+				}
+				if len(mArgs) >= 2 {
+					if c, ok := mArgs[1].(*Integer); ok {
+						code = int(c.Value)
+					}
+				}
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(code)
+				out := map[string]interface{}{
+					"sukses": false,
+					"galat":  pesan,
+				}
+				b, _ := json.Marshal(out)
+				w.Write(b)
+				return respMap
+			},
+		}
+
+		respMap.Pairs["tidakDitemukan"] = &Builtin{
+			Fn: func(mArgs ...Object) Object {
+				pesan := "Sumber daya tidak ditemukan"
+				if len(mArgs) >= 1 {
+					pesan = mArgs[0].Inspect()
+				}
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusNotFound)
+				out := map[string]interface{}{
+					"sukses": false,
+					"galat":  pesan,
+				}
+				b, _ := json.Marshal(out)
+				w.Write(b)
+				return respMap
+			},
+		}
+
+		respMap.Pairs["dilarang"] = &Builtin{
+			Fn: func(mArgs ...Object) Object {
+				pesan := "Akses ditolak"
+				if len(mArgs) >= 1 {
+					pesan = mArgs[0].Inspect()
+				}
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusForbidden)
+				out := map[string]interface{}{
+					"sukses": false,
+					"galat":  pesan,
+				}
+				b, _ := json.Marshal(out)
+				w.Write(b)
+				return respMap
+			},
+		}
+
 		// Jalankan rantai middleware jika ada
 		var executeHandler func(mwIndex int)
 		executeHandler = func(mwIndex int) {
@@ -5588,7 +5673,7 @@ func InitGlobalEnvironment() *Environment {
 	}
 	env.Set("peristiwa", peristiwaMap)
 
-	// Modul catatan (Logging Terstruktur dengan Timestamp)
+	// Modul catatan (Logging Terstruktur dengan Timestamp & Pewarnaan ANSI Otomatis)
 	catatanMap := &Map{Pairs: make(map[string]Object)}
 	catatanMap.Pairs["info"] = &Builtin{
 		Fn: func(args ...Object) Object {
@@ -5597,7 +5682,7 @@ func InitGlobalEnvironment() *Environment {
 			for _, a := range args {
 				items = append(items, a.Inspect())
 			}
-			fmt.Printf("[INFO] %s: %s\n", ts, strings.Join(items, " "))
+			fmt.Printf("\033[32m[INFO]\033[0m \033[90m%s\033[0m: %s\n", ts, strings.Join(items, " "))
 			return NIL
 		},
 	}
@@ -5608,7 +5693,7 @@ func InitGlobalEnvironment() *Environment {
 			for _, a := range args {
 				items = append(items, a.Inspect())
 			}
-			fmt.Printf("[PERINGATAN] %s: %s\n", ts, strings.Join(items, " "))
+			fmt.Printf("\033[33m[PERINGATAN]\033[0m \033[90m%s\033[0m: %s\n", ts, strings.Join(items, " "))
 			return NIL
 		},
 	}
@@ -5619,7 +5704,18 @@ func InitGlobalEnvironment() *Environment {
 			for _, a := range args {
 				items = append(items, a.Inspect())
 			}
-			fmt.Printf("[GALAT] %s: %s\n", ts, strings.Join(items, " "))
+			fmt.Printf("\033[31m[GALAT]\033[0m \033[90m%s\033[0m: %s\n", ts, strings.Join(items, " "))
+			return NIL
+		},
+	}
+	catatanMap.Pairs["debug"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			ts := time.Now().Format("2006-01-02 15:04:05")
+			items := []string{}
+			for _, a := range args {
+				items = append(items, a.Inspect())
+			}
+			fmt.Printf("\033[36m[DEBUG]\033[0m \033[90m%s\033[0m: %s\n", ts, strings.Join(items, " "))
 			return NIL
 		},
 	}
