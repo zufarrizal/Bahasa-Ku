@@ -16,6 +16,12 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"image"
+	"image/color"
+	"image/draw"
+	"image/gif"
+	"image/jpeg"
+	"image/png"
 	"io"
 	"math"
 	mrand "math/rand"
@@ -63,7 +69,21 @@ const (
 	PANIC_OBJ        = "PANIC"
 	CHANNEL_OBJ      = "CHANNEL"
 	INTERFACE_DEF_OBJ = "INTERFACE_DEF"
+	IMAGE_OBJ        = "IMAGE"
 )
+
+type NativeImageObject struct {
+	Img image.Image
+}
+
+func (n *NativeImageObject) Type() ObjectType { return IMAGE_OBJ }
+func (n *NativeImageObject) Inspect() string {
+	if n.Img == nil {
+		return "gambar(kosong)"
+	}
+	b := n.Img.Bounds()
+	return fmt.Sprintf("gambar(%dx%d)", b.Dx(), b.Dy())
+}
 
 type ChannelObject struct {
 	Ch chan Object
@@ -6811,6 +6831,202 @@ func InitGlobalEnvironment() *Environment {
 		},
 	}
 	env.Set("jadwal", jadwalMap)
+
+	// Modul gambar (Pemrosesan Gambar Native)
+	gambarMap := &Map{Pairs: make(map[string]Object)}
+
+	// Helper untuk membungkus image.Image ke Object
+	var wrapImageObject func(img image.Image) *Map
+	wrapImageObject = func(img image.Image) *Map {
+		b := img.Bounds()
+		objMap := &Map{Pairs: make(map[string]Object)}
+		objMap.Pairs["lebar"] = &Integer{Value: int64(b.Dx())}
+		objMap.Pairs["tinggi"] = &Integer{Value: int64(b.Dy())}
+		objMap.Pairs["_raw"] = &NativeImageObject{Img: img}
+
+		objMap.Pairs["potong"] = &Builtin{
+			Fn: func(args ...Object) Object {
+				// img.potong(x, y, lebar, tinggi)
+				if len(args) < 4 {
+					return objMap
+				}
+				x, ok1 := args[0].(*Integer)
+				y, ok2 := args[1].(*Integer)
+				w, ok3 := args[2].(*Integer)
+				h, ok4 := args[3].(*Integer)
+				if !ok1 || !ok2 || !ok3 || !ok4 {
+					return objMap
+				}
+				rect := image.Rect(int(x.Value), int(y.Value), int(x.Value+w.Value), int(y.Value+h.Value))
+				dst := image.NewRGBA(image.Rect(0, 0, int(w.Value), int(h.Value)))
+				draw.Draw(dst, dst.Bounds(), img, rect.Min, draw.Src)
+				return wrapImageObject(dst)
+			},
+		}
+
+		objMap.Pairs["ubahUkuran"] = &Builtin{
+			Fn: func(args ...Object) Object {
+				// img.ubahUkuran(targetLebar, targetTinggi) menggunakan nearest-neighbor / resampling sederhana
+				if len(args) < 2 {
+					return objMap
+				}
+				twObj, ok1 := args[0].(*Integer)
+				thObj, ok2 := args[1].(*Integer)
+				if !ok1 || !ok2 || twObj.Value <= 0 || thObj.Value <= 0 {
+					return objMap
+				}
+				dstW := int(twObj.Value)
+				dstH := int(thObj.Value)
+				srcB := img.Bounds()
+				srcW := srcB.Dx()
+				srcH := srcB.Dy()
+				dst := image.NewRGBA(image.Rect(0, 0, dstW, dstH))
+
+				for dy := 0; dy < dstH; dy++ {
+					for dx := 0; dx < dstW; dx++ {
+						sx := srcB.Min.X + (dx * srcW) / dstW
+						sy := srcB.Min.Y + (dy * srcH) / dstH
+						dst.Set(dx, dy, img.At(sx, sy))
+					}
+				}
+				return wrapImageObject(dst)
+			},
+		}
+
+		objMap.Pairs["simpan"] = &Builtin{
+			Fn: func(args ...Object) Object {
+				// img.simpan(path, [kualitas])
+				if len(args) < 1 {
+					return FALSE
+				}
+				pathObj, ok := args[0].(*String)
+				if !ok {
+					return FALSE
+				}
+				outPath := pathObj.Value
+				f, err := os.Create(outPath)
+				if err != nil {
+					return FALSE
+				}
+				defer f.Close()
+
+				ext := strings.ToLower(filepath.Ext(outPath))
+				switch ext {
+				case ".jpg", ".jpeg":
+					quality := 85
+					if len(args) >= 2 {
+						if q, ok := args[1].(*Integer); ok {
+							quality = int(q.Value)
+						}
+					}
+					err = jpeg.Encode(f, img, &jpeg.Options{Quality: quality})
+				case ".gif":
+					err = gif.Encode(f, img, nil)
+				default: // .png dan default
+					err = png.Encode(f, img)
+				}
+				if err != nil {
+					return FALSE
+				}
+				return TRUE
+			},
+		}
+
+		return objMap
+	}
+
+	gambarMap.Pairs["buka"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return NIL
+			}
+			pathObj, ok := args[0].(*String)
+			if !ok {
+				return NIL
+			}
+			f, err := os.Open(pathObj.Value)
+			if err != nil {
+				return NIL
+			}
+			defer f.Close()
+
+			img, _, err := image.Decode(f)
+			if err != nil {
+				return NIL
+			}
+			return wrapImageObject(img)
+		},
+	}
+
+	gambarMap.Pairs["info"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return NIL
+			}
+			pathObj, ok := args[0].(*String)
+			if !ok {
+				return NIL
+			}
+			f, err := os.Open(pathObj.Value)
+			if err != nil {
+				return NIL
+			}
+			defer f.Close()
+
+			cfg, format, err := image.DecodeConfig(f)
+			if err != nil {
+				return NIL
+			}
+			res := &Map{Pairs: make(map[string]Object)}
+			res.Pairs["lebar"] = &Integer{Value: int64(cfg.Width)}
+			res.Pairs["tinggi"] = &Integer{Value: int64(cfg.Height)}
+			res.Pairs["format"] = &String{Value: format}
+			return res
+		},
+	}
+
+	gambarMap.Pairs["buat"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			// gambar.buat(lebar, tinggi, [warnaHex])
+			if len(args) < 2 {
+				return NIL
+			}
+			wObj, ok1 := args[0].(*Integer)
+			hObj, ok2 := args[1].(*Integer)
+			if !ok1 || !ok2 || wObj.Value <= 0 || hObj.Value <= 0 {
+				return NIL
+			}
+			w := int(wObj.Value)
+			h := int(hObj.Value)
+			img := image.NewRGBA(image.Rect(0, 0, w, h))
+
+			bgColor := color.RGBA{0, 0, 0, 0}
+			if len(args) >= 3 {
+				if hexObj, ok := args[2].(*String); ok {
+					hexStr := strings.TrimPrefix(hexObj.Value, "#")
+					if len(hexStr) == 6 {
+						r, _ := strconv.ParseUint(hexStr[0:2], 16, 8)
+						g, _ := strconv.ParseUint(hexStr[2:4], 16, 8)
+						b, _ := strconv.ParseUint(hexStr[4:6], 16, 8)
+						bgColor = color.RGBA{uint8(r), uint8(g), uint8(b), 255}
+					} else if len(hexStr) == 8 {
+						r, _ := strconv.ParseUint(hexStr[0:2], 16, 8)
+						g, _ := strconv.ParseUint(hexStr[2:4], 16, 8)
+						b, _ := strconv.ParseUint(hexStr[4:6], 16, 8)
+						a, _ := strconv.ParseUint(hexStr[6:8], 16, 8)
+						bgColor = color.RGBA{uint8(r), uint8(g), uint8(b), uint8(a)}
+					}
+				}
+			}
+			for y := 0; y < h; y++ {
+				for x := 0; x < w; x++ {
+					img.Set(x, y, bgColor)
+				}
+			}
+			return wrapImageObject(img)
+		},
+	}
+	env.Set("gambar", gambarMap)
 
 	// Modul arsip (Kompresi & Dekompresi ZIP)
 	arsipMap := &Map{Pairs: make(map[string]Object)}
