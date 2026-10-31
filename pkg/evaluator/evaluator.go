@@ -5097,6 +5097,226 @@ func InitGlobalEnvironment() *Environment {
 	}
 	env.Set("pekerja", pekerjaMap)
 
+	parseDurasiWaktuHelper := func(obj Object) (time.Duration, bool) {
+		switch v := obj.(type) {
+		case *Integer:
+			return time.Duration(v.Value) * time.Millisecond, true
+		case *Float:
+			return time.Duration(v.Value * float64(time.Millisecond)), true
+		case *String:
+			str := strings.TrimSpace(strings.ToLower(v.Value))
+			// Dukung format bahasa Indonesia: "500ms", "5d", "5detik", "10m", "10menit", "2j", "2jam"
+			if strings.HasSuffix(str, "ms") || strings.HasSuffix(str, "milidetik") {
+				numStr := strings.TrimSuffix(strings.TrimSuffix(str, "milidetik"), "ms")
+				if val, err := strconv.ParseFloat(strings.TrimSpace(numStr), 64); err == nil {
+					return time.Duration(val * float64(time.Millisecond)), true
+				}
+			} else if strings.HasSuffix(str, "detik") || strings.HasSuffix(str, "d") || strings.HasSuffix(str, "s") {
+				numStr := strings.TrimSuffix(strings.TrimSuffix(strings.TrimSuffix(str, "detik"), "d"), "s")
+				if val, err := strconv.ParseFloat(strings.TrimSpace(numStr), 64); err == nil {
+					return time.Duration(val * float64(time.Second)), true
+				}
+			} else if strings.HasSuffix(str, "menit") || strings.HasSuffix(str, "m") {
+				numStr := strings.TrimSuffix(strings.TrimSuffix(str, "menit"), "m")
+				if val, err := strconv.ParseFloat(strings.TrimSpace(numStr), 64); err == nil {
+					return time.Duration(val * float64(time.Minute)), true
+				}
+			} else if strings.HasSuffix(str, "jam") || strings.HasSuffix(str, "j") || strings.HasSuffix(str, "h") {
+				numStr := strings.TrimSuffix(strings.TrimSuffix(strings.TrimSuffix(str, "jam"), "j"), "h")
+				if val, err := strconv.ParseFloat(strings.TrimSpace(numStr), 64); err == nil {
+					return time.Duration(val * float64(time.Hour)), true
+				}
+			}
+			// Standar Go duration (e.g. 1h30m, 5s)
+			if d, err := time.ParseDuration(str); err == nil {
+				return d, true
+			}
+			if ms, err := strconv.ParseInt(str, 10, 64); err == nil {
+				return time.Duration(ms) * time.Millisecond, true
+			}
+		}
+		return 0, false
+	}
+
+	// Modul singgahan (In-Memory Thread-Safe Cache with TTL & LRU-friendly ala Go bigcache/sync.Map)
+	singgahanMap := &Map{Pairs: make(map[string]Object)}
+	type cacheItem struct {
+		val       Object
+		expiresAt time.Time
+		hasTTL    bool
+	}
+	var cacheStore = make(map[string]cacheItem)
+	var cacheMu sync.RWMutex
+
+	// Background sweeper untuk membersihkan item kedaluwarsa secara berkala
+	go func() {
+		ticker := time.NewTicker(30 * time.Second)
+		defer ticker.Stop()
+		for range ticker.C {
+			cacheMu.Lock()
+			now := time.Now()
+			for k, item := range cacheStore {
+				if item.hasTTL && now.After(item.expiresAt) {
+					delete(cacheStore, k)
+				}
+			}
+			cacheMu.Unlock()
+		}
+	}()
+
+	singgahanMap.Pairs["taruh"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			// singgahan.taruh(kunci, nilai, [durasiMsAtauDetik])
+			if len(args) < 2 {
+				return FALSE
+			}
+			key := args[0].Inspect()
+			val := args[1]
+			hasTTL := false
+			var expiresAt time.Time
+
+			if len(args) >= 3 {
+				ttlDur, ok := parseDurasiWaktuHelper(args[2])
+				if ok && ttlDur > 0 {
+					hasTTL = true
+					expiresAt = time.Now().Add(ttlDur)
+				}
+			}
+
+			cacheMu.Lock()
+			cacheStore[key] = cacheItem{
+				val:       val,
+				expiresAt: expiresAt,
+				hasTTL:    hasTTL,
+			}
+			cacheMu.Unlock()
+			return TRUE
+		},
+	}
+
+	singgahanMap.Pairs["ambil"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			// singgahan.ambil(kunci, [bawaan])
+			if len(args) < 1 {
+				return NIL
+			}
+			key := args[0].Inspect()
+			var defaultVal Object = NIL
+			if len(args) >= 2 {
+				defaultVal = args[1]
+			}
+
+			cacheMu.Lock()
+			item, exists := cacheStore[key]
+			if !exists {
+				cacheMu.Unlock()
+				return defaultVal
+			}
+			if item.hasTTL && time.Now().After(item.expiresAt) {
+				delete(cacheStore, key)
+				cacheMu.Unlock()
+				return defaultVal
+			}
+			cacheMu.Unlock()
+			return item.val
+		},
+	}
+
+	singgahanMap.Pairs["ada"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return FALSE
+			}
+			key := args[0].Inspect()
+			cacheMu.Lock()
+			item, exists := cacheStore[key]
+			if !exists {
+				cacheMu.Unlock()
+				return FALSE
+			}
+			if item.hasTTL && time.Now().After(item.expiresAt) {
+				delete(cacheStore, key)
+				cacheMu.Unlock()
+				return FALSE
+			}
+			cacheMu.Unlock()
+			return TRUE
+		},
+	}
+
+	singgahanMap.Pairs["hapus"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return FALSE
+			}
+			key := args[0].Inspect()
+			cacheMu.Lock()
+			delete(cacheStore, key)
+			cacheMu.Unlock()
+			return TRUE
+		},
+	}
+
+	singgahanMap.Pairs["bersihkan"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			cacheMu.Lock()
+			cacheStore = make(map[string]cacheItem)
+			cacheMu.Unlock()
+			return TRUE
+		},
+	}
+
+	singgahanMap.Pairs["ukuran"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			cacheMu.RLock()
+			defer cacheMu.RUnlock()
+			return &Integer{Value: int64(len(cacheStore))}
+		},
+	}
+
+	singgahanMap.Pairs["ingat"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			// singgahan.ingat(kunci, durasiTTL, fungsiPenghasil)
+			// Pola memoization cache-aside Go
+			if len(args) < 3 {
+				return NIL
+			}
+			key := args[0].Inspect()
+			fn, isFn := args[2].(*Function)
+			if !isFn {
+				return NIL
+			}
+
+			cacheMu.Lock()
+			item, exists := cacheStore[key]
+			if exists && (!item.hasTTL || time.Now().Before(item.expiresAt)) {
+				cacheMu.Unlock()
+				return item.val
+			}
+			cacheMu.Unlock()
+
+			// Hitung nilai baru
+			freshVal := applyFunction(fn, []Object{}, env)
+			ttlDur, ok := parseDurasiWaktuHelper(args[1])
+			hasTTL := ok && ttlDur > 0
+			var expiresAt time.Time
+			if hasTTL {
+				expiresAt = time.Now().Add(ttlDur)
+			}
+
+			cacheMu.Lock()
+			cacheStore[key] = cacheItem{
+				val:       freshVal,
+				expiresAt: expiresAt,
+				hasTTL:    hasTTL,
+			}
+			cacheMu.Unlock()
+
+			return freshVal
+		},
+	}
+	env.Set("singgahan", singgahanMap)
+
 	// Modul catatan (Logging Terstruktur dengan Timestamp)
 	catatanMap := &Map{Pairs: make(map[string]Object)}
 	catatanMap.Pairs["info"] = &Builtin{
@@ -7257,54 +7477,13 @@ func InitGlobalEnvironment() *Environment {
 	env.Set("waktu", waktuMap)
 
 	// Modul jadwal (Task Scheduling & Cron Sederhana)
-	parseDurasiWaktu := func(obj Object) (time.Duration, bool) {
-		switch v := obj.(type) {
-		case *Integer:
-			return time.Duration(v.Value) * time.Millisecond, true
-		case *Float:
-			return time.Duration(v.Value * float64(time.Millisecond)), true
-		case *String:
-			str := strings.TrimSpace(strings.ToLower(v.Value))
-			// Dukung format bahasa Indonesia: "500ms", "5d", "5detik", "10m", "10menit", "2j", "2jam"
-			if strings.HasSuffix(str, "ms") || strings.HasSuffix(str, "milidetik") {
-				numStr := strings.TrimSuffix(strings.TrimSuffix(str, "milidetik"), "ms")
-				if val, err := strconv.ParseFloat(strings.TrimSpace(numStr), 64); err == nil {
-					return time.Duration(val * float64(time.Millisecond)), true
-				}
-			} else if strings.HasSuffix(str, "detik") || strings.HasSuffix(str, "d") || strings.HasSuffix(str, "s") {
-				numStr := strings.TrimSuffix(strings.TrimSuffix(strings.TrimSuffix(str, "detik"), "d"), "s")
-				if val, err := strconv.ParseFloat(strings.TrimSpace(numStr), 64); err == nil {
-					return time.Duration(val * float64(time.Second)), true
-				}
-			} else if strings.HasSuffix(str, "menit") || strings.HasSuffix(str, "m") {
-				numStr := strings.TrimSuffix(strings.TrimSuffix(str, "menit"), "m")
-				if val, err := strconv.ParseFloat(strings.TrimSpace(numStr), 64); err == nil {
-					return time.Duration(val * float64(time.Minute)), true
-				}
-			} else if strings.HasSuffix(str, "jam") || strings.HasSuffix(str, "j") || strings.HasSuffix(str, "h") {
-				numStr := strings.TrimSuffix(strings.TrimSuffix(strings.TrimSuffix(str, "jam"), "j"), "h")
-				if val, err := strconv.ParseFloat(strings.TrimSpace(numStr), 64); err == nil {
-					return time.Duration(val * float64(time.Hour)), true
-				}
-			}
-			// Standar Go duration (e.g. 1h30m, 5s)
-			if d, err := time.ParseDuration(str); err == nil {
-				return d, true
-			}
-			if ms, err := strconv.ParseInt(str, 10, 64); err == nil {
-				return time.Duration(ms) * time.Millisecond, true
-			}
-		}
-		return 0, false
-	}
-
 	jadwalMap := &Map{Pairs: make(map[string]Object)}
 	jadwalMap.Pairs["setelah"] = &Builtin{
 		Fn: func(args ...Object) Object {
 			if len(args) < 2 {
 				return NIL
 			}
-			dur, ok := parseDurasiWaktu(args[0])
+			dur, ok := parseDurasiWaktuHelper(args[0])
 			if !ok {
 				return NIL
 			}
@@ -7345,7 +7524,7 @@ func InitGlobalEnvironment() *Environment {
 			if len(args) < 2 {
 				return NIL
 			}
-			dur, ok := parseDurasiWaktu(args[0])
+			dur, ok := parseDurasiWaktuHelper(args[0])
 			if !ok || dur <= 0 {
 				return NIL
 			}
