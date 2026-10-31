@@ -2010,6 +2010,56 @@ func InitGlobalEnvironment() *Environment {
 				},
 			}
 
+			// Method Migrasi Skema Deklaratif Kompak: conn.skema("nama_tabel", skemaMap)
+			connMap.Pairs["skema"] = &Builtin{
+				Fn: func(sArgs ...Object) Object {
+					// conn.skema("produk", { "id": "kunci_utama", "nama": "teks", "harga": "angka", "stok": "angka" })
+					if len(sArgs) < 2 {
+						return FALSE
+					}
+					tName := sArgs[0].Inspect()
+					colMap, ok := sArgs[1].(*Map)
+					if !ok || len(colMap.Pairs) == 0 {
+						return FALSE
+					}
+
+					var colDefs []string
+					for colName, colTypeObj := range colMap.Pairs {
+						cType := strings.ToLower(colTypeObj.Inspect())
+						sqlType := "TEXT"
+						switch cType {
+						case "kunci_utama", "id", "primary_key", "pk":
+							if driver == "mysql" {
+								sqlType = "INT AUTO_INCREMENT PRIMARY KEY"
+							} else {
+								sqlType = "INTEGER PRIMARY KEY AUTOINCREMENT"
+							}
+						case "angka", "integer", "int", "bilangan":
+							sqlType = "INTEGER"
+						case "desimal", "float", "uang":
+							sqlType = "REAL"
+						case "benar_salah", "boolean", "bool":
+							sqlType = "BOOLEAN"
+						case "teks", "string", "varchar":
+							sqlType = "TEXT"
+						case "waktu", "tanggal", "datetime":
+							sqlType = "DATETIME"
+						default:
+							sqlType = "TEXT"
+						}
+						colDefs = append(colDefs, fmt.Sprintf("%s %s", colName, sqlType))
+					}
+
+					createSQL := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s);", tName, strings.Join(colDefs, ", "))
+					_, err := db.Exec(createSQL)
+					if err != nil {
+						fmt.Printf("Galat membuat skema tabel '%s': %v\n", tName, err)
+						return FALSE
+					}
+					return TRUE
+				},
+			}
+
 			// Tutup koneksi
 			connMap.Pairs["tutup"] = &Builtin{
 				Fn: func(tArgs ...Object) Object {
