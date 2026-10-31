@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ judul }}</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #0A0E17; color: #fff; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+    .card { background: #131B2E; border: 1px solid #00F0FF; padding: 2rem 3rem; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,240,255,0.15); text-align: center; max-width: 500px; }
+    h1 { color: #00F0FF; margin-top: 0; }
+    p { color: #94A3B8; font-size: 1.1rem; line-height: 1.6; }
+    .btn { display: inline-block; margin-top: 1.5rem; padding: 10px 24px; background: #00F0FF; color: #0A0E17; font-weight: bold; border-radius: 8px; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>{{ judul }}</h1>
+    <p>{{ keterangan }}</p>
+    <a href="/api/produk" class="btn">Lihat Data REST API</a>
+    <p style="font-size: 0.85rem; margin-top: 2rem; color: #64748B;">Bahasa Ku &copy; {{ waktu }}</p>
+  </div>
+</body>
+</html>
