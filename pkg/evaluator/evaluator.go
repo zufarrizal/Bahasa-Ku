@@ -5317,6 +5317,188 @@ func InitGlobalEnvironment() *Environment {
 	}
 	env.Set("singgahan", singgahanMap)
 
+	// Modul peristiwa (Event Emitter & Pub-Sub Asinkron ala Go Event Bus)
+	peristiwaMap := &Map{Pairs: make(map[string]Object)}
+
+	type eventSubscription struct {
+		id       int64
+		callback *Function
+		once     bool
+	}
+
+	var eventSubMutex sync.RWMutex
+	var eventListeners = make(map[string][]eventSubscription)
+	var nextSubID int64 = 1
+
+	peristiwaMap.Pairs["pada"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			// peristiwa.pada(namaEvent, fungsi(data) { ... }) -> mengembalikan idLangganan
+			if len(args) < 2 {
+				return NIL
+			}
+			eventName := args[0].Inspect()
+			fn, isFn := args[1].(*Function)
+			if !isFn {
+				return NIL
+			}
+
+			eventSubMutex.Lock()
+			subID := nextSubID
+			nextSubID++
+			eventListeners[eventName] = append(eventListeners[eventName], eventSubscription{
+				id:       subID,
+				callback: fn,
+				once:     false,
+			})
+			eventSubMutex.Unlock()
+			return &Integer{Value: subID}
+		},
+	}
+
+	peristiwaMap.Pairs["sekali"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			// peristiwa.sekali(namaEvent, fungsi(data) { ... })
+			if len(args) < 2 {
+				return NIL
+			}
+			eventName := args[0].Inspect()
+			fn, isFn := args[1].(*Function)
+			if !isFn {
+				return NIL
+			}
+
+			eventSubMutex.Lock()
+			subID := nextSubID
+			nextSubID++
+			eventListeners[eventName] = append(eventListeners[eventName], eventSubscription{
+				id:       subID,
+				callback: fn,
+				once:     true,
+			})
+			eventSubMutex.Unlock()
+			return &Integer{Value: subID}
+		},
+	}
+
+	peristiwaMap.Pairs["pancarkan"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			// peristiwa.pancarkan(namaEvent, [data]) - sinkron / berurutan
+			if len(args) < 1 {
+				return FALSE
+			}
+			eventName := args[0].Inspect()
+			var dataObj Object = NIL
+			if len(args) >= 2 {
+				dataObj = args[1]
+			}
+
+			eventSubMutex.Lock()
+			subs, exists := eventListeners[eventName]
+			if !exists || len(subs) == 0 {
+				eventSubMutex.Unlock()
+				return FALSE
+			}
+
+			var remainingSubs []eventSubscription
+			var toCall []*Function
+			for _, sub := range subs {
+				toCall = append(toCall, sub.callback)
+				if !sub.once {
+					remainingSubs = append(remainingSubs, sub)
+				}
+			}
+			eventListeners[eventName] = remainingSubs
+			eventSubMutex.Unlock()
+
+			for _, fn := range toCall {
+				applyFunction(fn, []Object{dataObj}, env)
+			}
+			return TRUE
+		},
+	}
+
+	peristiwaMap.Pairs["pancarkanAsinkron"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			// peristiwa.pancarkanAsinkron(namaEvent, [data]) - berjalan di goroutine paralel
+			if len(args) < 1 {
+				return FALSE
+			}
+			eventName := args[0].Inspect()
+			var dataObj Object = NIL
+			if len(args) >= 2 {
+				dataObj = args[1]
+			}
+
+			eventSubMutex.Lock()
+			subs, exists := eventListeners[eventName]
+			if !exists || len(subs) == 0 {
+				eventSubMutex.Unlock()
+				return FALSE
+			}
+
+			var remainingSubs []eventSubscription
+			var toCall []*Function
+			for _, sub := range subs {
+				toCall = append(toCall, sub.callback)
+				if !sub.once {
+					remainingSubs = append(remainingSubs, sub)
+				}
+			}
+			eventListeners[eventName] = remainingSubs
+			eventSubMutex.Unlock()
+
+			for _, fn := range toCall {
+				go func(targetFn *Function) {
+					applyFunction(targetFn, []Object{dataObj}, env)
+				}(fn)
+			}
+			return TRUE
+		},
+	}
+
+	peristiwaMap.Pairs["lepas"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			// peristiwa.lepas(namaEvent, [idLangganan])
+			if len(args) < 1 {
+				return FALSE
+			}
+			eventName := args[0].Inspect()
+			eventSubMutex.Lock()
+			defer eventSubMutex.Unlock()
+
+			if len(args) == 1 {
+				delete(eventListeners, eventName)
+				return TRUE
+			}
+
+			if idObj, ok := args[1].(*Integer); ok {
+				subs := eventListeners[eventName]
+				var remaining []eventSubscription
+				for _, s := range subs {
+					if s.id != idObj.Value {
+						remaining = append(remaining, s)
+					}
+				}
+				eventListeners[eventName] = remaining
+				return TRUE
+			}
+			return FALSE
+		},
+	}
+
+	peristiwaMap.Pairs["jumlahPendengar"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &Integer{Value: 0}
+			}
+			eventName := args[0].Inspect()
+			eventSubMutex.RLock()
+			defer eventSubMutex.RUnlock()
+			return &Integer{Value: int64(len(eventListeners[eventName]))}
+		},
+	}
+	env.Set("peristiwa", peristiwaMap)
+
 	// Modul catatan (Logging Terstruktur dengan Timestamp)
 	catatanMap := &Map{Pairs: make(map[string]Object)}
 	catatanMap.Pairs["info"] = &Builtin{
