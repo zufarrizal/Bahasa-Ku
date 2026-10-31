@@ -10,4 +10,5 @@ demo_sqlite/
 *.db
 *.env
 masalah/
+proyek-mvp/
 *.vsix
