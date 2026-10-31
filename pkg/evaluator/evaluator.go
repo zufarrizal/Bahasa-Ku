@@ -38,6 +38,7 @@ import (
 	"github.com/zufarrizal/bahasa-ku/pkg/ast"
 	"github.com/zufarrizal/bahasa-ku/pkg/lexer"
 	"github.com/zufarrizal/bahasa-ku/pkg/parser"
+	"github.com/zufarrizal/bahasa-ku/pkg/token"
 )
 
 type ObjectType string
@@ -70,12 +71,40 @@ type ChannelObject struct {
 func (c *ChannelObject) Type() ObjectType { return CHANNEL_OBJ }
 func (c *ChannelObject) Inspect() string  { return "kanal" }
 
+type CallFrame struct {
+	Function string
+	File     string
+	Line     int
+	Column   int
+}
+
 type PanicObject struct {
-	Value Object
+	Value      Object
+	StackTrace []CallFrame
 }
 
 func (p *PanicObject) Type() ObjectType { return PANIC_OBJ }
-func (p *PanicObject) Inspect() string  { return fmt.Sprintf("panik: %s", p.Value.Inspect()) }
+func (p *PanicObject) Inspect() string {
+	msg := fmt.Sprintf("panik: %s", p.Value.Inspect())
+	if len(p.StackTrace) > 0 {
+		var sb strings.Builder
+		sb.WriteString(msg)
+		sb.WriteString("\nJejak Pemanggilan (Stack Trace):")
+		for i, frame := range p.StackTrace {
+			fnName := frame.Function
+			if fnName == "" {
+				fnName = "<anonim>"
+			}
+			fileInfo := frame.File
+			if fileInfo == "" {
+				fileInfo = "berkas"
+			}
+			sb.WriteString(fmt.Sprintf("\n  [%d] %s() pada %s:%d:%d", i+1, fnName, fileInfo, frame.Line, frame.Column))
+		}
+		return sb.String()
+	}
+	return msg
+}
 
 type Object interface {
 	Type() ObjectType
@@ -287,6 +316,8 @@ func (b *Builtin) Type() ObjectType { return BUILTIN_OBJ }
 func (b *Builtin) Inspect() string  { return "fungsi bawaan" }
 
 type Function struct {
+	Name         string
+	Token        token.Token
 	Receiver     *ast.FunctionReceiver
 	Parameters   []*ast.Identifier
 	ReturnParams []*ast.Identifier // Named return parameters
@@ -6725,7 +6756,13 @@ func Eval(node ast.Node, env *Environment) Object {
 		return NIL
 
 	case *ast.FunctionStatement:
+		fnName := ""
+		if n.Name != nil {
+			fnName = n.Name.Value
+		}
 		fn := &Function{
+			Name:         fnName,
+			Token:        n.Token,
 			Receiver:     n.Receiver,
 			Parameters:   n.Parameters,
 			ReturnParams: n.ReturnParams,
@@ -6747,6 +6784,8 @@ func Eval(node ast.Node, env *Environment) Object {
 
 	case *ast.FunctionLiteral:
 		return &Function{
+			Name:         "<anonim>",
+			Token:        n.Token,
 			Parameters:   n.Parameters,
 			ReturnParams: n.ReturnParams,
 			IsVariadic:   n.IsVariadic,
@@ -7671,6 +7710,11 @@ func applyFunction(fn Object, args []Object, outerEnv *Environment) Object {
 		res := Eval(f.Body, fnEnv)
 
 		if pObj, isPanic := res.(*PanicObject); isPanic {
+			pObj.StackTrace = append(pObj.StackTrace, CallFrame{
+				Function: f.Name,
+				Line:     f.Token.Line,
+				Column:   f.Token.Column,
+			})
 			SetGlobalPanic(pObj.Value)
 		}
 
@@ -7687,7 +7731,17 @@ func applyFunction(fn Object, args []Object, outerEnv *Environment) Object {
 		}
 
 		if activePanic := GetGlobalPanic(); activePanic != nil {
-			return &PanicObject{Value: activePanic}
+			if pObj, isPanic := res.(*PanicObject); isPanic {
+				return pObj
+			}
+			return &PanicObject{
+				Value: activePanic,
+				StackTrace: []CallFrame{{
+					Function: f.Name,
+					Line:     f.Token.Line,
+					Column:   f.Token.Column,
+				}},
+			}
 		}
 
 		if ret, ok := res.(*ReturnValue); ok {

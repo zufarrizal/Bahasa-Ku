@@ -310,7 +310,7 @@ func runFile(filename string) {
 	env := evaluator.InitGlobalEnvironment()
 	res := evaluator.Eval(prog, env)
 	if pObj, isPanic := res.(*evaluator.PanicObject); isPanic {
-		fmt.Println("Galat Eksekusi (Panik): " + pObj.Value.Inspect())
+		fmt.Println("Galat Eksekusi: " + pObj.Inspect())
 		os.Exit(1)
 	}
 }
@@ -511,7 +511,7 @@ func main() {
 	env := evaluator.InitGlobalEnvironment()
 	res := evaluator.Eval(prog, env)
 	if pObj, isPanic := res.(*evaluator.PanicObject); isPanic {
-		fmt.Println("Galat Eksekusi (Panik): " + pObj.Value.Inspect())
+		fmt.Println("Galat Eksekusi: " + pObj.Inspect())
 		os.Exit(1)
 	}
 }
