@@ -21,7 +21,7 @@ func TestBasisdataSkemaDeklaratif(t *testing.T) {
 		"nama": "teks",
 		"harga": "angka",
 		"stok": "angka",
-		"tersedia": "benar_salah"
+		"tersedia": "saklar"
 	})
 
 	// 2. Masukkan data via QueryBuilder

@@ -2038,7 +2038,7 @@ func InitGlobalEnvironment() *Environment {
 							sqlType = "INTEGER"
 						case "desimal", "float", "uang":
 							sqlType = "REAL"
-						case "benar_salah", "boolean", "bool":
+						case "saklar", "logika", "boolean", "bool", "benar_salah":
 							sqlType = "BOOLEAN"
 						case "teks", "string", "varchar":
 							sqlType = "TEXT"
