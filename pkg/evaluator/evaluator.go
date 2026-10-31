@@ -7875,6 +7875,18 @@ func InitGlobalEnvironment() *Environment {
 					return &Integer{Value: int64(n)}
 				},
 			}
+			cMap.Pairs["tulisBaris"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					if len(mArgs) < 1 {
+						return &Integer{Value: 0}
+					}
+					n, err := conn.Write([]byte(mArgs[0].Inspect() + "\n"))
+					if err != nil {
+						return &Integer{Value: 0}
+					}
+					return &Integer{Value: int64(n)}
+				},
+			}
 			cMap.Pairs["baca"] = &Builtin{
 				Fn: func(mArgs ...Object) Object {
 					bufSize := 4096
@@ -7889,6 +7901,21 @@ func InitGlobalEnvironment() *Environment {
 						return &String{Value: ""}
 					}
 					return &String{Value: string(buf[:n])}
+				},
+			}
+			cMap.Pairs["bacaBaris"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					reader := bufio.NewReader(conn)
+					line, err := reader.ReadString('\n')
+					if err != nil && len(line) == 0 {
+						return &String{Value: ""}
+					}
+					return &String{Value: strings.TrimRight(line, "\r\n")}
+				},
+			}
+			cMap.Pairs["alamatJauh"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					return &String{Value: conn.RemoteAddr().String()}
 				},
 			}
 			cMap.Pairs["tutup"] = &Builtin{
@@ -7931,6 +7958,18 @@ func InitGlobalEnvironment() *Environment {
 							return &Integer{Value: int64(n)}
 						},
 					}
+					cMap.Pairs["tulisBaris"] = &Builtin{
+						Fn: func(subArgs ...Object) Object {
+							if len(subArgs) < 1 {
+								return &Integer{Value: 0}
+							}
+							n, err := conn.Write([]byte(subArgs[0].Inspect() + "\n"))
+							if err != nil {
+								return &Integer{Value: 0}
+							}
+							return &Integer{Value: int64(n)}
+						},
+					}
 					cMap.Pairs["baca"] = &Builtin{
 						Fn: func(subArgs ...Object) Object {
 							bufSize := 4096
@@ -7947,6 +7986,21 @@ func InitGlobalEnvironment() *Environment {
 							return &String{Value: string(buf[:n])}
 						},
 					}
+					cMap.Pairs["bacaBaris"] = &Builtin{
+						Fn: func(subArgs ...Object) Object {
+							reader := bufio.NewReader(conn)
+							line, err := reader.ReadString('\n')
+							if err != nil && len(line) == 0 {
+								return &String{Value: ""}
+							}
+							return &String{Value: strings.TrimRight(line, "\r\n")}
+						},
+					}
+					cMap.Pairs["alamatJauh"] = &Builtin{
+						Fn: func(subArgs ...Object) Object {
+							return &String{Value: conn.RemoteAddr().String()}
+						},
+					}
 					cMap.Pairs["tutup"] = &Builtin{
 						Fn: func(subArgs ...Object) Object {
 							_ = conn.Close()
@@ -7954,6 +8008,92 @@ func InitGlobalEnvironment() *Environment {
 						},
 					}
 					return cMap
+				},
+			}
+			sMap.Pairs["layani"] = &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					// sMap.layani(fungsi(koneksi) { ... })
+					if len(mArgs) < 1 {
+						return FALSE
+					}
+					fn, isFn := mArgs[0].(*Function)
+					if !isFn {
+						return FALSE
+					}
+					go func() {
+						for {
+							conn, err := ln.Accept()
+							if err != nil {
+								return
+							}
+							go func(c net.Conn) {
+								cMap := &Map{Pairs: make(map[string]Object)}
+								cMap.Pairs["tulis"] = &Builtin{
+									Fn: func(subArgs ...Object) Object {
+										if len(subArgs) < 1 {
+											return &Integer{Value: 0}
+										}
+										n, err := c.Write([]byte(subArgs[0].Inspect()))
+										if err != nil {
+											return &Integer{Value: 0}
+										}
+										return &Integer{Value: int64(n)}
+									},
+								}
+								cMap.Pairs["tulisBaris"] = &Builtin{
+									Fn: func(subArgs ...Object) Object {
+										if len(subArgs) < 1 {
+											return &Integer{Value: 0}
+										}
+										n, err := c.Write([]byte(subArgs[0].Inspect() + "\n"))
+										if err != nil {
+											return &Integer{Value: 0}
+										}
+										return &Integer{Value: int64(n)}
+									},
+								}
+								cMap.Pairs["baca"] = &Builtin{
+									Fn: func(subArgs ...Object) Object {
+										bufSize := 4096
+										if len(subArgs) > 0 {
+											if i, ok := subArgs[0].(*Integer); ok && i.Value > 0 {
+												bufSize = int(i.Value)
+											}
+										}
+										buf := make([]byte, bufSize)
+										n, err := c.Read(buf)
+										if err != nil {
+											return &String{Value: ""}
+										}
+										return &String{Value: string(buf[:n])}
+									},
+								}
+								cMap.Pairs["bacaBaris"] = &Builtin{
+									Fn: func(subArgs ...Object) Object {
+										reader := bufio.NewReader(c)
+										line, err := reader.ReadString('\n')
+										if err != nil && len(line) == 0 {
+											return &String{Value: ""}
+										}
+										return &String{Value: strings.TrimRight(line, "\r\n")}
+									},
+								}
+								cMap.Pairs["alamatJauh"] = &Builtin{
+									Fn: func(subArgs ...Object) Object {
+										return &String{Value: c.RemoteAddr().String()}
+									},
+								}
+								cMap.Pairs["tutup"] = &Builtin{
+									Fn: func(subArgs ...Object) Object {
+										_ = c.Close()
+										return TRUE
+									},
+								}
+								applyFunction(fn, []Object{cMap}, env)
+							}(conn)
+						}
+					}()
+					return TRUE
 				},
 			}
 			sMap.Pairs["tutup"] = &Builtin{
