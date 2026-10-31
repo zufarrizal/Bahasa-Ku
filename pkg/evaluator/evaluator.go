@@ -519,6 +519,7 @@ func formatDumpIndo(obj Object, indent int) string {
 }
 
 func InitGlobalEnvironment() *Environment {
+	ClearGlobalPanic()
 	env := NewEnvironment()
 
 	// Modul cetak
@@ -7445,11 +7446,35 @@ func Eval(node ast.Node, env *Environment) Object {
 		idx := Eval(n.Index, env)
 		if str, ok := left.(*String); ok {
 			// Pengindeksan string str[i] mengembalikan byte mentah (uint8/int64) ala Go
-			if i, ok := idx.(*Integer); ok && i.Value >= 0 && i.Value < int64(len(str.Value)) {
+			if i, ok := idx.(*Integer); ok {
+				if i.Value < 0 || i.Value >= int64(len(str.Value)) {
+					panicMsg := fmt.Sprintf("indeks teks [%d] di luar batas panjang %d pada baris %d:%d", i.Value, len(str.Value), n.Token.Line, n.Token.Column)
+					SetGlobalPanic(&String{Value: panicMsg})
+					return &PanicObject{
+						Value: &String{Value: panicMsg},
+						StackTrace: []CallFrame{{
+							Function: "<indeks>",
+							Line:     n.Token.Line,
+							Column:   n.Token.Column,
+						}},
+					}
+				}
 				return &Integer{Value: int64(str.Value[i.Value])}
 			}
 		} else if arr, ok := left.(*Array); ok {
-			if i, ok := idx.(*Integer); ok && i.Value >= 0 && i.Value < int64(len(arr.Elements)) {
+			if i, ok := idx.(*Integer); ok {
+				if i.Value < 0 || i.Value >= int64(len(arr.Elements)) {
+					panicMsg := fmt.Sprintf("indeks larik [%d] di luar batas panjang %d pada baris %d:%d", i.Value, len(arr.Elements), n.Token.Line, n.Token.Column)
+					SetGlobalPanic(&String{Value: panicMsg})
+					return &PanicObject{
+						Value: &String{Value: panicMsg},
+						StackTrace: []CallFrame{{
+							Function: "<indeks>",
+							Line:     n.Token.Line,
+							Column:   n.Token.Column,
+						}},
+					}
+				}
 				return arr.Elements[i.Value]
 			}
 		} else if m, ok := left.(*Map); ok {
@@ -7579,6 +7604,31 @@ func Eval(node ast.Node, env *Environment) Object {
 	case *ast.InfixExpression:
 		left := Eval(n.Left, env)
 		right := Eval(n.Right, env)
+		if n.Operator == "/" || n.Operator == "%" {
+			if rInt, ok := right.(*Integer); ok && rInt.Value == 0 {
+				panicMsg := fmt.Sprintf("pembagian atau modulus dengan angka nol pada baris %d:%d", n.Token.Line, n.Token.Column)
+				SetGlobalPanic(&String{Value: panicMsg})
+				return &PanicObject{
+					Value: &String{Value: panicMsg},
+					StackTrace: []CallFrame{{
+						Function: "<operasi>",
+						Line:     n.Token.Line,
+						Column:   n.Token.Column,
+					}},
+				}
+			} else if rFloat, ok := right.(*Float); ok && rFloat.Value == 0 {
+				panicMsg := fmt.Sprintf("pembagian dengan angka nol pada baris %d:%d", n.Token.Line, n.Token.Column)
+				SetGlobalPanic(&String{Value: panicMsg})
+				return &PanicObject{
+					Value: &String{Value: panicMsg},
+					StackTrace: []CallFrame{{
+						Function: "<operasi>",
+						Line:     n.Token.Line,
+						Column:   n.Token.Column,
+					}},
+				}
+			}
+		}
 		return evalInfixExpression(n.Operator, left, right)
 
 	case *ast.CallExpression:
