@@ -23,15 +23,10 @@ const version = "0.3.5 (Go Native Edition)"
 
 func init() {
 	evaluator.RegisterSubFileEvaluator(func(path string, env *evaluator.Environment) {
-		resolvedPath := path
-		if !filepath.IsAbs(resolvedPath) {
-			if _, err := os.Stat(resolvedPath); err != nil {
-				cwd, _ := os.Getwd()
-				candidate := filepath.Join(cwd, resolvedPath)
-				if _, err := os.Stat(candidate); err == nil {
-					resolvedPath = candidate
-				}
-			}
+		resolvedPath, err := evaluator.ResolveModulePath(path)
+		if err != nil {
+			fmt.Printf("Galat modul '%s': %v\n", path, err)
+			return
 		}
 
 		content, err := os.ReadFile(resolvedPath)
@@ -229,20 +224,29 @@ func main() {
 
 	case "rapi", "format":
 		if len(args) < 2 {
-			fmt.Println("Penggunaan: ku rapi [-w] <nama_berkas.ku>")
+			fmt.Println("Penggunaan: ku rapi [-w] [-c|--cek] <nama_berkas.ku|folder>")
 			os.Exit(1)
 		}
 		writeBack := false
-		targetFile := args[1]
-		if args[1] == "-w" || args[1] == "--write" {
-			if len(args) < 3 {
-				fmt.Println("Galat: Harap tentukan berkas .ku yang ingin dirapikan.")
-				os.Exit(1)
+		checkOnly := false
+		targetFile := ""
+
+		for i := 1; i < len(args); i++ {
+			arg := args[i]
+			if arg == "-w" || arg == "--write" {
+				writeBack = true
+			} else if arg == "-c" || arg == "--cek" || arg == "--check" {
+				checkOnly = true
+			} else if targetFile == "" {
+				targetFile = arg
 			}
-			writeBack = true
-			targetFile = args[2]
 		}
-		formatKuFile(targetFile, writeBack)
+
+		if targetFile == "" {
+			fmt.Println("Galat: Harap tentukan berkas .ku yang ingin dirapikan atau diperiksa.")
+			os.Exit(1)
+		}
+		formatKuFile(targetFile, writeBack, checkOnly)
 
 	case "uji", "test":
 		targetPath := "."
@@ -820,37 +824,94 @@ fungsi utama() {
 	fmt.Printf("Jalankan sekarang dengan:\n  ku jalankan %s/utama.ku\n", folderName)
 }
 
-func formatKuFile(filename string, writeBack bool) {
-	content, err := os.ReadFile(filename)
+func formatKuFile(target string, writeBack bool, checkOnly bool) {
+	files := []string{}
+	fi, err := os.Stat(target)
 	if err != nil {
-		fmt.Printf("Galat membaca berkas: %v\n", err)
+		fmt.Printf("Galat mengakses '%s': %v\n", target, err)
 		os.Exit(1)
 	}
 
-	l := lexer.New(string(content))
-	p := parser.New(l)
-	prog := p.ParseProgram()
-
-	if len(p.Errors()) > 0 {
-		fmt.Println("Galat Sintaks:")
-		for _, e := range p.Errors() {
-			fmt.Println(" -", e)
-		}
-		os.Exit(1)
-	}
-
-	f := formatter.New()
-	formatted := f.Format(prog)
-
-	if writeBack {
-		err := os.WriteFile(filename, []byte(formatted), 0644)
-		if err != nil {
-			fmt.Printf("Galat menyimpan berkas: %v\n", err)
-			os.Exit(1)
-		}
-		fmt.Printf("Format berkas '%s' berhasil dirapikan! ✨\n", filename)
+	if fi.IsDir() {
+		_ = filepath.Walk(target, func(path string, info os.FileInfo, err error) error {
+			if err == nil && !info.IsDir() && strings.HasSuffix(info.Name(), ".ku") {
+				files = append(files, path)
+			}
+			return nil
+		})
 	} else {
-		fmt.Print(formatted)
+		files = append(files, target)
+	}
+
+	if len(files) == 0 {
+		fmt.Printf("Tidak ditemukan berkas .ku pada '%s'\n", target)
+		return
+	}
+
+	unformattedCount := 0
+	for _, filename := range files {
+		content, err := os.ReadFile(filename)
+		if err != nil {
+			fmt.Printf("Galat membaca berkas '%s': %v\n", filename, err)
+			continue
+		}
+
+		l := lexer.New(string(content))
+		p := parser.New(l)
+		prog := p.ParseProgram()
+
+		if len(p.Errors()) > 0 {
+			fmt.Printf("Galat Sintaks pada '%s':\n", filename)
+			for _, e := range p.Errors() {
+				fmt.Println(" -", e)
+			}
+			if checkOnly {
+				unformattedCount++
+			}
+			continue
+		}
+
+		f := formatter.New()
+		formatted := f.Format(prog)
+
+		// Normalisasi line endings untuk perbandingan akurat
+		origNorm := strings.ReplaceAll(string(content), "\r\n", "\n")
+		formNorm := strings.ReplaceAll(formatted, "\r\n", "\n")
+
+		if origNorm != formNorm {
+			unformattedCount++
+			if checkOnly {
+				fmt.Printf("❌ Perlu dirapikan: %s\n", filename)
+			} else if writeBack {
+				err := os.WriteFile(filename, []byte(formatted), 0644)
+				if err != nil {
+					fmt.Printf("Galat menyimpan berkas '%s': %v\n", filename, err)
+				} else {
+					fmt.Printf("✨ Format berkas '%s' berhasil dirapikan!\n", filename)
+				}
+			} else {
+				if len(files) == 1 {
+					fmt.Print(formatted)
+				} else {
+					fmt.Printf("--- %s ---\n%s\n", filename, formatted)
+				}
+			}
+		} else {
+			if checkOnly {
+				fmt.Printf("✅ Sudah rapi: %s\n", filename)
+			} else if !writeBack && len(files) == 1 {
+				fmt.Print(formatted)
+			}
+		}
+	}
+
+	if checkOnly {
+		if unformattedCount > 0 {
+			fmt.Printf("\n⚠️  Ditemukan %d berkas yang belum rapi. Jalankan 'ku rapi -w <berkas>' untuk memperbaikinya.\n", unformattedCount)
+			os.Exit(1)
+		} else {
+			fmt.Printf("\n✨ Semua berkas (%d) sudah rapi sempurna!\n", len(files))
+		}
 	}
 }
 

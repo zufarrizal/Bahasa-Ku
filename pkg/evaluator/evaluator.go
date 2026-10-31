@@ -246,20 +246,77 @@ func RegisterSubFileEvaluator(sfe SubFileEvaluator) {
 	subFileRunner = sfe
 }
 
+// ResolveModulePath menyelesaikan path berkas lokal maupun remote URL dengan caching otomatis
+func ResolveModulePath(path string) (string, error) {
+	// 1. Cek apakah ini Remote URL HTTP/HTTPS
+	if strings.HasPrefix(path, "http://") || strings.HasPrefix(path, "https://") {
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			homeDir = os.TempDir()
+		}
+		cacheDir := filepath.Join(homeDir, ".bahasa-ku", "cache")
+		_ = os.MkdirAll(cacheDir, 0755)
+
+		hash := sha256.Sum256([]byte(path))
+		hashStr := hex.EncodeToString(hash[:12])
+
+		urlPath := path
+		if idx := strings.Index(urlPath, "?"); idx != -1 {
+			urlPath = urlPath[:idx]
+		}
+		baseName := filepath.Base(urlPath)
+		if !strings.HasSuffix(baseName, ".ku") {
+			baseName += ".ku"
+		}
+
+		cachedFile := filepath.Join(cacheDir, fmt.Sprintf("%s_%s", hashStr, baseName))
+
+		// Jika belum ada di cache, unduh berkas
+		if _, err := os.Stat(cachedFile); os.IsNotExist(err) {
+			client := &http.Client{Timeout: 15 * time.Second}
+			resp, err := client.Get(path)
+			if err != nil {
+				return "", fmt.Errorf("gagal mengunduh modul remote '%s': %v", path, err)
+			}
+			defer resp.Body.Close()
+
+			if resp.StatusCode != http.StatusOK {
+				return "", fmt.Errorf("gagal mengunduh modul remote '%s' (status %d)", path, resp.StatusCode)
+			}
+
+			data, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return "", fmt.Errorf("gagal membaca data modul remote '%s': %v", path, err)
+			}
+
+			if err := os.WriteFile(cachedFile, data, 0644); err != nil {
+				return "", fmt.Errorf("gagal menyimpan cache modul '%s': %v", cachedFile, err)
+			}
+		}
+
+		return cachedFile, nil
+	}
+
+	// 2. Berkas lokal
+	resolvedPath := path
+	if !filepath.IsAbs(resolvedPath) {
+		if _, err := os.Stat(resolvedPath); err != nil {
+			cwd, _ := os.Getwd()
+			candidate := filepath.Join(cwd, resolvedPath)
+			if _, err := os.Stat(candidate); err == nil {
+				resolvedPath = candidate
+			}
+		}
+	}
+	return resolvedPath, nil
+}
+
 func init() {
 	RegisterSubFileEvaluator(func(path string, env *Environment) {
-		// Dukung resolusi path relatif, absolut, dan modular
-		resolvedPath := path
-		if !filepath.IsAbs(resolvedPath) {
-			// Cek apakah berkas ada di direktori kerja
-			if _, err := os.Stat(resolvedPath); err != nil {
-				// Cek apakah ada direktori proyek aktif
-				cwd, _ := os.Getwd()
-				candidate := filepath.Join(cwd, resolvedPath)
-				if _, err := os.Stat(candidate); err == nil {
-					resolvedPath = candidate
-				}
-			}
+		resolvedPath, err := ResolveModulePath(path)
+		if err != nil {
+			fmt.Printf("Galat modul '%s': %v\n", path, err)
+			return
 		}
 
 		content, err := os.ReadFile(resolvedPath)
@@ -1637,6 +1694,48 @@ func InitGlobalEnvironment() *Environment {
 				return &String{Value: ""}
 			}
 			return &String{Value: filepath.Ext(args[0].Inspect())}
+		},
+	}
+	jalurMap.Pairs["absolut"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			abs, err := filepath.Abs(args[0].Inspect())
+			if err != nil {
+				return &String{Value: args[0].Inspect()}
+			}
+			return &String{Value: abs}
+		},
+	}
+	jalurMap.Pairs["relatif"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return &String{Value: ""}
+			}
+			base := args[0].Inspect()
+			target := args[1].Inspect()
+			rel, err := filepath.Rel(base, target)
+			if err != nil {
+				return &String{Value: target}
+			}
+			return &String{Value: rel}
+		},
+	}
+	jalurMap.Pairs["apakahAbsolut"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return FALSE
+			}
+			return &Boolean{Value: filepath.IsAbs(args[0].Inspect())}
+		},
+	}
+	jalurMap.Pairs["bersihkan"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			return &String{Value: filepath.Clean(args[0].Inspect())}
 		},
 	}
 	env.Set("jalur", jalurMap)
