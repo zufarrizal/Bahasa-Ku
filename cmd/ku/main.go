@@ -169,6 +169,14 @@ func main() {
 		}
 		runFile(args[1])
 
+	case "awasi", "watch":
+		if len(args) < 2 {
+			fmt.Println("Galat: Harap tentukan nama berkas .ku atau folder yang ingin diawasi.")
+			fmt.Println("Penggunaan: ku awasi <berkas.ku|folder>")
+			os.Exit(1)
+		}
+		watchAndRun(args[1], args[2:])
+
 	case "buat":
 		if len(args) < 2 {
 			fmt.Println("Galat: Harap tentukan nama berkas .ku yang ingin ditranspilasi.")
@@ -291,6 +299,7 @@ func printHelp() {
 	fmt.Printf(`Penggunaan CLI Bahasa Ku (Go Native):
   ku                       Membuka REPL (terminal interaktif)
   ku jalankan <berkas.ku>  Menjalankan berkas kode .ku
+  ku awasi <berkas.ku>     Menjalankan berkas dan me-reload otomatis saat kode berubah (Hot Reload)
   ku uji [berkas/_uji.ku]  Menjalankan pengujian unit test otomatis
   ku tolakUkur [berkas]    Menjalankan pengujian tolok ukur performa (benchmark)
   ku rapi [-w] [-c] <berkas|folder> Merapikan format kode (-w: simpan, -c: periksa CI/CD)
@@ -1143,6 +1152,85 @@ func checkLatestRelease(checkOnly bool) {
 		}
 	} else {
 		fmt.Printf("\n✨ Bahasa Ku sudah menggunakan versi terbaru (%s)! Tidak perlu pembaruan.\n", localTag)
+	}
+}
+
+func watchAndRun(target string, extraArgs []string) {
+	fmt.Printf("👀 [Hot Reload] Mengawasi perubahan pada '%s'...\n", target)
+	fmt.Println("Tekan Ctrl+C untuk berhenti.")
+
+	selfExe, err := os.Executable()
+	if err != nil {
+		selfExe = "ku"
+	}
+
+	getSnapshot := func() map[string]time.Time {
+		snapshot := make(map[string]time.Time)
+		info, err := os.Stat(target)
+		if err != nil {
+			return snapshot
+		}
+
+		if !info.IsDir() {
+			snapshot[target] = info.ModTime()
+			return snapshot
+		}
+
+		_ = filepath.Walk(target, func(path string, f os.FileInfo, err error) error {
+			if err == nil && !f.IsDir() && strings.HasSuffix(f.Name(), ".ku") {
+				snapshot[path] = f.ModTime()
+			}
+			return nil
+		})
+		return snapshot
+	}
+
+	lastSnapshot := getSnapshot()
+	var currentCmd *exec.Cmd
+
+	startProcess := func() {
+		if currentCmd != nil && currentCmd.Process != nil {
+			fmt.Println("\n🔄 Terdeteksi perubahan kode! Memulai ulang aplikasi...")
+			_ = currentCmd.Process.Kill()
+			_ = currentCmd.Wait()
+		} else {
+			fmt.Println("\n🚀 Menjalankan aplikasi Bahasa Ku...")
+		}
+
+		cmdArgs := []string{"jalankan", target}
+		cmdArgs = append(cmdArgs, extraArgs...)
+		currentCmd = exec.Command(selfExe, cmdArgs...)
+		currentCmd.Stdout = os.Stdout
+		currentCmd.Stderr = os.Stderr
+		currentCmd.Stdin = os.Stdin
+
+		if err := currentCmd.Start(); err != nil {
+			fmt.Printf("❌ Gagal memulai aplikasi: %v\n", err)
+		}
+	}
+
+	startProcess()
+
+	for {
+		time.Sleep(500 * time.Millisecond)
+		newSnapshot := getSnapshot()
+
+		changed := false
+		if len(newSnapshot) != len(lastSnapshot) {
+			changed = true
+		} else {
+			for path, modTime := range newSnapshot {
+				if oldTime, ok := lastSnapshot[path]; !ok || !oldTime.Equal(modTime) {
+					changed = true
+					break
+				}
+			}
+		}
+
+		if changed {
+			lastSnapshot = newSnapshot
+			startProcess()
+		}
 	}
 }
 

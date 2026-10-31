@@ -64,6 +64,9 @@ ku
 # Menjalankan berkas kode
 ku jalankan contoh/halo.ku
 
+# Menjalankan aplikasi dengan Hot Reload (otomatis restart saat kode disimpan)
+ku awasi contoh/halo.ku
+
 # Menjalankan suite pengujian unit test
 ku uji
 

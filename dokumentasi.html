@@ -1634,8 +1634,10 @@ var respons = jaringan.kirimJSON("https://api.domain.id/order", {
             <tr><td><code>web.taruh(jalur, fn)</code></td><td>Mendaftarkan rute khusus metode HTTP <code>PUT</code></td></tr>
             <tr><td><code>web.hapus(jalur, fn)</code></td><td>Mendaftarkan rute khusus metode HTTP <code>DELETE</code></td></tr>
             <tr><td><code>web.rute(jalur, fn)</code> / <code>tangani</code></td><td>Mendaftarkan rute untuk seluruh metode HTTP</td></tr>
+            <tr><td><code>web.gunakan(fnMiddleware)</code></td><td>Mendaftarkan middleware HTTP global (logging, otentikasi token, interceptor)</td></tr>
             <tr><td><code>web.aktifkanCORS()</code></td><td>Mengaktifkan header Cross-Origin Resource Sharing (CORS) global</td></tr>
             <tr><td><code>web.berkasStatis(prefix, folder)</code></td><td>Menyajikan berkas frontend statis dari folder lokal (HTML, CSS, JS, Gambar)</td></tr>
+            <tr><td><code>respons.tampilkan(berkas, [data])</code></td><td>Merender berkas template HTML SSR dengan interpolasi variabel <code>{{ variabel }}</code></td></tr>
             <tr><td><code>web.jalankan(port)</code> / <code>dengarkan</code></td><td>Menjalankan server web HTTP pada port yang ditentukan (contoh: <code>8080</code> atau <code>":8080"</code>)</td></tr>
           </tbody>
         </table>
@@ -1693,10 +1695,19 @@ jika klien != kosong {
         <pre><code>// 1. Basis Data Berkas Portabel (SQLite - Tanpa Server)
 var db = basisdata.bukaBerkas("aplikasi.db")
 db.eksekusi("CREATE TABLE IF NOT EXISTS produk (id INTEGER PRIMARY KEY, nama TEXT, harga INTEGER);")
-db.eksekusi("INSERT INTO produk (nama, harga) VALUES ('Kopi Ku', 15000);")
 
-var daftar = db.kueri("SELECT id, nama, harga FROM produk")
-cetak.tulis("Daftar produk:", daftar)
+// Menggunakan Query Builder Modern (.tabel)
+db.tabel("produk").masukkan({"nama": "Kopi Ku", "harga": 15000})
+db.tabel("produk").masukkan({"nama": "Teh Ku", "harga": 8000})
+
+// Mengambil Data dengan Filter & Pengurutan
+var satu = db.tabel("produk").dimana("nama", "Kopi Ku").ambilSatu()
+var semua = db.tabel("produk").urutkan("harga DESC").ambilSemua()
+
+// Memperbarui & Menghapus Data
+db.tabel("produk").dimana("nama", "Teh Ku").perbarui({"harga": 10000})
+db.tabel("produk").dimana("harga", "<", 5000).hapus()
+
 db.tutup()
 
 // 2. Basis Data MySQL Terpusat

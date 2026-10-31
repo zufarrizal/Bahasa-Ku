@@ -757,6 +757,17 @@ func InitGlobalEnvironment() *Environment {
 
 	webMap := &Map{Pairs: make(map[string]Object)}
 
+	var webMiddlewares []Object
+
+	webMap.Pairs["gunakan"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) > 0 {
+				webMiddlewares = append(webMiddlewares, args[0])
+			}
+			return TRUE
+		},
+	}
+
 	webMap.Pairs["aktifkanCORS"] = &Builtin{
 		Fn: func(args ...Object) Object {
 			corsEnabled = true
@@ -901,19 +912,73 @@ func InitGlobalEnvironment() *Environment {
 			},
 		}
 
-		// Panggil fungsi handler: bisa fungsi(permintaan, respons) atau fungsi(permintaan) kembalikan nilai
-		respObj := applyFunction(route.handler, []Object{reqMap, respMap}, env)
-		if respObj != nil && respObj != NIL {
-			if m, ok := respObj.(*Map); ok {
-				goObj := convertKuToGoObject(m)
-				b, _ := json.Marshal(goObj)
-				w.Header().Set("Content-Type", "application/json")
-				w.Write(b)
-			} else if s, ok := respObj.(*String); ok {
+		respMap.Pairs["tampilkan"] = &Builtin{
+			Fn: func(mArgs ...Object) Object {
+				if len(mArgs) < 1 {
+					return FALSE
+				}
+				tmplPath := mArgs[0].Inspect()
+				tmplBytes, err := os.ReadFile(tmplPath)
+				if err != nil {
+					http.Error(w, fmt.Sprintf("Template tidak ditemukan: %v", err), http.StatusInternalServerError)
+					return FALSE
+				}
+				tmplContent := string(tmplBytes)
+
+				// Interpolasi variabel {{ variabel }} dari map data jika disediakan
+				if len(mArgs) >= 2 {
+					if dataMap, ok := mArgs[1].(*Map); ok {
+						for k, v := range dataMap.Pairs {
+							placeholder := fmt.Sprintf("{{ %s }}", k)
+							placeholderTight := fmt.Sprintf("{{%s}}", k)
+							tmplContent = strings.ReplaceAll(tmplContent, placeholder, v.Inspect())
+							tmplContent = strings.ReplaceAll(tmplContent, placeholderTight, v.Inspect())
+						}
+					}
+				}
+
 				w.Header().Set("Content-Type", "text/html; charset=utf-8")
-				w.Write([]byte(s.Value))
+				w.Write([]byte(tmplContent))
+				return TRUE
+			},
+		}
+
+		// Jalankan rantai middleware jika ada
+		var executeHandler func(mwIndex int)
+		executeHandler = func(mwIndex int) {
+			if mwIndex < len(webMiddlewares) {
+				mw := webMiddlewares[mwIndex]
+				nextCalled := false
+				nextFn := &Builtin{
+					Fn: func(nextArgs ...Object) Object {
+						nextCalled = true
+						executeHandler(mwIndex + 1)
+						return NIL
+					},
+				}
+				applyFunction(mw, []Object{reqMap, respMap, nextFn}, env)
+				if !nextCalled && mwIndex+1 == len(webMiddlewares) {
+					// Jika middleware tidak membutuhkan parameter 'lanjut/next', otomatis lanjutkan
+					executeHandler(mwIndex + 1)
+				}
+			} else {
+				// Panggil fungsi handler utama rute
+				respObj := applyFunction(route.handler, []Object{reqMap, respMap}, env)
+				if respObj != nil && respObj != NIL {
+					if m, ok := respObj.(*Map); ok {
+						goObj := convertKuToGoObject(m)
+						b, _ := json.Marshal(goObj)
+						w.Header().Set("Content-Type", "application/json")
+						w.Write(b)
+					} else if s, ok := respObj.(*String); ok {
+						w.Header().Set("Content-Type", "text/html; charset=utf-8")
+						w.Write([]byte(s.Value))
+					}
+				}
 			}
 		}
+
+		executeHandler(0)
 	})
 
 	webMap.Pairs["dengarkan"] = &Builtin{
@@ -1188,6 +1253,9 @@ func InitGlobalEnvironment() *Environment {
 				return NIL
 			}
 			driver := args[0].Inspect() // misal "mysql"
+			if driver == "sqlite" {
+				driver = "sqlite" // nama driver modernc adalah "sqlite"
+			}
 			dsn := args[1].Inspect()    // misal "user:password@tcp(127.0.0.1:3306)/dbname"
 
 			db, err := sql.Open(driver, dsn)
@@ -1316,6 +1384,203 @@ func InitGlobalEnvironment() *Environment {
 						return FALSE
 					}
 					return TRUE
+				},
+			}
+
+			// Method Query Builder: conn.tabel("nama_tabel")
+			connMap.Pairs["tabel"] = &Builtin{
+				Fn: func(tArgs ...Object) Object {
+					if len(tArgs) < 1 {
+						return NIL
+					}
+					tableName := tArgs[0].Inspect()
+					tbMap := &Map{Pairs: make(map[string]Object)}
+
+					var conditions []string
+					var condArgs []interface{}
+					var limitVal int = 0
+					var orderByVal string = ""
+
+					tbMap.Pairs["dimana"] = &Builtin{
+						Fn: func(wArgs ...Object) Object {
+							if len(wArgs) >= 3 {
+								col := wArgs[0].Inspect()
+								op := wArgs[1].Inspect()
+								val := convertKuToGoObject(wArgs[2])
+								conditions = append(conditions, fmt.Sprintf("%s %s ?", col, op))
+								condArgs = append(condArgs, val)
+							} else if len(wArgs) == 2 {
+								col := wArgs[0].Inspect()
+								val := convertKuToGoObject(wArgs[1])
+								conditions = append(conditions, fmt.Sprintf("%s = ?", col))
+								condArgs = append(condArgs, val)
+							}
+							return tbMap
+						},
+					}
+
+					tbMap.Pairs["urutkan"] = &Builtin{
+						Fn: func(oArgs ...Object) Object {
+							if len(oArgs) > 0 {
+								orderByVal = oArgs[0].Inspect()
+							}
+							return tbMap
+						},
+					}
+
+					tbMap.Pairs["batas"] = &Builtin{
+						Fn: func(lArgs ...Object) Object {
+							if len(lArgs) > 0 {
+								if li, ok := lArgs[0].(*Integer); ok {
+									limitVal = int(li.Value)
+								}
+							}
+							return tbMap
+						},
+					}
+
+					tbMap.Pairs["ambilSemua"] = &Builtin{
+						Fn: func(fArgs ...Object) Object {
+							q := fmt.Sprintf("SELECT * FROM %s", tableName)
+							if len(conditions) > 0 {
+								q += " WHERE " + strings.Join(conditions, " AND ")
+							}
+							if orderByVal != "" {
+								q += " ORDER BY " + orderByVal
+							}
+							if limitVal > 0 {
+								q += fmt.Sprintf(" LIMIT %d", limitVal)
+							}
+							var rows *sql.Rows
+							var qErr error
+							if len(condArgs) > 0 {
+								rows, qErr = db.Query(q, condArgs...)
+							} else {
+								rows, qErr = db.Query(q)
+							}
+							if qErr != nil {
+								fmt.Printf("Galat QueryBuilder ambilSemua: %v (Query: %s)\n", qErr, q)
+								return &Array{Elements: []Object{}}
+							}
+							defer rows.Close()
+
+							cols, _ := rows.Columns()
+							hasilArray := &Array{Elements: []Object{}}
+							for rows.Next() {
+								vals := make([]interface{}, len(cols))
+								valPtrs := make([]interface{}, len(cols))
+								for i := range vals {
+									valPtrs[i] = &vals[i]
+								}
+								rows.Scan(valPtrs...)
+								barisMap := &Map{Pairs: make(map[string]Object)}
+								for i, col := range cols {
+									valStr := ""
+									if vals[i] != nil {
+										if b, ok := vals[i].([]byte); ok {
+											valStr = string(b)
+										} else {
+											valStr = fmt.Sprintf("%v", vals[i])
+										}
+									}
+									barisMap.Pairs[col] = &String{Value: valStr}
+								}
+								hasilArray.Elements = append(hasilArray.Elements, barisMap)
+							}
+							return hasilArray
+						},
+					}
+
+					tbMap.Pairs["ambilSatu"] = &Builtin{
+						Fn: func(fArgs ...Object) Object {
+							limitVal = 1
+							allRes := tbMap.Pairs["ambilSemua"].(*Builtin).Fn()
+							if arr, ok := allRes.(*Array); ok && len(arr.Elements) > 0 {
+								return arr.Elements[0]
+							}
+							return NIL
+						},
+					}
+
+					tbMap.Pairs["masukkan"] = &Builtin{
+						Fn: func(insArgs ...Object) Object {
+							if len(insArgs) < 1 {
+								return FALSE
+							}
+							dataMap, ok := insArgs[0].(*Map)
+							if !ok || len(dataMap.Pairs) == 0 {
+								return FALSE
+							}
+							cols := []string{}
+							placeholders := []string{}
+							var vals []interface{}
+							for k, v := range dataMap.Pairs {
+								cols = append(cols, k)
+								placeholders = append(placeholders, "?")
+								vals = append(vals, convertKuToGoObject(v))
+							}
+							insertQ := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)", tableName, strings.Join(cols, ", "), strings.Join(placeholders, ", "))
+							_, err := db.Exec(insertQ, vals...)
+							if err != nil {
+								fmt.Printf("Galat QueryBuilder masukkan: %v\n", err)
+								return FALSE
+							}
+							return TRUE
+						},
+					}
+
+					tbMap.Pairs["perbarui"] = &Builtin{
+						Fn: func(updArgs ...Object) Object {
+							if len(updArgs) < 1 {
+								return FALSE
+							}
+							dataMap, ok := updArgs[0].(*Map)
+							if !ok || len(dataMap.Pairs) == 0 {
+								return FALSE
+							}
+							setClauses := []string{}
+							var vals []interface{}
+							for k, v := range dataMap.Pairs {
+								setClauses = append(setClauses, fmt.Sprintf("%s = ?", k))
+								vals = append(vals, convertKuToGoObject(v))
+							}
+							updateQ := fmt.Sprintf("UPDATE %s SET %s", tableName, strings.Join(setClauses, ", "))
+							if len(conditions) > 0 {
+								updateQ += " WHERE " + strings.Join(conditions, " AND ")
+								vals = append(vals, condArgs...)
+							}
+							_, err := db.Exec(updateQ, vals...)
+							if err != nil {
+								fmt.Printf("Galat QueryBuilder perbarui: %v\n", err)
+								return FALSE
+							}
+							return TRUE
+						},
+					}
+
+					tbMap.Pairs["hapus"] = &Builtin{
+						Fn: func(delArgs ...Object) Object {
+							deleteQ := fmt.Sprintf("DELETE FROM %s", tableName)
+							var vals []interface{}
+							if len(conditions) > 0 {
+								deleteQ += " WHERE " + strings.Join(conditions, " AND ")
+								vals = append(vals, condArgs...)
+							}
+							var err error
+							if len(vals) > 0 {
+								_, err = db.Exec(deleteQ, vals...)
+							} else {
+								_, err = db.Exec(deleteQ)
+							}
+							if err != nil {
+								fmt.Printf("Galat QueryBuilder hapus: %v\n", err)
+								return FALSE
+							}
+							return TRUE
+						},
+					}
+
+					return tbMap
 				},
 			}
 
@@ -7808,7 +8073,11 @@ func Eval(node ast.Node, env *Environment) Object {
 				return arr.Elements[i.Value]
 			}
 		} else if m, ok := left.(*Map); ok {
-			if val, ok := m.Pairs[idx.Inspect()]; ok {
+			keyStr := idx.Inspect()
+			if s, isStr := idx.(*String); isStr {
+				keyStr = s.Value
+			}
+			if val, ok := m.Pairs[keyStr]; ok {
 				return val
 			}
 		}
