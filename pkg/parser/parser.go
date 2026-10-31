@@ -3,6 +3,7 @@ package parser
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/zufarrizal/bahasa-ku/pkg/ast"
 	"github.com/zufarrizal/bahasa-ku/pkg/lexer"
@@ -900,10 +901,12 @@ func (p *Parser) parsePrefix() ast.Expression {
 	case token.IDENT:
 		return &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 	case token.INT:
-		v, _ := strconv.ParseInt(p.curToken.Literal, 0, 64)
+		cleanLit := strings.ReplaceAll(p.curToken.Literal, "_", "")
+		v, _ := strconv.ParseInt(cleanLit, 0, 64)
 		return &ast.IntegerLiteral{Token: p.curToken, Value: v}
 	case token.FLOAT:
-		v, _ := strconv.ParseFloat(p.curToken.Literal, 64)
+		cleanLit := strings.ReplaceAll(p.curToken.Literal, "_", "")
+		v, _ := strconv.ParseFloat(cleanLit, 64)
 		return &ast.FloatLiteral{Token: p.curToken, Value: v}
 	case token.STRING:
 		return &ast.StringLiteral{Token: p.curToken, Value: p.curToken.Literal}

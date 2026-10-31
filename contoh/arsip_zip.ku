@@ -1,0 +1,39 @@
+paket utama
+
+pakai "cetak"
+pakai "arsip"
+pakai "berkas"
+
+fungsi utama() {
+    cetak.tulis("=== Contoh Kompresi & Ekstraksi Arsip ZIP ===")
+
+    // 1. Siapkan folder dan berkas sementara
+    berkas.buatFolder("temp_arsip")
+    berkas.tulis("temp_arsip/berkas1.txt", "Halo dari berkas pertama!")
+    berkas.tulis("temp_arsip/berkas2.txt", "Bahasa Ku mendukung pembuatan ZIP secara mandiri.")
+
+    // 2. Buat arsip zip
+    var daftar = ["temp_arsip/berkas1.txt", "temp_arsip/berkas2.txt"]
+    var suksesBuat = arsip.buatZip("arsip_contoh.zip", daftar)
+    jika suksesBuat {
+        cetak.tulis("✅ Berhasil membuat 'arsip_contoh.zip'")
+        cetak.tulis("Ukuran arsip:", berkas.ukuran("arsip_contoh.zip"), "byte")
+    } lainnya {
+        cetak.tulis("❌ Gagal membuat arsip zip")
+        kembalikan
+    }
+
+    // 3. Ekstrak arsip zip
+    var suksesEkstrak = arsip.ekstrakZip("arsip_contoh.zip", "temp_ekstrak")
+    jika suksesEkstrak {
+        cetak.tulis("✅ Berhasil mengekstrak ke folder 'temp_ekstrak/'")
+        var isi1 = berkas.baca("temp_ekstrak/berkas1.txt")
+        cetak.tulis("Isi berkas1.txt:", isi1)
+    }
+
+    // 4. Bersihkan berkas percobaan
+    berkas.hapusFolder("temp_arsip")
+    berkas.hapusFolder("temp_ekstrak")
+    berkas.hapus("arsip_contoh.zip")
+    cetak.tulis("✨ Demonstrasi arsip zip selesai dan bersih.")
+}

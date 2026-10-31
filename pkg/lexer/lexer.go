@@ -288,13 +288,45 @@ func (l *Lexer) readIdentifier() string {
 func (l *Lexer) readNumber() (string, bool) {
 	pos := l.position
 	isFloat := false
-	for isDigit(l.ch) || (l.ch == '.' && isDigit(l.peekChar())) {
+
+	// Cek apakah angka diawali 0x (heksadesimal), 0b (biner), atau 0o (oktal)
+	if l.ch == '0' {
+		next := l.peekChar()
+		if next == 'x' || next == 'X' {
+			l.readChar() // baca '0'
+			l.readChar() // baca 'x' / 'X'
+			for isHexDigit(l.ch) || l.ch == '_' {
+				l.readChar()
+			}
+			return l.input[pos:l.position], false
+		} else if next == 'b' || next == 'B' {
+			l.readChar() // baca '0'
+			l.readChar() // baca 'b' / 'B'
+			for l.ch == '0' || l.ch == '1' || l.ch == '_' {
+				l.readChar()
+			}
+			return l.input[pos:l.position], false
+		} else if next == 'o' || next == 'O' {
+			l.readChar() // baca '0'
+			l.readChar() // baca 'o' / 'O'
+			for (l.ch >= '0' && l.ch <= '7') || l.ch == '_' {
+				l.readChar()
+			}
+			return l.input[pos:l.position], false
+		}
+	}
+
+	for isDigit(l.ch) || l.ch == '_' || (l.ch == '.' && isDigit(l.peekChar())) {
 		if l.ch == '.' {
 			isFloat = true
 		}
 		l.readChar()
 	}
 	return l.input[pos:l.position], isFloat
+}
+
+func isHexDigit(ch byte) bool {
+	return ('0' <= ch && ch <= '9') || ('a' <= ch && ch <= 'f') || ('A' <= ch && ch <= 'F')
 }
 
 func (l *Lexer) readString(quote byte) string {

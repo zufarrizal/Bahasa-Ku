@@ -1,0 +1,29 @@
+paket utama
+
+pakai "cetak"
+pakai "waktu"
+
+fungsi utama() {
+    cetak.tulis("=== Contoh Pewaktu Asinkron (Ticker & Timeout) ===")
+
+    var hitungan = 0
+
+    // Jalankan callback setiap 300 milidetik
+    var pewaktu = waktu.setiap(300, fungsi() {
+        hitungan = hitungan + 1
+        cetak.tulis("⏱️ Tik ke-", hitungan, "pada", waktu.sekarang().teks)
+        jika hitungan >= 3 {
+            cetak.tulis("🛑 Menghentikan pewaktu berkala...")
+            pewaktu.hentikan()
+        }
+    })
+
+    // Pasang timeout satu kali setelah 1500 milidetik
+    waktu.setelah(1500, fungsi() {
+        cetak.tulis("🔔 Waktu tunggu 1.5 detik selesai!")
+    })
+
+    // Tunggu agar goroutine selesai sebelum program utama berakhir
+    waktu.tidur(2000)
+    cetak.tulis("✨ Demonstrasi pewaktu selesai.")
+}
