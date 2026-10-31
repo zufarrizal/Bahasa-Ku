@@ -5487,6 +5487,247 @@ func InitGlobalEnvironment() *Environment {
 	}
 	env.Set("terminal", terminalMap)
 
+	// Modul cli (Framework Command Line Interface ala Cobra)
+	cliMap := &Map{Pairs: make(map[string]Object)}
+
+	type cliOptionDef struct {
+		name        string
+		shorthand   string
+		description string
+		defaultVal  Object
+	}
+
+	type cliCommandDef struct {
+		name        string
+		description string
+		action      Object
+		options     map[string]cliOptionDef
+		subcommands map[string]*cliCommandDef
+	}
+
+	var rootCliCommand = &cliCommandDef{
+		name:        "aplikasi",
+		description: "Aplikasi CLI Berbasis Bahasa Ku",
+		options:     make(map[string]cliOptionDef),
+		subcommands: make(map[string]*cliCommandDef),
+	}
+
+	var wrapCliCommandObject func(cmd *cliCommandDef) *Map
+	wrapCliCommandObject = func(cmd *cliCommandDef) *Map {
+		m := &Map{Pairs: make(map[string]Object)}
+		m.Pairs["nama"] = &String{Value: cmd.name}
+		m.Pairs["deskripsi"] = &String{Value: cmd.description}
+
+		m.Pairs["aksi"] = &Builtin{
+			Fn: func(args ...Object) Object {
+				if len(args) > 0 {
+					cmd.action = args[0]
+				}
+				return m
+			},
+		}
+
+		m.Pairs["opsi"] = &Builtin{
+			Fn: func(args ...Object) Object {
+				// cmd.opsi(nama, shorthand, deskripsi, [defaultVal])
+				if len(args) < 3 {
+					return m
+				}
+				optName := strings.TrimPrefix(args[0].Inspect(), "--")
+				short := strings.TrimPrefix(args[1].Inspect(), "-")
+				desc := args[2].Inspect()
+				var defVal Object = NIL
+				if len(args) >= 4 {
+					defVal = args[3]
+				}
+				cmd.options[optName] = cliOptionDef{
+					name:        optName,
+					shorthand:   short,
+					description: desc,
+					defaultVal:  defVal,
+				}
+				return m
+			},
+		}
+
+		m.Pairs["perintah"] = &Builtin{
+			Fn: func(args ...Object) Object {
+				// cmd.perintah(nama, deskripsi, [callbackFn])
+				if len(args) < 2 {
+					return NIL
+				}
+				subName := args[0].Inspect()
+				subDesc := args[1].Inspect()
+				subCmd := &cliCommandDef{
+					name:        subName,
+					description: subDesc,
+					options:     make(map[string]cliOptionDef),
+					subcommands: make(map[string]*cliCommandDef),
+				}
+				cmd.subcommands[subName] = subCmd
+				subObj := wrapCliCommandObject(subCmd)
+				if len(args) >= 3 {
+					if fn, ok := args[2].(*Function); ok {
+						applyFunction(fn, []Object{subObj}, env)
+					}
+				}
+				return subObj
+			},
+		}
+
+		m.Pairs["bantuan"] = &Builtin{
+			Fn: func(args ...Object) Object {
+				var sb strings.Builder
+				sb.WriteString(fmt.Sprintf("Penggunaan:\n  %s [perintah] [opsi] [argumen]\n\n", cmd.name))
+				if cmd.description != "" {
+					sb.WriteString(fmt.Sprintf("Deskripsi:\n  %s\n\n", cmd.description))
+				}
+				if len(cmd.subcommands) > 0 {
+					sb.WriteString("Perintah yang tersedia:\n")
+					for _, sc := range cmd.subcommands {
+						sb.WriteString(fmt.Sprintf("  %-15s %s\n", sc.name, sc.description))
+					}
+					sb.WriteString("\n")
+				}
+				if len(cmd.options) > 0 {
+					sb.WriteString("Opsi (Flags):\n")
+					for _, o := range cmd.options {
+						shortText := ""
+						if o.shorthand != "" {
+							shortText = fmt.Sprintf("-%s, ", o.shorthand)
+						}
+						sb.WriteString(fmt.Sprintf("  %-15s %s (bawaan: %s)\n", fmt.Sprintf("%s--%s", shortText, o.name), o.description, o.defaultVal.Inspect()))
+					}
+					sb.WriteString("\n")
+				}
+				return &String{Value: sb.String()}
+			},
+		}
+
+		return m
+	}
+
+	executeCliArgs := func(rawArgs []string) Object {
+		// Evaluasi hierarki perintah & parsing flags
+		currentCmd := rootCliCommand
+		posArgs := []string{}
+		parsedFlags := make(map[string]Object)
+
+		// Set default values untuk root options
+		for k, opt := range currentCmd.options {
+			parsedFlags[k] = opt.defaultVal
+		}
+
+		i := 0
+		for i < len(rawArgs) {
+			arg := rawArgs[i]
+			if strings.HasPrefix(arg, "--") {
+				flagName := strings.TrimPrefix(arg, "--")
+				var flagVal Object = TRUE
+				if strings.Contains(flagName, "=") {
+					parts := strings.SplitN(flagName, "=", 2)
+					flagName = parts[0]
+					flagVal = &String{Value: parts[1]}
+				} else if i+1 < len(rawArgs) && !strings.HasPrefix(rawArgs[i+1], "-") {
+					i++
+					flagVal = &String{Value: rawArgs[i]}
+				}
+				parsedFlags[flagName] = flagVal
+			} else if strings.HasPrefix(arg, "-") && len(arg) == 2 {
+				short := strings.TrimPrefix(arg, "-")
+				found := false
+				for k, opt := range currentCmd.options {
+					if opt.shorthand == short {
+						found = true
+						var flagVal Object = TRUE
+						if i+1 < len(rawArgs) && !strings.HasPrefix(rawArgs[i+1], "-") {
+							i++
+							flagVal = &String{Value: rawArgs[i]}
+						}
+						parsedFlags[k] = flagVal
+						break
+					}
+				}
+				if !found {
+					parsedFlags[short] = TRUE
+				}
+			} else {
+				// Cek apakah argumen adalah subperintah yang terdaftar
+				if sub, exists := currentCmd.subcommands[arg]; exists {
+					currentCmd = sub
+					for k, opt := range currentCmd.options {
+						parsedFlags[k] = opt.defaultVal
+					}
+				} else {
+					posArgs = append(posArgs, arg)
+				}
+			}
+			i++
+		}
+
+		// Konversi parsed flags dan posArgs ke Object
+		ctxMap := &Map{Pairs: make(map[string]Object)}
+		opsiMap := &Map{Pairs: make(map[string]Object)}
+		for k, v := range parsedFlags {
+			opsiMap.Pairs[k] = v
+		}
+		ctxMap.Pairs["opsi"] = opsiMap
+
+		arrArgs := &Array{Elements: make([]Object, len(posArgs))}
+		for idx, a := range posArgs {
+			arrArgs.Elements[idx] = &String{Value: a}
+		}
+		ctxMap.Pairs["argumen"] = arrArgs
+		ctxMap.Pairs["perintah"] = &String{Value: currentCmd.name}
+
+		if currentCmd.action != nil {
+			return applyFunction(currentCmd.action, []Object{ctxMap}, env)
+		}
+		// Jika tidak ada action, cetak bantuan
+		bantuanObj := wrapCliCommandObject(currentCmd).Pairs["bantuan"].(*Builtin).Fn()
+		fmt.Print(bantuanObj.Inspect())
+		return ctxMap
+	}
+
+	cliRootObj := wrapCliCommandObject(rootCliCommand)
+	cliMap.Pairs["nama"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) > 0 {
+				rootCliCommand.name = args[0].Inspect()
+			}
+			return cliRootObj
+		},
+	}
+	cliMap.Pairs["deskripsi"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) > 0 {
+				rootCliCommand.description = args[0].Inspect()
+			}
+			return cliRootObj
+		},
+	}
+	cliMap.Pairs["opsi"] = cliRootObj.Pairs["opsi"]
+	cliMap.Pairs["perintah"] = cliRootObj.Pairs["perintah"]
+	cliMap.Pairs["bantuan"] = cliRootObj.Pairs["bantuan"]
+	cliMap.Pairs["jalankan"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			targetArgs := []string{}
+			if len(args) > 0 {
+				if arr, ok := args[0].(*Array); ok {
+					for _, el := range arr.Elements {
+						targetArgs = append(targetArgs, el.Inspect())
+					}
+				}
+			} else {
+				if len(os.Args) > 1 {
+					targetArgs = os.Args[1:]
+				}
+			}
+			return executeCliArgs(targetArgs)
+		},
+	}
+	env.Set("cli", cliMap)
+
 	// Bawaan: panjang & tambah
 	env.Set("panjang", &Builtin{
 		Fn: func(args ...Object) Object {
