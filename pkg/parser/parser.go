@@ -164,6 +164,10 @@ func (p *Parser) parseStatement() ast.Statement {
 	case token.COBA:
 		return p.parseTryCatchStatement()
 	case token.HENTI:
+		if p.peekTokenIs(token.LPAREN) {
+			// Jika diikuti '(' misal henti() / berhenti(), izinkan sebagai pemanggilan fungsi
+			return p.parseExpressionOrAssignStatement()
+		}
 		stmt := &ast.BreakStatement{Token: p.curToken}
 		if p.peekTokenIs(token.IDENT) {
 			p.nextToken()
@@ -902,7 +906,7 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 
 func (p *Parser) parsePrefix() ast.Expression {
 	switch p.curToken.Type {
-	case token.IDENT, token.LANJUT:
+	case token.IDENT, token.LANJUT, token.HENTI:
 		return &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 	case token.INT:
 		cleanLit := strings.ReplaceAll(p.curToken.Literal, "_", "")
