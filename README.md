@@ -32,7 +32,7 @@ fungsi utama() {
 ```
 
 > 📖 **Dokumentasi Kode Lengkap & Referensi API:**  
-> Untuk panduan sintaksis, seluruh contoh kode (19 contoh lengkap), dan referensi pustaka standar (`cetak`, `waktu`, `pola`, `larik`, `peta`, `kompresi`, `jalur`, `enkoding`, `bita`, `acak`, `teks`, `konversi`, `kripto`, `berkas`, `sistem`, `web`, `jendela`, `basisdata`, `uji`), silakan baca langsung di:  
+> Untuk panduan sintaksis, seluruh contoh kode (19 contoh lengkap), dan referensi pustaka standar (`cetak`, `waktu`, `arsip`, `pola`, `larik`, `peta`, `kompresi`, `jalur`, `enkoding`, `bita`, `acak`, `teks`, `konversi`, `kripto`, `berkas`, `sistem`, `web`, `jendela`, `basisdata`, `uji`), silakan baca langsung di:  
 > 👉 **[Halaman Dokumentasi Web Resmi](https://zufarrizal.github.io/Bahasa-Ku/dokumentasi.html)** atau buka file lokal [`dokumentasi.html`](dokumentasi.html).
 
 ---
@@ -67,11 +67,21 @@ ku jalankan contoh/halo.ku
 # Menjalankan suite pengujian unit test
 ku uji
 
+# Menjalankan tolok ukur performa (Benchmark dengan metrik ns/op, B/op, allocs/op)
+ku tolakUkur contoh/matematika_tolakukur.ku
+
 # Merapikan format kode secara otomatis (mirip gofmt)
 ku rapi -w contoh/halo.ku
 
-# Kompilasi langsung ke biner mandiri (.exe)
+# Memeriksa kerapian format kode (untuk CI/CD)
+ku rapi -c .
+
+# Kompilasi mandiri ke biner executable (.exe / Linux ELF / Darwin Mach-O)
 ku kompilasi contoh/halo.ku -o HaloApp.exe
+ku kompilasi -gui contoh/aplikasi_desktop.ku -o DesktopApp.exe
+
+# Mengimpor modul langsung dari URL Remote (HTTPS dengan caching lokal otomatis)
+# Di dalam kode: pakai "https://raw.githubusercontent.com/.../modul.ku"
 
 # Membuat kerangka kerja proyek baru
 ku inisiasi web portal-berita
