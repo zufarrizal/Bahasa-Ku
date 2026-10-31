@@ -781,102 +781,135 @@ bahasa ku
 
 pakai "cetak"
 pakai "web"
-
-// Tangani REST API rute dinamis dengan parameter ID
-fungsi ambilProduk(konteks) {
-    var id = konteks.parameter.id
-    var mode = konteks.query.mode ?? "biasa"
-    kembalikan {
-        "sukses": benar,
-        "id_produk": id,
-        "nama": "Paket Belajar Bahasa Ku",
-        "harga": 150000,
-        "mode_ambil": mode
-    }
-}
-
-// Tangani POST data baru
-fungsi simpanProduk(konteks) {
-    var payload = konteks.badanJson ?? {}
-    kembalikan {
-        "sukses": benar,
-        "pesan": "Produk tersimpan",
-        "data": payload
-    }
-}
-
-fungsi beranda(konteks) {
-    kembalikan "<h1>🚀 Selamat Datang di Server Web Bahasa Ku!</h1><p>Proyek backend Anda siap digunakan.</p>"
-}
+pakai "konfigurasi"
+pakai "debug"
 
 fungsi utama() {
-    // Aktifkan CORS untuk kemudahan frontend modern (React, Vue, Flutter, dsb)
-    web.aktifkanCORS("*")
+    // 1. Muat Konfigurasi Berlapis (.env & bawaan)
+    konfigurasi.muatBerkas(".env")
+    var port = konfigurasi.ambilAngka("PORT", 3000)
+    var namaApp = konfigurasi.ambilTeks("APP_NAME", "Aplikasi Web Ku")
 
-    // Daftarkan rute REST API
-    web.dapatkan("/", beranda)
-    web.dapatkan("/api/produk/:id", ambilProduk)
-    web.pos("/api/produk", simpanProduk)
+    // 2. Middleware & CORS
+    web.aktifkanCORS()
+    web.gunakan(fungsi(minta, respon, lanjut) {
+        cetak.tulis("[HTTP]", minta["metode"], minta["jalur"])
+        lanjut()
+    })
 
-    cetak.tulis("Server web berjalan di http://localhost:8080")
-    web.jalankan(":8080")
+    // 3. Rute Beranda
+    web.dapatkan("/", fungsi(minta, respon) {
+        respon.status(200).html("<h1>🚀 Selamat Datang di " + namaApp + "</h1><p>Server aktif di port " + teks(port) + "</p>")
+    })
+
+    // 4. REST API Terkelola (Grup)
+    var api = web.grup("/api")
+    api.dapatkan("/info", fungsi(minta, respon) {
+        respon.status(200).json({
+            "aplikasi": namaApp,
+            "status": "aktif",
+            "waktu": waktu.sekarang()
+        })
+    })
+
+    cetak.tulis("🚀 " + namaApp + " berjalan di: http://localhost:" + teks(port))
+    web.jalankan(port)
 }
 `
+		// Sertakan .env default
+		_ = os.WriteFile(filepath.Join(folderName, ".env"), []byte("PORT=3000\nAPP_NAME=Aplikasi Web Ku\nAPP_DEBUG=true\n"), 0644)
+		_ = os.WriteFile(filepath.Join(folderName, ".gitignore"), []byte("*.db\n*.exe\n.env.local\n"), 0644)
+
 	case "desktop":
 		fileContent = `paket utama
 
 pakai "cetak"
 pakai "desktop"
 pakai "jendela"
+pakai "debug"
 
 fungsi utama() {
     cetak.tulis("Memulai aplikasi Desktop Bahasa Ku...")
 
-    // Tampilkan notifikasi dialog native OS
-    desktop.pesan("Info", "Selamat datang di Aplikasi Desktop Bahasa Ku!")
+    jendela.daftarkanFungsi("ambilStatus", fungsi() {
+        var stat = debug.memori()
+        kembalikan {
+            "pesan": "Halo dari Backend Bahasa Ku!",
+            "memoriMB": stat["alokasiMB"],
+            "goroutine": stat["jumlahGoroutine"]
+        }
+    })
 
-    // Buka jendela WebView mandiri yang interaktif
     jendela.buka({
         "judul": "Aplikasi Desktop Modern - Bahasa Ku",
         "lebar": 800,
         "tinggi": 600,
         "html": ` + "`" + `
-            <html style="font-family: sans-serif; background: #0f172a; color: #f8fafc; padding: 30px; text-align: center;">
+            <!DOCTYPE html>
+            <html style="font-family: system-ui, sans-serif; background: #0f172a; color: #f8fafc; padding: 40px; text-align: center;">
                 <body>
                     <h1 style="color: #38bdf8;">⚡ Aplikasi Desktop Bahasa Ku</h1>
-                    <p>Antarmuka grafis desktop modern berbasis HTML5/CSS dan WebView OS native.</p>
-                    <button style="padding: 10px 20px; font-size: 16px; border-radius: 8px; border: none; background: #0284c7; color: white; cursor: pointer;"
-                            onclick="alert('Halo dari event interaktif!')">
-                        Klik Saya
-                    </button>
+                    <p style="color: #94a3b8;">Frontend HTML5/CSS modern dengan integrasi backend native Bahasa Ku.</p>
+                    <div style="margin: 30px auto; max-width: 400px; padding: 20px; background: #1e293b; border-radius: 12px; border: 1px solid #334155;">
+                        <button style="padding: 10px 24px; font-weight: 600; border-radius: 8px; border: none; background: #0284c7; color: white; cursor: pointer;"
+                                onclick="panggilKu()">
+                            Cek Status Mesin
+                        </button>
+                        <p id="hasil" style="margin-top: 15px; font-size: 14px; color: #34d399;"></p>
+                    </div>
+                    <script>
+                        async function panggilKu() {
+                            try {
+                                const res = await fetch('/ku_ipc', {
+                                    method: 'POST',
+                                    headers: {'Content-Type': 'application/json'},
+                                    body: JSON.stringify({fungsi: 'ambilStatus', argumen: []})
+                                });
+                                const data = await res.json();
+                                document.getElementById('hasil').innerText = data.hasil.pesan + ' (' + data.hasil.memoriMB + ' MB)';
+                            } catch(e) {
+                                document.getElementById('hasil').innerText = 'Gagal memanggil backend: ' + e;
+                            }
+                        }
+                    </script>
                 </body>
             </html>
         ` + "`" + `
     })
 }
 `
+		_ = os.WriteFile(filepath.Join(folderName, ".gitignore"), []byte("*.exe\n*.db\n"), 0644)
+
 	case "cli":
 		fileContent = `paket utama
 
 pakai "cetak"
-pakai "sistem"
-pakai "basisdata"
-pakai "konversi"
+pakai "cli"
+pakai "konfigurasi"
+pakai "debug"
 
 fungsi utama() {
-    cetak.tulis("=== Selamat Datang di Proyek Bahasa Ku ===")
-    cetak.tulis("Waktu saat ini:", sistem.waktu())
+    cli.nama("` + filepath.Base(folderName) + `")
+    cli.deskripsi("Alat CLI Modern Berbasis Bahasa Ku")
 
-    // Inisialisasi basis data SQLite lokal portabel
-    var db = basisdata.bukaBerkas("catatan.db")
-    db.eksekusi("CREATE TABLE IF NOT EXISTS riwayat (id INTEGER PRIMARY KEY, catatan TEXT)")
-    db.eksekusi("INSERT INTO riwayat (catatan) VALUES (?)", "Inisialisasi proyek baru")
+    cli.perintah("info", "Menampilkan status sistem", fungsi(cmd) {
+        cmd.opsi("detail", "d", "Tampilkan statistik memori", salah)
+        cmd.aksi(fungsi(konteks) {
+            cetak.tulis("=== Status Aplikasi ===")
+            cetak.tulis("Nama:", cli.nama)
+            jika konteks["opsi"]["detail"] == benar {
+                var mem = debug.memori()
+                cetak.tulis("Memori Heap:", mem["alokasiMB"], "MB")
+                cetak.tulis("Goroutine:", mem["jumlahGoroutine"])
+            }
+        })
+    })
 
-    var hasil = db.kueri("SELECT COUNT(*) AS total FROM riwayat")
-    cetak.tulis("Total riwayat tersimpan:", hasil[0]["total"])
-    cetak.tulis("Proyek Anda siap dikembangkan! 🎉")
+    cli.jalankan()
 }
 `
+		_ = os.WriteFile(filepath.Join(folderName, ".gitignore"), []byte("*.exe\n*.db\n"), 0644)
+
 	default:
 		fmt.Printf("Tipe proyek '%s' tidak dikenal. Pilihan: web, desktop, cli\n", projectType)
 		os.Exit(1)
