@@ -127,7 +127,11 @@ func main() {
 					os.Exit(1)
 				}
 				env := evaluator.InitGlobalEnvironment()
-				evaluator.Eval(prog, env)
+				res := evaluator.Eval(prog, env)
+				if pObj, isPanic := res.(*evaluator.PanicObject); isPanic {
+					fmt.Printf("Galat Eksekusi (Panik): %s\n", pObj.Value.Inspect())
+					os.Exit(1)
+				}
 				return
 			}
 		}
@@ -304,7 +308,11 @@ func runFile(filename string) {
 	}
 
 	env := evaluator.InitGlobalEnvironment()
-	evaluator.Eval(prog, env)
+	res := evaluator.Eval(prog, env)
+	if pObj, isPanic := res.(*evaluator.PanicObject); isPanic {
+		fmt.Println("Galat Eksekusi (Panik): " + pObj.Value.Inspect())
+		os.Exit(1)
+	}
 }
 
 func transpileFile(source, target string) {
@@ -501,7 +509,11 @@ func main() {
 		os.Exit(1)
 	}
 	env := evaluator.InitGlobalEnvironment()
-	evaluator.Eval(prog, env)
+	res := evaluator.Eval(prog, env)
+	if pObj, isPanic := res.(*evaluator.PanicObject); isPanic {
+		fmt.Println("Galat Eksekusi (Panik): " + pObj.Value.Inspect())
+		os.Exit(1)
+	}
 }
 `, string(content))
 
