@@ -332,6 +332,9 @@ func (f *Formatter) Format(node ast.Node) string {
 	case *ast.StringLiteral:
 		return fmt.Sprintf("%q", n.Value)
 
+	case *ast.InterpolatedStringLiteral:
+		return "`" + n.Token.Literal + "`"
+
 	case *ast.BooleanLiteral:
 		if n.Value {
 			return "benar"

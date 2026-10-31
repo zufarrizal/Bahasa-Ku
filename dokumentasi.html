@@ -484,10 +484,14 @@ fungsi utama() {
     var biner = 0b1010          // biner (0b) -> 10
     var mode = 0o77             // oktal (0o) -> 63
     
+    // Interpolasi String Modern (${...})
+    var sapa = `Halo ${nama}, umur Anda ${umur} tahun!`
+    var hitung = "Hasil penjumlahan: ${10 + 20}"
+    
     // Nilai kosong
     var data = kosong // atau nihil
 
-    cetak.tulis(nama, umur, tinggi, aktif, PI, gaji)
+    cetak.tulis(nama, umur, tinggi, aktif, PI, gaji, sapa, hitung)
 }</code></pre>
 
         <h3>Array (Larik), Map (Kamus) & Built-in ala Go</h3>

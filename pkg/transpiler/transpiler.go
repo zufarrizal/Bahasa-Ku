@@ -349,6 +349,20 @@ func (t *Transpiler) Transpile(node ast.Node) string {
 	case *ast.StringLiteral:
 		return fmt.Sprintf("%q", n.Value)
 
+	case *ast.InterpolatedStringLiteral:
+		partStrs := []string{}
+		for _, part := range n.Parts {
+			if strLit, ok := part.(*ast.StringLiteral); ok {
+				partStrs = append(partStrs, fmt.Sprintf("%q", strLit.Value))
+			} else {
+				partStrs = append(partStrs, fmt.Sprintf("fmt.Sprint(%s)", t.Transpile(part)))
+			}
+		}
+		if len(partStrs) == 0 {
+			return `""`
+		}
+		return strings.Join(partStrs, " + ")
+
 	case *ast.BooleanLiteral:
 		if n.Value {
 			return "true"

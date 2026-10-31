@@ -299,6 +299,14 @@ type StringLiteral struct {
 func (sl *StringLiteral) expressionNode()      {}
 func (sl *StringLiteral) TokenLiteral() string { return sl.Token.Literal }
 
+type InterpolatedStringLiteral struct {
+	Token token.Token
+	Parts []Expression
+}
+
+func (isl *InterpolatedStringLiteral) expressionNode()      {}
+func (isl *InterpolatedStringLiteral) TokenLiteral() string { return isl.Token.Literal }
+
 type BooleanLiteral struct {
 	Token token.Token
 	Value bool

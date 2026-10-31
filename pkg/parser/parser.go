@@ -909,7 +909,7 @@ func (p *Parser) parsePrefix() ast.Expression {
 		v, _ := strconv.ParseFloat(cleanLit, 64)
 		return &ast.FloatLiteral{Token: p.curToken, Value: v}
 	case token.STRING:
-		return &ast.StringLiteral{Token: p.curToken, Value: p.curToken.Literal}
+		return p.parseStringLiteral()
 	case token.BENAR:
 		return &ast.BooleanLiteral{Token: p.curToken, Value: true}
 	case token.SALAH:
@@ -1099,6 +1099,69 @@ func (p *Parser) parseMapLiteral() ast.Expression {
 		return nil
 	}
 	return m
+}
+
+func (p *Parser) parseStringLiteral() ast.Expression {
+	tok := p.curToken
+	lit := tok.Literal
+
+	// Cek apakah string mengandung template interpolasi ${...}
+	if !strings.Contains(lit, "${") {
+		return &ast.StringLiteral{Token: tok, Value: lit}
+	}
+
+	parts := []ast.Expression{}
+	remaining := lit
+
+	for {
+		startIdx := strings.Index(remaining, "${")
+		if startIdx == -1 {
+			if len(remaining) > 0 {
+				parts = append(parts, &ast.StringLiteral{Token: tok, Value: remaining})
+			}
+			break
+		}
+
+		if startIdx > 0 {
+			parts = append(parts, &ast.StringLiteral{Token: tok, Value: remaining[:startIdx]})
+		}
+
+		// Cari kurung kurawal penutup '}'
+		endIdx := -1
+		braceCount := 1
+		for i := startIdx + 2; i < len(remaining); i++ {
+			if remaining[i] == '{' {
+				braceCount++
+			} else if remaining[i] == '}' {
+				braceCount--
+				if braceCount == 0 {
+					endIdx = i
+					break
+				}
+			}
+		}
+
+		if endIdx == -1 {
+			// Kurung kurawal tidak tertutup, perlakukan sebagai string mentah
+			parts = append(parts, &ast.StringLiteral{Token: tok, Value: remaining[startIdx:]})
+			break
+		}
+
+		exprStr := remaining[startIdx+2 : endIdx]
+		remaining = remaining[endIdx+1:]
+
+		// Parse sub-ekspresi di dalam ${...}
+		subLexer := lexer.New(exprStr)
+		subParser := New(subLexer)
+		subExpr := subParser.parseExpression(LOWEST)
+		if subExpr != nil {
+			parts = append(parts, subExpr)
+		} else {
+			parts = append(parts, &ast.StringLiteral{Token: tok, Value: "${" + exprStr + "}"})
+		}
+	}
+
+	return &ast.InterpolatedStringLiteral{Token: tok, Parts: parts}
 }
 
 func (p *Parser) parseFunctionLiteral() ast.Expression {

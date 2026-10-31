@@ -7679,6 +7679,20 @@ func Eval(node ast.Node, env *Environment) Object {
 	case *ast.StringLiteral:
 		return &String{Value: n.Value}
 
+	case *ast.InterpolatedStringLiteral:
+		var sb strings.Builder
+		for _, part := range n.Parts {
+			val := Eval(part, env)
+			if val != nil {
+				if strObj, isStr := val.(*String); isStr {
+					sb.WriteString(strObj.Value)
+				} else {
+					sb.WriteString(val.Inspect())
+				}
+			}
+		}
+		return &String{Value: sb.String()}
+
 	case *ast.BooleanLiteral:
 		if n.Value {
 			return TRUE
