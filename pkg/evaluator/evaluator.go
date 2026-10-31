@@ -272,27 +272,34 @@ func ResolveModulePath(path string) (string, error) {
 
 		cachedFile := filepath.Join(cacheDir, fmt.Sprintf("%s_%s", hashStr, baseName))
 
-		// Jika belum ada di cache, unduh berkas
-		if _, err := os.Stat(cachedFile); os.IsNotExist(err) {
-			client := &http.Client{Timeout: 15 * time.Second}
-			resp, err := client.Get(path)
-			if err != nil {
-				return "", fmt.Errorf("gagal mengunduh modul remote '%s': %v", path, err)
-			}
+		// Cek apakah berkas sudah ada di cache lokal
+		hasCached := false
+		if _, err := os.Stat(cachedFile); err == nil {
+			hasCached = true
+		}
+
+		// Coba unduh berkas remote dengan timeout aman
+		client := &http.Client{Timeout: 10 * time.Second}
+		resp, err := client.Get(path)
+		if err == nil && resp.StatusCode == http.StatusOK {
 			defer resp.Body.Close()
-
-			if resp.StatusCode != http.StatusOK {
-				return "", fmt.Errorf("gagal mengunduh modul remote '%s' (status %d)", path, resp.StatusCode)
+			data, readErr := io.ReadAll(resp.Body)
+			if readErr == nil && len(data) > 0 {
+				_ = os.WriteFile(cachedFile, data, 0644)
+				return cachedFile, nil
 			}
+		}
 
-			data, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return "", fmt.Errorf("gagal membaca data modul remote '%s': %v", path, err)
-			}
+		// Jika gagal unduh tapi cache lokal sudah pernah ada, gunakan fallback cache offline
+		if hasCached {
+			return cachedFile, nil
+		}
 
-			if err := os.WriteFile(cachedFile, data, 0644); err != nil {
-				return "", fmt.Errorf("gagal menyimpan cache modul '%s': %v", cachedFile, err)
-			}
+		if err != nil {
+			return "", fmt.Errorf("gagal mengunduh modul remote '%s' dan cache lokal tidak tersedia: %v", path, err)
+		}
+		if resp != nil && resp.StatusCode != http.StatusOK {
+			return "", fmt.Errorf("gagal mengunduh modul remote '%s' (status %d)", path, resp.StatusCode)
 		}
 
 		return cachedFile, nil
