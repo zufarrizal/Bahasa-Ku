@@ -2,12 +2,17 @@ package main
 
 import (
 	"bytes"
-	fmt "fmt"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
+	"time"
 	"unicode"
 
 	"github.com/zufarrizal/bahasa-ku/pkg/ast"
@@ -142,7 +147,20 @@ func main() {
 	case "repl":
 		repl.Start(os.Stdin, os.Stdout, version)
 	case "versi", "-v", "--version":
+		checkUpgrade := false
+		for _, a := range args[1:] {
+			if a == "--cek" || a == "-c" || a == "--check" {
+				checkUpgrade = true
+			}
+		}
 		fmt.Println("Bahasa Ku versi", version)
+		if checkUpgrade {
+			checkLatestRelease(true)
+		}
+
+	case "perbarui", "upgrade", "update":
+		fmt.Println("Bahasa Ku versi lokal:", version)
+		checkLatestRelease(false)
 
 	case "jalankan":
 		if len(args) < 2 {
@@ -279,7 +297,8 @@ func printHelp() {
   ku kompilasi <berkas.ku> [-gui] [-ikon ikon.ico] [-native] [-o keluar.exe]  Kompilasi mandiri (.exe)
   ku inisialisasi <nama_folder> [web|desktop|cli]  Membuat proyek baru beserta berkas ku.mod
   ku buat <berkas.ku>      Mengonversi berkas .ku ke .go murni
-  ku versi                 Menampilkan versi
+  ku versi [--cek]         Menampilkan versi & memeriksa rilis terbaru
+  ku perbarui              Memeriksa dan memperbarui biner Bahasa Ku ke rilis terbaru
 
 Contoh:
   ku
@@ -1033,6 +1052,100 @@ func runBenchmarks(targetPath string) {
 
 	fmt.Println("✨ Pengujian Tolak Ukur Selesai.")
 }
+
+type githubRelease struct {
+	TagName string `json:"tag_name"`
+	HTMLURL string `json:"html_url"`
+	Body    string `json:"body"`
+}
+
+func checkLatestRelease(checkOnly bool) {
+	fmt.Print("🔍 Memeriksa versi rilis terbaru di GitHub...")
+	client := &http.Client{Timeout: 8 * time.Second}
+	req, err := http.NewRequest("GET", "https://api.github.com/repos/zufarrizal/Bahasa-Ku/releases/latest", nil)
+	if err != nil {
+		fmt.Printf("\n❌ Gagal membuat permintaan pembaruan: %v\n", err)
+		return
+	}
+	req.Header.Set("User-Agent", "Bahasa-Ku-CLI")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Printf("\n⚠️  Gagal terhubung ke GitHub: %v\n", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		fmt.Printf("\n⚠️  Respons server GitHub tidak terduga: status %d\n", resp.StatusCode)
+		return
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Printf("\n❌ Gagal membaca respon GitHub: %v\n", err)
+		return
+	}
+
+	var rel githubRelease
+	if err := json.Unmarshal(body, &rel); err != nil {
+		fmt.Printf("\n❌ Gagal mem-parse respon rilis: %v\n", err)
+		return
+	}
+
+	fmt.Println(" Selesai!")
+	latestTag := strings.TrimSpace(rel.TagName)
+	localTag := "v0.3.5"
+
+	cleanVer := func(s string) []int {
+		s = strings.TrimPrefix(strings.TrimPrefix(strings.TrimSpace(s), "v"), "V")
+		parts := strings.Split(s, ".")
+		nums := []int{}
+		for _, p := range parts {
+			numStr := ""
+			for _, ch := range p {
+				if ch >= '0' && ch <= '9' {
+					numStr += string(ch)
+				} else {
+					break
+				}
+			}
+			n, _ := strconv.Atoi(numStr)
+			nums = append(nums, n)
+		}
+		for len(nums) < 3 {
+			nums = append(nums, 0)
+		}
+		return nums
+	}
+
+	vLocal := cleanVer(localTag)
+	vRemote := cleanVer(latestTag)
+
+	isNewer := false
+	for i := 0; i < len(vLocal) && i < len(vRemote); i++ {
+		if vRemote[i] > vLocal[i] {
+			isNewer = true
+			break
+		} else if vRemote[i] < vLocal[i] {
+			break
+		}
+	}
+
+	if isNewer {
+		fmt.Printf("\n🌟 Versi baru tersedia: %s (Versi lokal Anda: %s)\n", latestTag, localTag)
+		fmt.Printf("Catatan rilis: %s\n", rel.HTMLURL)
+		fmt.Println("\nCara memperbarui:")
+		if runtime.GOOS == "windows" {
+			fmt.Println("  PowerShell: irm https://raw.githubusercontent.com/zufarrizal/Bahasa-Ku/main/pasang.ps1 | iex")
+		} else {
+			fmt.Println("  Terminal:   curl -fsSL https://raw.githubusercontent.com/zufarrizal/Bahasa-Ku/main/pasang.sh | bash")
+		}
+	} else {
+		fmt.Printf("\n✨ Bahasa Ku sudah menggunakan versi terbaru (%s)! Tidak perlu pembaruan.\n", localTag)
+	}
+}
+
 
 
 
