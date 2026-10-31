@@ -37,6 +37,19 @@ func tampilkanPesanNative(judul, isi, tipe string) {
 	msgBox.Call(0, uintptr(unsafe.Pointer(cPtr)), uintptr(unsafe.Pointer(tPtr)), uintptr(uType))
 }
 
+func tampilkanKonfirmasiNative(judul, isi string) bool {
+	user32 := syscall.NewLazyDLL("user32.dll")
+	msgBox := user32.NewProc("MessageBoxW")
+	tPtr, _ := syscall.UTF16PtrFromString(judul)
+	cPtr, _ := syscall.UTF16PtrFromString(isi)
+
+	// MB_YESNO (0x00000004) | MB_ICONQUESTION (0x00000020)
+	var uType uint32 = 0x00000004 | 0x00000020
+	ret, _, _ := msgBox.Call(0, uintptr(unsafe.Pointer(cPtr)), uintptr(unsafe.Pointer(tPtr)), uintptr(uType))
+	// IDYES = 6
+	return ret == 6
+}
+
 func dialogPilihBerkasNative(judul, filter string) string {
 	psScript := `Add-Type -AssemblyName System.Windows.Forms; $d = New-Object System.Windows.Forms.OpenFileDialog; `
 	if judul != "" {

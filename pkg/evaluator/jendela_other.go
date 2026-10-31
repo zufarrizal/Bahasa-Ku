@@ -11,6 +11,11 @@ func tampilkanPesanNative(judul, isi, tipe string) {
 	fmt.Printf("[%s][%s] %s\n", tipe, judul, isi)
 }
 
+func tampilkanKonfirmasiNative(judul, isi string) bool {
+	fmt.Printf("[KONFIRMASI][%s] %s (y/n)\n", judul, isi)
+	return true
+}
+
 func dialogPilihBerkasNative(judul, filter string) string {
 	return ""
 }

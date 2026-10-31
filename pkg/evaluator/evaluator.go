@@ -1161,6 +1161,24 @@ func InitGlobalEnvironment() *Environment {
 		},
 	}
 
+	jendelaMap.Pairs["konfirmasi"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			judul := "Konfirmasi Tindakan"
+			isi := "Apakah Anda yakin ingin melanjutkan?"
+			if len(args) == 1 {
+				isi = args[0].Inspect()
+			} else if len(args) >= 2 {
+				judul = args[0].Inspect()
+				isi = args[1].Inspect()
+			}
+			yakin := tampilkanKonfirmasiNative(judul, isi)
+			if yakin {
+				return TRUE
+			}
+			return FALSE
+		},
+	}
+
 	jendelaMap.Pairs["pilihBerkas"] = &Builtin{
 		Fn: func(args ...Object) Object {
 			judul := "Pilih Berkas"
