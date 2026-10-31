@@ -2958,6 +2958,103 @@ func InitGlobalEnvironment() *Environment {
 			return convertGoToKuObject(parsed)
 		},
 	}
+
+	// Password Hashing Standar Industri (PBKDF2-SHA512 + Salt Kriptografis Acak)
+	kriptoMap.Pairs["hashSandi"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			sandi := []byte(args[0].Inspect())
+			// Generate 16-byte random cryptographic salt
+			salt := make([]byte, 16)
+			_, _ = io.ReadFull(rand.Reader, salt)
+
+			// Iterasi 100.000 putaran HMAC-SHA512 (sangat aman dari brute force & rainbow table)
+			iter := 100000
+			keyLen := 32
+			prf := hmac.New(sha512.New, sandi)
+			hashResult := make([]byte, keyLen)
+
+			// PBKDF2 Block 1
+			u := make([]byte, prf.Size())
+			prf.Reset()
+			prf.Write(salt)
+			prf.Write([]byte{0, 0, 0, 1})
+			u = prf.Sum(u[:0])
+			copy(hashResult, u)
+
+			for i := 1; i < iter; i++ {
+				prf.Reset()
+				prf.Write(u)
+				u = prf.Sum(u[:0])
+				for k := 0; k < len(hashResult); k++ {
+					hashResult[k] ^= u[k]
+				}
+			}
+
+			// Format standar: pbkdf2_sha512$100000$saltHex$hashHex
+			formatted := fmt.Sprintf("pbkdf2_sha512$%d$%s$%s", iter, hex.EncodeToString(salt), hex.EncodeToString(hashResult))
+			return &String{Value: formatted}
+		},
+	}
+
+	kriptoMap.Pairs["cocokkanSandi"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return FALSE
+			}
+			sandiInput := []byte(args[0].Inspect())
+			hashedRecord := args[1].Inspect()
+
+			parts := strings.Split(hashedRecord, "$")
+			if len(parts) != 4 || parts[0] != "pbkdf2_sha512" {
+				return FALSE
+			}
+
+			iter, err := strconv.Atoi(parts[1])
+			if err != nil || iter <= 0 {
+				return FALSE
+			}
+
+			salt, err := hex.DecodeString(parts[2])
+			if err != nil || len(salt) == 0 {
+				return FALSE
+			}
+
+			expectedHash, err := hex.DecodeString(parts[3])
+			if err != nil || len(expectedHash) == 0 {
+				return FALSE
+			}
+
+			// Hitung ulang hash dengan sandi input
+			prf := hmac.New(sha512.New, sandiInput)
+			calcHash := make([]byte, len(expectedHash))
+
+			u := make([]byte, prf.Size())
+			prf.Reset()
+			prf.Write(salt)
+			prf.Write([]byte{0, 0, 0, 1})
+			u = prf.Sum(u[:0])
+			copy(calcHash, u)
+
+			for i := 1; i < iter; i++ {
+				prf.Reset()
+				prf.Write(u)
+				u = prf.Sum(u[:0])
+				for k := 0; k < len(calcHash); k++ {
+					calcHash[k] ^= u[k]
+				}
+			}
+
+			// Constant-time compare untuk mencegah timing attacks
+			if hmac.Equal(calcHash, expectedHash) {
+				return TRUE
+			}
+			return FALSE
+		},
+	}
+
 	env.Set("kripto", kriptoMap)
 
 	// Modul matematika (Kalkulasi Numerik)
@@ -8133,6 +8230,9 @@ func Eval(node ast.Node, env *Environment) Object {
 
 	case *ast.DotExpression:
 		left := Eval(n.Left, env)
+		if n.IsOptional && (left == nil || left == NIL) {
+			return NIL
+		}
 		if m, ok := left.(*Map); ok {
 			if val, ok := m.Pairs[n.Property.Value]; ok {
 				return val
