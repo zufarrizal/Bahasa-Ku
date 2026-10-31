@@ -3,7 +3,7 @@
 Ekstensi resmi Visual Studio Code untuk bahasa pemrograman **Bahasa Ku** (`.ku`). Menyediakan penyorotan sintaksis (*syntax highlighting*) cerdas, konfigurasi bahasa, auto-closing kurung & tanda petik, serta ikon berkas resmi.
 
 <p align="center">
-  <img src="icon.png" alt="Logo Ekstensi Bahasa Ku" width="128" height="128" />
+  <img src="https://raw.githubusercontent.com/zufarrizal/Bahasa-Ku/main/ekstensi-vscode/icon.png" alt="Logo Ekstensi Bahasa Ku" width="128" height="128" />
 </p>
 
 ---
