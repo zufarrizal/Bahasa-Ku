@@ -32,7 +32,7 @@ fungsi utama() {
 ```
 
 > 📖 **Dokumentasi Kode Lengkap & Referensi API:**  
-> Untuk panduan sintaksis, seluruh contoh kode (19 contoh lengkap), dan referensi pustaka standar (`cetak`, `waktu`, `arsip`, `pola`, `larik`, `peta`, `kompresi`, `jalur`, `enkoding`, `bita`, `acak`, `teks`, `konversi`, `kripto`, `berkas`, `sistem`, `web`, `jendela`, `basisdata`, `uji`), silakan baca langsung di:  
+> Untuk panduan sintaksis, seluruh contoh kode, dan referensi pustaka standar (`cetak`, `waktu`, `arsip`, `pola`, `larik`, `peta`, `kompresi`, `jalur`, `enkoding`, `bita`, `acak`, `teks`, `konversi`, `kripto`, `berkas`, `sistem`, `web`, `jendela`, `desktop`, `basisdata`, `soket`, `jadwal`, `gambar`, `cli`, `pekerja`, `singgahan`, `peristiwa`, `konfigurasi`, `debug`, `uji`), silakan baca langsung di:  
 > 👉 **[Halaman Dokumentasi Web Resmi](https://zufarrizal.github.io/Bahasa-Ku/dokumentasi.html)** atau buka file lokal [`dokumentasi.html`](dokumentasi.html).
 
 ---
@@ -61,14 +61,20 @@ curl -fsSL https://raw.githubusercontent.com/zufarrizal/Bahasa-Ku/main/pasang.sh
 # Terminal Interaktif (REPL)
 ku
 
-# Menjalankan berkas kode
+# Menjalankan berkas kode (otomatis mendeteksi 'utama.ku' jika tanpa nama file)
 ku jalankan contoh/halo.ku
+ku jalankan              # Compact run: otomatis jalankan utama.ku di folder aktif
+ku j                     # Pintasan super cepat 1 huruf (alias 'ku jalankan')
+ku j -d                  # Menjalankan dengan mode debug & profil memori/waktu
 
 # Menjalankan aplikasi dengan Hot Reload (otomatis restart saat kode disimpan)
 ku awasi contoh/halo.ku
+ku awasi                 # Compact watch: awasi seluruh folder aktif
+ku a                     # Pintasan 1 huruf (alias 'ku awasi')
 
 # Menjalankan suite pengujian unit test
 ku uji
+ku u                     # Pintasan 1 huruf (alias 'ku uji')
 
 # Menjalankan tolok ukur performa (Benchmark dengan metrik ns/op, B/op, allocs/op)
 ku tolakUkur contoh/matematika_tolakukur.ku
@@ -81,12 +87,14 @@ ku rapi -c .
 
 # Kompilasi mandiri ke biner executable (.exe / Linux ELF / Darwin Mach-O)
 ku kompilasi contoh/halo.ku -o HaloApp.exe
+ku kompilasi             # Compact compile: otomatis kompilasi utama.ku
+ku k                     # Pintasan 1 huruf (alias 'ku kompilasi')
 ku kompilasi -gui contoh/aplikasi_desktop.ku -o DesktopApp.exe
 
 # Mengimpor modul langsung dari URL Remote (HTTPS dengan caching lokal otomatis)
 # Di dalam kode: pakai "https://raw.githubusercontent.com/.../modul.ku"
 
-# Membuat kerangka kerja proyek baru
+# Membuat kerangka kerja proyek baru (scaffolding rapi dengan ku.mod, .env, .gitignore)
 ku inisiasi web portal-berita
 ku inisiasi desktop aplikasi-kasir
 ku inisiasi cli perkakas-data
@@ -133,6 +141,8 @@ Ekstensi resmi Visual Studio Code menyediakan pewarnaan sintaks (*syntax highlig
 | `delete(map, key)` | `hapus(map, key)` | Menghapus kunci dari map |
 | `true` / `false` | `benar` / `salah` | Nilai boolean |
 | `nil` | `kosong` / `nihil` | Nilai kosong |
+| `obj?.prop` | `obj?.prop` | Akses properti aman (*Optional Chaining*) |
+| `val ?? default` | `val ?? bawaan` | Nilai bawaan jika kosong (*Nullish Coalescing*) |
 
 ---
 

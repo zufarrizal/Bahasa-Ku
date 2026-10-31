@@ -130,6 +130,7 @@
 pakai "cetak"
 pakai "matematika"
 pakai "konversi"
+pakai "singgahan"
 
 fungsi hitungFaktorial(n) {
     jika n <= 1 {
@@ -141,18 +142,25 @@ fungsi hitungFaktorial(n) {
 fungsi utama() {
     cetak.tulis("⚡ === Selamat Datang di Bahasa Ku v0.3.5! ===")
     
+    // In-Memory Cache bawaan dengan TTL
+    singgahan.taruh("pengguna", "Zufar Rizal", 60)
+    cetak.tulis("Data singgahan:", singgahan.ambil("pengguna"))
+
+    // Safe navigation (?.) & null coalescing (??)
+    var profil = {"nama": "Ahmad", "alamat": nil}
+    var kota = profil["alamat"]?.kota ?? "Jakarta (Default)"
+    cetak.tulis("Kota pengguna:", kota)
+
     // Angka modern dengan pemisah digit underscore & basis heksadesimal
     var targetDana = 25_000_000
-    var kodeWarna = 0xFF_AA_00
     cetak.tulis("Target Dana:", konversi.rupiah(targetDana))
-    cetak.tulis("Kode Warna Heksa:", kodeWarna)
 
     // Perulangan dan perhitungan fungsi
     untuk i := 1; i <= 5; i++ {
         cetak.tulis("Faktorial dari", i, "=", hitungFaktorial(i))
     }
 
-    cetak.tulis("✨ Bahasa Ku siap digunakan di browser via WebAssembly!")
+    cetak.tulis("✨ Bahasa Ku siap dijalankan di browser via WebAssembly!")
 }</textarea>
         </div>
 
@@ -176,17 +184,32 @@ fungsi utama() {
       <div class="feature-card">
         <div class="feature-icon">🌐</div>
         <h3>Backend Web & REST API</h3>
-        <p>Dilengkapi modul <code>web</code> untuk membangun server HTTP dan API endpoint JSON siap produksi.</p>
+        <p>Dilengkapi modul <code>web</code> untuk route grouping, auto-parse JSON/Form, cookie, static/file streaming, dan middleware dengan auto-recovery.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🛠️</div>
+        <h3>Framework CLI & Diagnostik</h3>
+        <p>Modul <code>cli</code> untuk sub-perintah dan opsi otomatis, didukung modul <code>debug</code> untuk profiler memori, latency database, dan stack trace.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⚙️</div>
+        <h3>Worker Pool & Caching</h3>
+        <p>Kelola antrean tugas paralel thread-safe dengan modul <code>pekerja</code> serta in-memory key-value cache ber-TTL lewat modul <code>singgahan</code>.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📡</div>
+        <h3>Event Bus & Konfigurasi</h3>
+        <p>Sistem pub-sub decoupled lewat modul <code>peristiwa</code> dan manajemen konfigurasi multi-layer (Env, .env, JSON) via modul <code>konfigurasi</code>.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💾</div>
+        <h3>Database MySQL & SQLite</h3>
+        <p>Koneksi database langsung dengan modul <code>basisdata</code>, migrasi skema deklaratif kompak (<code>saklar</code>, <code>angka</code>, <code>teks</code>), dan profiling query.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">🖥️</div>
         <h3>Aplikasi Desktop GUI</h3>
         <p>Buka kotak dialog native dan jendela aplikasi desktop modern menggunakan modul <code>jendela</code> tanpa Electron.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">💾</div>
-        <h3>Database MySQL & SQLite</h3>
-        <p>Koneksi database langsung dengan modul <code>basisdata</code> untuk MySQL maupun SQLite berkas lokal (<code>basisdata.bukaBerkas</code>).</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">📁</div>
@@ -200,13 +223,8 @@ fungsi utama() {
       </div>
       <div class="feature-card">
         <div class="feature-icon">⏱️</div>
-        <h3>Waktu & Durasi</h3>
-        <p>Modul <code>waktu</code> bawaan untuk stempel waktu Unix, formatting tanggal, dan kalkulasi durasi waktu.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">🔍</div>
-        <h3>Regex & Pola String</h3>
-        <p>Modul <code>pola</code> untuk pencocokan regular expression, pencarian multi-substring, dan sensor teks dinamis.</p>
+        <h3>Waktu & Penjadwal Tugas</h3>
+        <p>Modul <code>waktu</code> dan modul <code>jadwal</code> bawaan untuk cron-like background jobs, ticker periodik, dan kalkulasi durasi.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">🔄</div>
@@ -217,11 +235,6 @@ fungsi utama() {
         <div class="feature-icon">🧩</div>
         <h3>Antarmuka & Komposisi Tipe</h3>
         <p>Definisi <code>tipe ... antarmuka</code> dengan polimorfisme struktural implisit, pewarisan komposisi struct embedding, type assertion <code>v.(Tipe)</code>, dan type switch.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">🔤</div>
-        <h3>Unicode Rune & Bitwise</h3>
-        <p>Manipulasi karakter Unicode (rune), pengindeksan bita string <code>s[i]</code>, modul <code>enkoding</code> (CSV, URL, Heksa), dan modul <code>matematika</code> / <code>kripto</code> lengkap.</p>
       </div>
     </section>
   </main>
