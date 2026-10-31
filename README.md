@@ -88,8 +88,12 @@ ku inisiasi web portal-berita
 ku inisiasi desktop aplikasi-kasir
 ku inisiasi cli perkakas-data
 
-# Informasi versi
+# Informasi versi & periksa pembaruan rilis
 ku versi
+ku versi --cek
+
+# Memeriksa dan memperbarui ke biner Bahasa Ku terbaru
+ku perbarui
 ```
 
 ---

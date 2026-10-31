@@ -49,13 +49,43 @@
             {
               "name": "constant.character.escape.ku",
               "match": "\\\\."
+            },
+            {
+              "name": "meta.embedded.line.ku",
+              "begin": "\\$\\{",
+              "end": "\\}",
+              "beginCaptures": {
+                "0": { "name": "punctuation.definition.template-expression.begin.ku" }
+              },
+              "endCaptures": {
+                "0": { "name": "punctuation.definition.template-expression.end.ku" }
+              },
+              "patterns": [
+                { "include": "$self" }
+              ]
             }
           ]
         },
         {
           "name": "string.quoted.raw.ku",
           "begin": "`",
-          "end": "`"
+          "end": "`",
+          "patterns": [
+            {
+              "name": "meta.embedded.line.ku",
+              "begin": "\\$\\{",
+              "end": "\\}",
+              "beginCaptures": {
+                "0": { "name": "punctuation.definition.template-expression.begin.ku" }
+              },
+              "endCaptures": {
+                "0": { "name": "punctuation.definition.template-expression.end.ku" }
+              },
+              "patterns": [
+                { "include": "$self" }
+              ]
+            }
+          ]
         }
       ]
     },
@@ -75,8 +105,20 @@
     "numbers": {
       "patterns": [
         {
+          "name": "constant.numeric.hex.ku",
+          "match": "\\b0[xX][0-9a-fA-F_]+\\b"
+        },
+        {
+          "name": "constant.numeric.binary.ku",
+          "match": "\\b0[bB][01_]+\\b"
+        },
+        {
+          "name": "constant.numeric.octal.ku",
+          "match": "\\b0[oO][0-7_]+\\b"
+        },
+        {
           "name": "constant.numeric.ku",
-          "match": "\\b[0-9]+(\\.[0-9]+)?\\b"
+          "match": "\\b[0-9][0-9_]*(\\.[0-9_]+)?\\b"
         }
       ]
     },
