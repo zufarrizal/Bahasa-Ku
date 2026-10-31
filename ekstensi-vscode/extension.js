@@ -21,7 +21,9 @@ const MODULES_DATA = {
     doc: "Modul penanganan tanggal, jam, pewaktu, dan durasi.",
     methods: {
       sekarang: { sig: "waktu.sekarang()", doc: "Mengambil objek waktu saat ini (Unix timestamp & tanggal)." },
-      tidur: { sig: "waktu.tidur(nanodetik)", doc: "Menghentikan rutin sementara selama durasi nanodetik tertentu." },
+      tidur: { sig: "waktu.tidur(milidetik)", doc: "Menghentikan rutin sementara selama N milidetik." },
+      setiap: { sig: "waktu.setiap(milidetik, fungsi)", doc: "Menjalankan fungsi berulang secara asinkron dengan interval milidetik." },
+      setelah: { sig: "waktu.setelah(milidetik, fungsi)", doc: "Menjalankan fungsi sekali setelah jeda milidetik terlewati (timeout)." },
       format: { sig: "waktu.format(wkt, formatPola)", doc: "Memformat tanggal/waktu sesuai pola string." },
       sejak: { sig: "waktu.sejak(wktAwal)", doc: "Menghitung selisih durasi yang telah berlalu sejak waktu awal." }
     }
@@ -66,12 +68,17 @@ const MODULES_DATA = {
     }
   },
   sistem: {
-    doc: "Modul operasi sistem, runtime goroutine, dan sinkronisasi memori.",
+    doc: "Modul operasi sistem, runtime goroutine, dan introspeksi lingkungan OS.",
     methods: {
+      arsitektur: { sig: "sistem.arsitektur()", doc: "Mengembalikan arsitektur CPU target (amd64, arm64, wasm)." },
+      sistemOperasi: { sig: "sistem.sistemOperasi()", doc: "Mengembalikan nama OS (windows, linux, darwin)." },
+      namaHost: { sig: "sistem.namaHost()", doc: "Mengembalikan nama host / hostname komputer." },
+      pid: { sig: "sistem.pid()", doc: "Mengembalikan Process ID dari proses yang sedang berjalan." },
+      keluar: { sig: "sistem.keluar(kode)", doc: "Mengakhiri eksekusi program dengan kode keluar (exit code)." },
       kelompokTunggu: { sig: "sistem.kelompokTunggu()", doc: "Membuat instance WaitGroup untuk menunggu sekumpulan Ku-routine." },
       kunci: { sig: "sistem.kunci()", doc: "Membuat kunci Mutex eksklusif." },
       kunciBacaTulis: { sig: "sistem.kunciBacaTulis()", doc: "Membuat kunci RWMutex bersama." },
-      tidur: { sig: "sistem.tidur(milidetik)", doc: "Menghentikan sementara eksekusi rutin selama N milidetik." },
+      tidur: { sig: "sistem.tidur(detik)", doc: "Menghentikan sementara eksekusi rutin selama N detik." },
       argumen: { sig: "sistem.argumen()", doc: "Mengambil parameter argumen baris perintah CLI." }
     }
   },
@@ -92,8 +99,13 @@ const MODULES_DATA = {
     doc: "Modul enkripsi hash dan pengacakan kriptografi aman.",
     methods: {
       sha256: { sig: "kripto.sha256(teks)", doc: "Menghasilkan heksadesimal hash SHA-256." },
+      sha256Berkas: { sig: "kripto.sha256Berkas(jalur)", doc: "Menghitung hash SHA-256 dari sebuah berkas secara hemat memori." },
+      sha512: { sig: "kripto.sha512(teks)", doc: "Menghasilkan heksadesimal hash SHA-512 (128 karakter)." },
+      sha512Berkas: { sig: "kripto.sha512Berkas(jalur)", doc: "Menghitung hash SHA-512 dari sebuah berkas secara hemat memori." },
       md5: { sig: "kripto.md5(teks)", doc: "Menghasilkan heksadesimal hash MD5." },
-      acakBita: { sig: "kripto.acakBita(panjang)", doc: "Menghasilkan string bita acak berkekuatan kriptografi." }
+      md5Berkas: { sig: "kripto.md5Berkas(jalur)", doc: "Menghitung hash MD5 dari sebuah berkas." },
+      acakBita: { sig: "kripto.acakBita(panjang)", doc: "Menghasilkan string bita acak berkekuatan kriptografi." },
+      uuid: { sig: "kripto.uuid()", doc: "Membuat string UUID v4 acak murni." }
     }
   },
   berkas: {
