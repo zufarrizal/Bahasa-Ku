@@ -162,5 +162,26 @@
       "}"
     ],
     "description": "Membuka & Kueri Berkas SQLite Lokal"
+  },
+  "Aplikasi Desktop Native Wails-Style": {
+    "prefix": "desktop",
+    "body": [
+      "paket utama\n",
+      "pakai \"jendela\"\n",
+      "fungsi sapa(nama) {",
+      "\tkembalikan \"Halo \" + nama + \" dari Bahasa Ku!\"",
+      "}\n",
+      "fungsi utama() {",
+      "\tjendela.ikat(\"sapa\", sapa)",
+      "\tjendela.buka({",
+      "\t\t\"judul\": \"${1:Aplikasi Desktop Bahasa Ku}\",",
+      "\t\t\"lebar\": ${2:800},",
+      "\t\t\"tinggi\": ${3:600},",
+      "\t\t\"konten\": \"<h1>🚀 ${1:Aplikasi Desktop Bahasa Ku}</h1><button onclick='window.ku.panggil(\\\"sapa\\\", \\\"Dunia\\\").then(alert)'>Klik Saya</button>\"",
+      "\t})",
+      "}\n",
+      "utama()"
+    ],
+    "description": "Template Aplikasi Desktop Native WebView2 Modern (Wails-Style)"
   }
 }

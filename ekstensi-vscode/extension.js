@@ -2,6 +2,23 @@ const vscode = require('vscode');
 
 // Metadata Autocomplete Modul dan Fungsi Bawaan Bahasa Ku
 const MODULES_DATA = {
+  jendela: {
+    doc: "Modul GUI Desktop Native WebView2 (Arsitektur Wails-Style) berkinerja tinggi.",
+    methods: {
+      buka: { sig: "jendela.buka(konfigurasi)", doc: "Membuka jendela GUI aplikasi desktop native (judul, lebar, tinggi, konten/html)." },
+      ikat: { sig: "jendela.ikat(nama, fungsi)", doc: "Mendaftarkan fungsi Bahasa Ku ke runtime IPC JavaScript (window.ku.panggil)." },
+      tutup: { sig: "jendela.tutup()", doc: "Menutup jendela aplikasi desktop dan membersihkan koneksi basis data." }
+    }
+  },
+  waktu: {
+    doc: "Modul penanganan tanggal, jam, pewaktu, dan durasi.",
+    methods: {
+      sekarang: { sig: "waktu.sekarang()", doc: "Mengambil objek waktu saat ini (Unix timestamp & tanggal)." },
+      tidur: { sig: "waktu.tidur(nanodetik)", doc: "Menghentikan rutin sementara selama durasi nanodetik tertentu." },
+      format: { sig: "waktu.format(wkt, formatPola)", doc: "Memformat tanggal/waktu sesuai pola string." },
+      sejak: { sig: "waktu.sejak(wktAwal)", doc: "Menghitung selisih durasi yang telah berlalu sejak waktu awal." }
+    }
+  },
   cetak: {
     doc: "Modul I/O terminal untuk menampilkan informasi dan format teks.",
     methods: {
