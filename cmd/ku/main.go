@@ -167,7 +167,20 @@ func main() {
 			fmt.Println("Galat: Harap tentukan nama berkas .ku yang ingin dijalankan.")
 			os.Exit(1)
 		}
-		runFile(args[1])
+		debugMode := false
+		fileName := ""
+		for _, a := range args[1:] {
+			if a == "--debug" || a == "-d" {
+				debugMode = true
+			} else if !strings.HasPrefix(a, "-") && fileName == "" {
+				fileName = a
+			}
+		}
+		if fileName == "" {
+			fmt.Println("Galat: Nama berkas .ku tidak ditemukan.")
+			os.Exit(1)
+		}
+		runFile(fileName, debugMode)
 
 	case "awasi", "watch":
 		if len(args) < 2 {
@@ -321,13 +334,14 @@ Contoh:
 `)
 }
 
-func runFile(filename string) {
+func runFile(filename string, debugMode bool) {
 	content, err := os.ReadFile(filename)
 	if err != nil {
 		fmt.Printf("Galat membaca berkas: %v\n", err)
 		os.Exit(1)
 	}
 
+	startParse := time.Now()
 	l := lexer.New(string(content))
 	p := parser.New(l)
 	prog := p.ParseProgram()
@@ -339,12 +353,38 @@ func runFile(filename string) {
 		}
 		os.Exit(1)
 	}
+	parseDuration := time.Since(startParse)
+
+	if debugMode {
+		fmt.Println("[DEBUG] Mode debug aktif.")
+		fmt.Printf("[DEBUG] Parsing AST selesai dalam: %v\n", parseDuration)
+		fmt.Printf("[DEBUG] Menjalankan berkas: %s\n", filename)
+		fmt.Println("[DEBUG] ----------------------------------------------")
+	}
 
 	env := evaluator.InitGlobalEnvironment()
+	startEval := time.Now()
 	res := evaluator.Eval(prog, env)
+	evalDuration := time.Since(startEval)
+
 	if pObj, isPanic := res.(*evaluator.PanicObject); isPanic {
-		fmt.Println("Galat Eksekusi: " + pObj.Inspect())
+		fmt.Println("\n==============================================")
+		fmt.Println("🛑 GALAT EKSEKUSI / PANIK TERDETEKSI:")
+		fmt.Println("==============================================")
+		fmt.Println(pObj.Inspect())
 		os.Exit(1)
+	}
+
+	if debugMode {
+		fmt.Println("\n[DEBUG] ----------------------------------------------")
+		fmt.Printf("[DEBUG] Eksekusi selesai dalam: %v (Total: %v)\n", evalDuration, parseDuration+evalDuration)
+		memStats := env.GetStore()["debug"]
+		if memMap, ok := memStats.(*evaluator.Map); ok {
+			if memFn, hasMem := memMap.Pairs["memori"].(*evaluator.Builtin); hasMem {
+				m := memFn.Fn().(*evaluator.Map)
+				fmt.Printf("[DEBUG] Penggunaan Memori Heap: %s MB | Goroutine Aktif: %s\n", m.Pairs["alokasiMB"].Inspect(), m.Pairs["jumlahGoroutine"].Inspect())
+			}
+		}
 	}
 }
 

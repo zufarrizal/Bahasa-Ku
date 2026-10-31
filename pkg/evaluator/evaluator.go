@@ -1199,6 +1199,21 @@ func InitGlobalEnvironment() *Environment {
 		// Jalankan rantai middleware jika ada
 		var executeHandler func(mwIndex int)
 		executeHandler = func(mwIndex int) {
+			defer func() {
+				if r := recover(); r != nil {
+					// Tangani panic Go runtime
+					w.WriteHeader(http.StatusInternalServerError)
+					w.Header().Set("Content-Type", "application/json")
+					errResp := map[string]interface{}{
+						"sukses": false,
+						"galat":  "Terjadi kesalahan internal server (Panic)",
+						"detail": fmt.Sprintf("%v", r),
+					}
+					b, _ := json.Marshal(errResp)
+					w.Write(b)
+				}
+			}()
+
 			if mwIndex < len(webMiddlewares) {
 				mw := webMiddlewares[mwIndex]
 				nextCalled := false
@@ -1209,7 +1224,20 @@ func InitGlobalEnvironment() *Environment {
 						return NIL
 					},
 				}
-				applyFunction(mw, []Object{reqMap, respMap, nextFn}, env)
+				respPanic := applyFunction(mw, []Object{reqMap, respMap, nextFn}, env)
+				if pObj, isPanic := respPanic.(*PanicObject); isPanic {
+					w.WriteHeader(http.StatusInternalServerError)
+					w.Header().Set("Content-Type", "application/json")
+					errResp := map[string]interface{}{
+						"sukses": false,
+						"galat":  "Galat pada Middleware",
+						"detail": pObj.Inspect(),
+					}
+					b, _ := json.Marshal(errResp)
+					w.Write(b)
+					return
+				}
+
 				if !nextCalled && mwIndex+1 == len(webMiddlewares) {
 					// Jika middleware tidak membutuhkan parameter 'lanjut/next', otomatis lanjutkan
 					executeHandler(mwIndex + 1)
@@ -1217,6 +1245,19 @@ func InitGlobalEnvironment() *Environment {
 			} else {
 				// Panggil fungsi handler utama rute
 				respObj := applyFunction(route.handler, []Object{reqMap, respMap}, env)
+				if pObj, isPanic := respObj.(*PanicObject); isPanic {
+					w.WriteHeader(http.StatusInternalServerError)
+					w.Header().Set("Content-Type", "application/json")
+					errResp := map[string]interface{}{
+						"sukses": false,
+						"galat":  "Galat Eksekusi Rute (Panik)",
+						"detail": pObj.Inspect(),
+					}
+					b, _ := json.Marshal(errResp)
+					w.Write(b)
+					return
+				}
+
 				if respObj != nil && respObj != NIL {
 					if m, ok := respObj.(*Map); ok {
 						goObj := convertKuToGoObject(m)
