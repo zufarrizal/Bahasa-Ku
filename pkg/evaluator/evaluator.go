@@ -6617,6 +6617,201 @@ func InitGlobalEnvironment() *Environment {
 	}
 	env.Set("waktu", waktuMap)
 
+	// Modul jadwal (Task Scheduling & Cron Sederhana)
+	parseDurasiWaktu := func(obj Object) (time.Duration, bool) {
+		switch v := obj.(type) {
+		case *Integer:
+			return time.Duration(v.Value) * time.Millisecond, true
+		case *Float:
+			return time.Duration(v.Value * float64(time.Millisecond)), true
+		case *String:
+			str := strings.TrimSpace(strings.ToLower(v.Value))
+			// Dukung format bahasa Indonesia: "500ms", "5d", "5detik", "10m", "10menit", "2j", "2jam"
+			if strings.HasSuffix(str, "ms") || strings.HasSuffix(str, "milidetik") {
+				numStr := strings.TrimSuffix(strings.TrimSuffix(str, "milidetik"), "ms")
+				if val, err := strconv.ParseFloat(strings.TrimSpace(numStr), 64); err == nil {
+					return time.Duration(val * float64(time.Millisecond)), true
+				}
+			} else if strings.HasSuffix(str, "detik") || strings.HasSuffix(str, "d") || strings.HasSuffix(str, "s") {
+				numStr := strings.TrimSuffix(strings.TrimSuffix(strings.TrimSuffix(str, "detik"), "d"), "s")
+				if val, err := strconv.ParseFloat(strings.TrimSpace(numStr), 64); err == nil {
+					return time.Duration(val * float64(time.Second)), true
+				}
+			} else if strings.HasSuffix(str, "menit") || strings.HasSuffix(str, "m") {
+				numStr := strings.TrimSuffix(strings.TrimSuffix(str, "menit"), "m")
+				if val, err := strconv.ParseFloat(strings.TrimSpace(numStr), 64); err == nil {
+					return time.Duration(val * float64(time.Minute)), true
+				}
+			} else if strings.HasSuffix(str, "jam") || strings.HasSuffix(str, "j") || strings.HasSuffix(str, "h") {
+				numStr := strings.TrimSuffix(strings.TrimSuffix(strings.TrimSuffix(str, "jam"), "j"), "h")
+				if val, err := strconv.ParseFloat(strings.TrimSpace(numStr), 64); err == nil {
+					return time.Duration(val * float64(time.Hour)), true
+				}
+			}
+			// Standar Go duration (e.g. 1h30m, 5s)
+			if d, err := time.ParseDuration(str); err == nil {
+				return d, true
+			}
+			if ms, err := strconv.ParseInt(str, 10, 64); err == nil {
+				return time.Duration(ms) * time.Millisecond, true
+			}
+		}
+		return 0, false
+	}
+
+	jadwalMap := &Map{Pairs: make(map[string]Object)}
+	jadwalMap.Pairs["setelah"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return NIL
+			}
+			dur, ok := parseDurasiWaktu(args[0])
+			if !ok {
+				return NIL
+			}
+			fnObj, isFn := args[1].(*Function)
+			if !isFn {
+				return NIL
+			}
+			stopCh := make(chan struct{})
+			timer := time.NewTimer(dur)
+			go func() {
+				select {
+				case <-timer.C:
+					applyFunction(fnObj, []Object{}, env)
+				case <-stopCh:
+					timer.Stop()
+					return
+				}
+			}()
+			taskMap := &Map{Pairs: make(map[string]Object)}
+			batalFn := &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					select {
+					case <-stopCh:
+					default:
+						close(stopCh)
+					}
+					return NIL
+				},
+			}
+			taskMap.Pairs["batal"] = batalFn
+			taskMap.Pairs["hentikan"] = batalFn
+			taskMap.Pairs["henti"] = batalFn
+			return taskMap
+		},
+	}
+	jadwalMap.Pairs["setiap"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return NIL
+			}
+			dur, ok := parseDurasiWaktu(args[0])
+			if !ok || dur <= 0 {
+				return NIL
+			}
+			fnObj, isFn := args[1].(*Function)
+			if !isFn {
+				return NIL
+			}
+			stopCh := make(chan struct{})
+			go func() {
+				ticker := time.NewTicker(dur)
+				defer ticker.Stop()
+				for {
+					select {
+					case <-ticker.C:
+						applyFunction(fnObj, []Object{}, env)
+					case <-stopCh:
+						return
+					}
+				}
+			}()
+			taskMap := &Map{Pairs: make(map[string]Object)}
+			stopFn := &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					select {
+					case <-stopCh:
+					default:
+						close(stopCh)
+					}
+					return NIL
+				},
+			}
+			taskMap.Pairs["henti"] = stopFn
+			taskMap.Pairs["hentikan"] = stopFn
+			taskMap.Pairs["batal"] = stopFn
+			return taskMap
+		},
+	}
+	jadwalMap.Pairs["pukul"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			// jadwal.pukul("14:30", fungsi) atau jadwal.pukul("14:30:00", fungsi)
+			if len(args) < 2 {
+				return NIL
+			}
+			jamStrObj, ok := args[0].(*String)
+			if !ok {
+				return NIL
+			}
+			fnObj, isFn := args[1].(*Function)
+			if !isFn {
+				return NIL
+			}
+
+			parts := strings.Split(strings.TrimSpace(jamStrObj.Value), ":")
+			if len(parts) < 2 {
+				return NIL
+			}
+			targetJam, err1 := strconv.Atoi(parts[0])
+			targetMenit, err2 := strconv.Atoi(parts[1])
+			targetDetik := 0
+			if len(parts) >= 3 {
+				targetDetik, _ = strconv.Atoi(parts[2])
+			}
+			if err1 != nil || err2 != nil || targetJam < 0 || targetJam > 23 || targetMenit < 0 || targetMenit > 59 || targetDetik < 0 || targetDetik > 59 {
+				return NIL
+			}
+
+			stopCh := make(chan struct{})
+			go func() {
+				for {
+					now := time.Now()
+					next := time.Date(now.Year(), now.Month(), now.Day(), targetJam, targetMenit, targetDetik, 0, now.Location())
+					if !next.After(now) {
+						next = next.Add(24 * time.Hour)
+					}
+					waitDur := time.Until(next)
+					timer := time.NewTimer(waitDur)
+					select {
+					case <-timer.C:
+						applyFunction(fnObj, []Object{}, env)
+					case <-stopCh:
+						timer.Stop()
+						return
+					}
+				}
+			}()
+
+			taskMap := &Map{Pairs: make(map[string]Object)}
+			stopFn := &Builtin{
+				Fn: func(mArgs ...Object) Object {
+					select {
+					case <-stopCh:
+					default:
+						close(stopCh)
+					}
+					return NIL
+				},
+			}
+			taskMap.Pairs["henti"] = stopFn
+			taskMap.Pairs["hentikan"] = stopFn
+			taskMap.Pairs["batal"] = stopFn
+			return taskMap
+		},
+	}
+	env.Set("jadwal", jadwalMap)
+
 	// Modul arsip (Kompresi & Dekompresi ZIP)
 	arsipMap := &Map{Pairs: make(map[string]Object)}
 	arsipMap.Pairs["buatZip"] = &Builtin{
