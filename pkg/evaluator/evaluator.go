@@ -6062,6 +6062,127 @@ func InitGlobalEnvironment() *Environment {
 	}
 	env.Set("waktu", waktuMap)
 
+	// Modul arsip (Kompresi & Dekompresi ZIP)
+	arsipMap := &Map{Pairs: make(map[string]Object)}
+	arsipMap.Pairs["buatZip"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return FALSE
+			}
+			zipName, ok := args[0].(*String)
+			if !ok {
+				return FALSE
+			}
+
+			filesToZip := []string{}
+			if arr, ok := args[1].(*Array); ok {
+				for _, el := range arr.Elements {
+					if s, ok := el.(*String); ok {
+						filesToZip = append(filesToZip, s.Value)
+					}
+				}
+			} else if s, ok := args[1].(*String); ok {
+				filesToZip = append(filesToZip, s.Value)
+			}
+
+			zipFile, err := os.Create(zipName.Value)
+			if err != nil {
+				return FALSE
+			}
+			defer zipFile.Close()
+
+			zipWriter := zip.NewWriter(zipFile)
+			defer zipWriter.Close()
+
+			for _, path := range filesToZip {
+				info, err := os.Stat(path)
+				if err != nil {
+					continue
+				}
+
+				if info.IsDir() {
+					_ = filepath.Walk(path, func(subPath string, subInfo os.FileInfo, walkErr error) error {
+						if walkErr != nil || subInfo.IsDir() {
+							return nil
+						}
+						relPath, _ := filepath.Rel(filepath.Dir(path), subPath)
+						w, err := zipWriter.Create(filepath.ToSlash(relPath))
+						if err != nil {
+							return nil
+						}
+						f, err := os.Open(subPath)
+						if err == nil {
+							_, _ = io.Copy(w, f)
+							f.Close()
+						}
+						return nil
+					})
+				} else {
+					w, err := zipWriter.Create(filepath.Base(path))
+					if err == nil {
+						f, err := os.Open(path)
+						if err == nil {
+							_, _ = io.Copy(w, f)
+							f.Close()
+						}
+					}
+				}
+			}
+			return TRUE
+		},
+	}
+	arsipMap.Pairs["ekstrakZip"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 2 {
+				return FALSE
+			}
+			zipPath, ok := args[0].(*String)
+			if !ok {
+				return FALSE
+			}
+			destFolder, ok := args[1].(*String)
+			if !ok {
+				return FALSE
+			}
+
+			r, err := zip.OpenReader(zipPath.Value)
+			if err != nil {
+				return FALSE
+			}
+			defer r.Close()
+
+			_ = os.MkdirAll(destFolder.Value, 0755)
+
+			for _, f := range r.File {
+				fpath := filepath.Join(destFolder.Value, f.Name)
+				// Cegah Zip Slip Vulnerability
+				if !strings.HasPrefix(filepath.Clean(fpath), filepath.Clean(destFolder.Value)+string(os.PathSeparator)) && filepath.Clean(fpath) != filepath.Clean(destFolder.Value) {
+					continue
+				}
+
+				if f.FileInfo().IsDir() {
+					_ = os.MkdirAll(fpath, os.ModePerm)
+					continue
+				}
+
+				_ = os.MkdirAll(filepath.Dir(fpath), os.ModePerm)
+				outFile, err := os.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+				if err != nil {
+					continue
+				}
+
+				rc, err := f.Open()
+				if err == nil {
+					_, _ = io.Copy(outFile, rc)
+					rc.Close()
+				}
+				outFile.Close()
+			}
+			return TRUE
+		},
+	}
+	env.Set("arsip", arsipMap)
+
 	// Modul angka (Operasi Bitwise & Representasi Basis Angka)
 	angkaMap := &Map{Pairs: make(map[string]Object)}
 	angkaMap.Pairs["biner"] = &Builtin{

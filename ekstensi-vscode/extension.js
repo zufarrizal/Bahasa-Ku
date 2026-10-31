@@ -2,6 +2,13 @@ const vscode = require('vscode');
 
 // Metadata Autocomplete Modul dan Fungsi Bawaan Bahasa Ku
 const MODULES_DATA = {
+  arsip: {
+    doc: "Modul kompresi arsip ZIP dan ekstraksi berkas lokal.",
+    methods: {
+      buatZip: { sig: "arsip.buatZip(namaBerkasZip, daftarBerkas)", doc: "Mengompresi berkas atau folder ke format .zip." },
+      ekstrakZip: { sig: "arsip.ekstrakZip(namaBerkasZip, tujuanFolder)", doc: "Mengekstrak seluruh isi berkas .zip ke folder target." }
+    }
+  },
   jendela: {
     doc: "Modul GUI Desktop Native WebView2 (Arsitektur Wails-Style) berkinerja tinggi.",
     methods: {
