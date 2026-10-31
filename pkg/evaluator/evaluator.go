@@ -5536,6 +5536,211 @@ func InitGlobalEnvironment() *Environment {
 	}
 	env.Set("catatan", catatanMap)
 
+	// Modul konfigurasi (Framework Manajemen Konfigurasi Berlapis: Default -> .env -> Berkas JSON/YAML -> Argumen CLI)
+	konfigurasiMap := &Map{Pairs: make(map[string]Object)}
+	var configStore = make(map[string]Object)
+	var configMu sync.RWMutex
+
+	konfigurasiMap.Pairs["atur"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			// konfigurasi.atur(kunci, nilai)
+			if len(args) < 2 {
+				return FALSE
+			}
+			key := args[0].Inspect()
+			configMu.Lock()
+			configStore[key] = args[1]
+			configMu.Unlock()
+			return TRUE
+		},
+	}
+
+	konfigurasiMap.Pairs["ambil"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			// konfigurasi.ambil(kunci, [bawaan])
+			if len(args) < 1 {
+				return NIL
+			}
+			key := args[0].Inspect()
+			var defaultVal Object = NIL
+			if len(args) >= 2 {
+				defaultVal = args[1]
+			}
+
+			// Prioritas 1: Cek environment variable OS (SNAKE_CASE / UPPERCASE)
+			envKey := strings.ToUpper(strings.ReplaceAll(key, ".", "_"))
+			if envVal := os.Getenv(envKey); envVal != "" {
+				return &String{Value: envVal}
+			}
+
+			// Prioritas 2: Cek config store internal
+			configMu.RLock()
+			val, exists := configStore[key]
+			configMu.RUnlock()
+			if exists && val != nil && val != NIL {
+				return val
+			}
+
+			return defaultVal
+		},
+	}
+
+	konfigurasiMap.Pairs["ambilTeks"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &String{Value: ""}
+			}
+			key := args[0].Inspect()
+			defVal := ""
+			if len(args) >= 2 {
+				defVal = args[1].Inspect()
+			}
+			// Cek OS env
+			envKey := strings.ToUpper(strings.ReplaceAll(key, ".", "_"))
+			if envVal := os.Getenv(envKey); envVal != "" {
+				return &String{Value: envVal}
+			}
+			configMu.RLock()
+			val, exists := configStore[key]
+			configMu.RUnlock()
+			if exists && val != nil && val != NIL {
+				return &String{Value: val.Inspect()}
+			}
+			return &String{Value: defVal}
+		},
+	}
+
+	konfigurasiMap.Pairs["ambilAngka"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return &Integer{Value: 0}
+			}
+			key := args[0].Inspect()
+			var defVal int64 = 0
+			if len(args) >= 2 {
+				if i, ok := args[1].(*Integer); ok {
+					defVal = i.Value
+				}
+			}
+			// Cek OS env
+			envKey := strings.ToUpper(strings.ReplaceAll(key, ".", "_"))
+			if envVal := os.Getenv(envKey); envVal != "" {
+				if num, err := strconv.ParseInt(envVal, 10, 64); err == nil {
+					return &Integer{Value: num}
+				}
+			}
+			configMu.RLock()
+			val, exists := configStore[key]
+			configMu.RUnlock()
+			if exists {
+				if i, ok := val.(*Integer); ok {
+					return i
+				}
+				if num, err := strconv.ParseInt(val.Inspect(), 10, 64); err == nil {
+					return &Integer{Value: num}
+				}
+			}
+			return &Integer{Value: defVal}
+		},
+	}
+
+	konfigurasiMap.Pairs["ambilBenarSalah"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return FALSE
+			}
+			key := args[0].Inspect()
+			defVal := false
+			if len(args) >= 2 {
+				if b, ok := args[1].(*Boolean); ok {
+					defVal = b.Value
+				}
+			}
+			envKey := strings.ToUpper(strings.ReplaceAll(key, ".", "_"))
+			if envVal := os.Getenv(envKey); envVal != "" {
+				lower := strings.ToLower(envVal)
+				if lower == "true" || lower == "benar" || lower == "1" || lower == "ya" {
+					return TRUE
+				}
+				return FALSE
+			}
+			configMu.RLock()
+			val, exists := configStore[key]
+			configMu.RUnlock()
+			if exists {
+				if b, ok := val.(*Boolean); ok {
+					return b
+				}
+				lower := strings.ToLower(val.Inspect())
+				if lower == "true" || lower == "benar" || lower == "1" || lower == "ya" {
+					return TRUE
+				}
+				return FALSE
+			}
+			if defVal {
+				return TRUE
+			}
+			return FALSE
+		},
+	}
+
+	konfigurasiMap.Pairs["muatBerkas"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			// konfigurasi.muatBerkas(path) - otomatis deteksi JSON atau key=value .env
+			if len(args) < 1 {
+				return FALSE
+			}
+			fPath := args[0].Inspect()
+			data, err := os.ReadFile(fPath)
+			if err != nil {
+				return FALSE
+			}
+
+			// Coba urai sebagai JSON terlebih dahulu
+			var jsonMap map[string]interface{}
+			if err := json.Unmarshal(data, &jsonMap); err == nil {
+				configMu.Lock()
+				for k, v := range jsonMap {
+					configStore[k] = convertGoToKuObject(v)
+				}
+				configMu.Unlock()
+				return TRUE
+			}
+
+			// Fallback: urai sebagai format KEY=VALUE (.env)
+			lines := strings.Split(string(data), "\n")
+			configMu.Lock()
+			for _, line := range lines {
+				line = strings.TrimSpace(line)
+				if line == "" || strings.HasPrefix(line, "#") {
+					continue
+				}
+				parts := strings.SplitN(line, "=", 2)
+				if len(parts) == 2 {
+					k := strings.TrimSpace(parts[0])
+					v := strings.Trim(strings.TrimSpace(parts[1]), "\"'")
+					configStore[k] = &String{Value: v}
+					os.Setenv(k, v)
+				}
+			}
+			configMu.Unlock()
+			return TRUE
+		},
+	}
+
+	konfigurasiMap.Pairs["semua"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			configMu.RLock()
+			defer configMu.RUnlock()
+			res := &Map{Pairs: make(map[string]Object)}
+			for k, v := range configStore {
+				res.Pairs[k] = v
+			}
+			return res
+		},
+	}
+	env.Set("konfigurasi", konfigurasiMap)
+
 	// Modul kompresi (Gzip)
 	kompresiMap := &Map{Pairs: make(map[string]Object)}
 	kompresiMap.Pairs["gzip"] = &Builtin{
