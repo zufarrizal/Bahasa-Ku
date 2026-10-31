@@ -163,10 +163,6 @@ func main() {
 		checkLatestRelease(false)
 
 	case "jalankan":
-		if len(args) < 2 {
-			fmt.Println("Galat: Harap tentukan nama berkas .ku yang ingin dijalankan.")
-			os.Exit(1)
-		}
 		debugMode := false
 		fileName := ""
 		for _, a := range args[1:] {
@@ -176,19 +172,33 @@ func main() {
 				fileName = a
 			}
 		}
+		// Compact run: Jika tanpa argumen nama berkas, otomatis cari utama.ku / main.ku di folder aktif
 		if fileName == "" {
-			fmt.Println("Galat: Nama berkas .ku tidak ditemukan.")
-			os.Exit(1)
+			if _, err := os.Stat("utama.ku"); err == nil {
+				fileName = "utama.ku"
+			} else if _, err := os.Stat("main.ku"); err == nil {
+				fileName = "main.ku"
+			} else {
+				fmt.Println("Galat: Harap tentukan nama berkas .ku yang ingin dijalankan (atau jalankan di folder yang memiliki 'utama.ku').")
+				os.Exit(1)
+			}
 		}
 		runFile(fileName, debugMode)
 
 	case "awasi", "watch":
-		if len(args) < 2 {
-			fmt.Println("Galat: Harap tentukan nama berkas .ku atau folder yang ingin diawasi.")
-			fmt.Println("Penggunaan: ku awasi <berkas.ku|folder>")
-			os.Exit(1)
+		target := "."
+		if len(args) >= 2 && !strings.HasPrefix(args[1], "-") {
+			target = args[1]
+		} else {
+			if _, err := os.Stat("utama.ku"); err == nil {
+				target = "utama.ku"
+			}
 		}
-		watchAndRun(args[1], args[2:])
+		var extra []string
+		if len(args) > 2 {
+			extra = args[2:]
+		}
+		watchAndRun(target, extra)
 
 	case "buat":
 		if len(args) < 2 {
