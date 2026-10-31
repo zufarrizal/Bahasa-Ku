@@ -13,11 +13,22 @@ OS="$(uname -s)"
 ARCH="$(uname -m)"
 
 if [ "$OS" = "Linux" ]; then
-    URL="https://github.com/zufarrizal/Bahasa-Ku/releases/download/v0.3.5/ku-linux-amd64"
+    if [ "$ARCH" = "x86_64" ] || [ "$ARCH" = "amd64" ]; then
+        URL="https://github.com/zufarrizal/Bahasa-Ku/releases/download/v0.3.5/ku-linux-amd64"
+    else
+        echo "Arsitektur Linux ($ARCH) belum didukung secara resmi untuk rilis biner portabel."
+        echo "Silakan gunakan Go untuk mengompilasi dari sumber: go install github.com/zufarrizal/bahasa-ku/cmd/ku@latest"
+        exit 1
+    fi
 elif [ "$OS" = "Darwin" ]; then
-    URL="https://github.com/zufarrizal/Bahasa-Ku/releases/download/v0.3.5/ku-darwin-arm64"
+    if [ "$ARCH" = "arm64" ] || [ "$ARCH" = "aarch64" ]; then
+        URL="https://github.com/zufarrizal/Bahasa-Ku/releases/download/v0.3.5/ku-darwin-arm64"
+    else
+        echo "Arsitektur macOS Intel ($ARCH) belum didukung secara biner portabel. Gunakan go install github.com/zufarrizal/bahasa-ku/cmd/ku@latest"
+        exit 1
+    fi
 else
-    echo "OS tidak didukung oleh skrip ini: $OS"
+    echo "Sistem Operasi tidak didukung oleh skrip ini: $OS"
     exit 1
 fi
 

@@ -327,6 +327,7 @@
             </div>
             <ul class="sidebar-links">
               <li><a href="#modul-berkas">`berkas` (File I/O)</a></li>
+              <li><a href="#modul-arsip">`arsip` (Kompresi ZIP)</a></li>
               <li><a href="#modul-jalur">`jalur` (Filepath)</a></li>
               <li><a href="#modul-kompresi">`kompresi` (Gzip & Zip)</a></li>
               <li><a href="#modul-sistem">`sistem` (OS & Lingkungan)</a></li>
@@ -477,10 +478,16 @@ fungsi utama() {
     // Konstanta
     tetap PI = 3.14159
     
+    // Literal Angka Lanjutan (Heksadesimal, Biner, Oktal & Underscore)
+    var gaji = 10_000_000       // pemisah digit underscore
+    var warna = 0xFF_AA_00      // heksadesimal (0x)
+    var biner = 0b1010          // biner (0b) -> 10
+    var mode = 0o77             // oktal (0o) -> 63
+    
     // Nilai kosong
     var data = kosong // atau nihil
 
-    cetak.tulis(nama, umur, tinggi, aktif, PI)
+    cetak.tulis(nama, umur, tinggi, aktif, PI, gaji)
 }</code></pre>
 
         <h3>Array (Larik), Map (Kamus) & Built-in ala Go</h3>
@@ -1265,6 +1272,30 @@ var dir = berkas.direktori(pathLengkap)   // "folder/sub"
 var ext = berkas.ekstensi(pathLengkap)   // ".ku"</code></pre>
       </section>
 
+      <!-- Modul Standar: Arsip -->
+      <section id="modul-arsip" class="docs-section">
+        <h2>Modul `arsip` (Kompresi & Ekstraksi ZIP Mandiri)</h2>
+        <p>Pembuatan dan ekstraksi berkas arsip <code>.zip</code> mandiri berkinerja tinggi yang aman dari serangan <em>zip-slip directory traversal</em>:</p>
+        <table>
+          <thead>
+            <tr><th>Fungsi</th><th>Deskripsi</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>arsip.buatZip(namaZip, [daftarBerkas])</code></td><td>Mengompresi sekumpulan berkas atau folder ke dalam satu berkas arsip <code>.zip</code></td></tr>
+            <tr><td><code>arsip.ekstrakZip(namaZip, tujuanFolder)</code></td><td>Mengekstrak seluruh isi arsip <code>.zip</code> ke folder target dengan pembuatan subdirektori otomatis</td></tr>
+          </tbody>
+        </table>
+        <pre><code>// 1. Buat arsip ZIP baru
+var daftar = ["dokumen.txt", "gambar/logo.png", "data/"]
+var berhasil = arsip.buatZip("paket_data.zip", daftar)
+jika berhasil {
+    cetak.tulis("Arsip zip berhasil dibuat!")
+}
+
+// 2. Ekstrak arsip ZIP
+arsip.ekstrakZip("paket_data.zip", "hasil_ekstrak/")</code></pre>
+      </section>
+
 <section id="modul-jalur" class="docs-section">
         <h2>Modul `jalur` (Manipulasi Path Berkas ala filepath)</h2>
         <p>Pengelolaan path dan lokasi berkas independen lintas sistem operasi:</p>
@@ -1277,12 +1308,18 @@ var ext = berkas.ekstensi(pathLengkap)   // ".ku"</code></pre>
             <tr><td><code>jalur.nama(path)</code></td><td>Mengambil nama berkas saja dari sebuah path (Base)</td></tr>
             <tr><td><code>jalur.induk(path)</code></td><td>Mengambil folder direktori induk (Dir)</td></tr>
             <tr><td><code>jalur.ekstensi(path)</code></td><td>Mengambil ekstensi berkas (Ext, misal: <code>.ku</code>)</td></tr>
+            <tr><td><code>jalur.absolut(path)</code></td><td>Mengonversi path relatif menjadi path absolut sistem</td></tr>
+            <tr><td><code>jalur.relatif(base, target)</code></td><td>Menghitung jarak path relatif dari direktori base ke target</td></tr>
+            <tr><td><code>jalur.apakahAbsolut(path)</code></td><td>Memeriksa apakah string path merupakan jalur absolut</td></tr>
+            <tr><td><code>jalur.bersihkan(path)</code></td><td>Merapikan format path dari karakter pemisah ganda atau referensi titik berlebih</td></tr>
           </tbody>
         </table>
         <pre><code>var lokasi = jalur.gabung("folder", "sub", "utama.ku")
 cetak.tulis("Nama berkas:", jalur.nama(lokasi)) // utama.ku
 cetak.tulis("Folder induk:", jalur.induk(lokasi)) // folder/sub
-cetak.tulis("Ekstensi:", jalur.ekstensi(lokasi)) // .ku</code></pre>
+cetak.tulis("Ekstensi:", jalur.ekstensi(lokasi)) // .ku
+cetak.tulis("Jalur Absolut:", jalur.absolut(lokasi))
+cetak.tulis("Apakah Absolut?", jalur.apakahAbsolut(lokasi))</code></pre>
       </section>
 
 <section id="modul-kompresi" class="docs-section">
@@ -1313,8 +1350,11 @@ kompresi.ekstrakZip("arsip-proyek.zip", "ekstraksi/")</code></pre>
         <p>Interaksi langsung dengan lingkungan sistem operasi dan proses mesin:</p>
         <pre><code>// Modul Sistem & Lingkungan OS
 sistem.muatEnv(".env") // Muat berkas variabel lingkungan lokal
-var osName = sistem.os() // windows, linux, darwin
-var isWin = sistem.apakahWindows() // boolean helper
+var osName = sistem.sistemOperasi() // "windows", "linux", "darwin"
+var arch = sistem.arsitektur()       // "amd64", "arm64", "wasm"
+var host = sistem.namaHost()         // hostname komputer pengguna
+var pid = sistem.pid()               // Process ID saat runtime
+var isWin = sistem.apakahWindows()   // boolean helper
 var mode = sistem.bendera("mode", "standar") // Parser flag CLI: --mode=nilai
 sistem.aturLingkungan("APLIKASI_ENV", "produksi")
 var envVal = sistem.lingkungan("APLIKASI_ENV")
@@ -1454,6 +1494,8 @@ jika lanjut {
           <tbody>
             <tr><td><code>kripto.sha256(teks)</code></td><td>Hasing teks dengan algoritma SHA-256</td></tr>
             <tr><td><code>kripto.sha256Berkas(jalur)</code></td><td>Menghitung hash SHA-256 dari berkas fisik secara efisien tanpa membebani memori</td></tr>
+            <tr><td><code>kripto.sha512(teks)</code></td><td>Hasing teks dengan algoritma SHA-512 keamanan tinggi (128 karakter heksadesimal)</td></tr>
+            <tr><td><code>kripto.sha512Berkas(jalur)</code></td><td>Menghitung hash SHA-512 dari berkas fisik secara streaming hemat memori</td></tr>
             <tr><td><code>kripto.md5(teks)</code></td><td>Hashing teks dengan algoritma MD5</td></tr>
             <tr><td><code>kripto.md5Berkas(jalur)</code></td><td>Menghitung hash MD5 dari berkas fisik</td></tr>
             <tr><td><code>kripto.hmacSha256(kunci, pesan)</code></td><td>Menghasilkan tanda tangan HMAC berbasis SHA-256</td></tr>
