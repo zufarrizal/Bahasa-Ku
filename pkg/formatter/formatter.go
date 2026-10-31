@@ -2,6 +2,7 @@ package formatter
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/zufarrizal/bahasa-ku/pkg/ast"
@@ -317,10 +318,16 @@ func (f *Formatter) Format(node ast.Node) string {
 		return n.Value
 
 	case *ast.IntegerLiteral:
+		if n.Token.Literal != "" {
+			return n.Token.Literal
+		}
 		return fmt.Sprintf("%d", n.Value)
 
 	case *ast.FloatLiteral:
-		return fmt.Sprintf("%f", n.Value)
+		if n.Token.Literal != "" {
+			return n.Token.Literal
+		}
+		return strconv.FormatFloat(n.Value, 'f', -1, 64)
 
 	case *ast.StringLiteral:
 		return fmt.Sprintf("%q", n.Value)
