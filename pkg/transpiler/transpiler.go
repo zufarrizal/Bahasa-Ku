@@ -335,9 +335,15 @@ func (t *Transpiler) Transpile(node ast.Node) string {
 		return n.Value
 
 	case *ast.IntegerLiteral:
+		if n.Token.Literal != "" {
+			return n.Token.Literal
+		}
 		return fmt.Sprintf("%d", n.Value)
 
 	case *ast.FloatLiteral:
+		if n.Token.Literal != "" {
+			return n.Token.Literal
+		}
 		return fmt.Sprintf("%f", n.Value)
 
 	case *ast.StringLiteral:
