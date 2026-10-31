@@ -5793,6 +5793,23 @@ func InitGlobalEnvironment() *Environment {
 
 	// Modul waktu (Pengelolaan Tanggal dan Durasi Waktu)
 	waktuMap := &Map{Pairs: make(map[string]Object)}
+	waktuMap.Pairs["tidur"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return NIL
+			}
+			// Mendukung milidetik (integer) atau detik desimal (float)
+			if f, ok := args[0].(*Float); ok {
+				time.Sleep(time.Duration(f.Value * float64(time.Millisecond)))
+				return NIL
+			}
+			if i, ok := args[0].(*Integer); ok {
+				time.Sleep(time.Duration(i.Value) * time.Millisecond)
+				return NIL
+			}
+			return NIL
+		},
+	}
 	waktuMap.Pairs["sekarang"] = &Builtin{
 		Fn: func(args ...Object) Object {
 			now := time.Now()
@@ -5970,7 +5987,7 @@ func InitGlobalEnvironment() *Environment {
 				}
 			}()
 			timerMap := &Map{Pairs: make(map[string]Object)}
-			timerMap.Pairs["hentikan"] = &Builtin{
+			stopFn := &Builtin{
 				Fn: func(mArgs ...Object) Object {
 					select {
 					case <-stopCh:
@@ -5980,6 +5997,9 @@ func InitGlobalEnvironment() *Environment {
 					return NIL
 				},
 			}
+			timerMap.Pairs["hentikan"] = stopFn
+			timerMap.Pairs["henti"] = stopFn
+			timerMap.Pairs["stop"] = stopFn
 			return timerMap
 		},
 	}
