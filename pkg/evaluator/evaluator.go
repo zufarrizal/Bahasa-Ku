@@ -70,7 +70,15 @@ const (
 	CHANNEL_OBJ      = "CHANNEL"
 	INTERFACE_DEF_OBJ = "INTERFACE_DEF"
 	IMAGE_OBJ        = "IMAGE"
+	HANDLER_OBJ      = "HANDLER"
 )
+
+type NativeHandlerObject struct {
+	Handler http.Handler
+}
+
+func (h *NativeHandlerObject) Type() ObjectType { return HANDLER_OBJ }
+func (h *NativeHandlerObject) Inspect() string  { return "penangan_http" }
 
 type NativeImageObject struct {
 	Img image.Image
@@ -824,6 +832,61 @@ func InitGlobalEnvironment() *Environment {
 	webMap.Pairs["pos"] = addRouteMethod("POST")
 	webMap.Pairs["taruh"] = addRouteMethod("PUT")
 	webMap.Pairs["hapus"] = addRouteMethod("DELETE")
+	webMap.Pairs["tambal"] = addRouteMethod("PATCH")
+	webMap.Pairs["opsi"] = addRouteMethod("OPTIONS")
+	webMap.Pairs["kepala"] = addRouteMethod("HEAD")
+
+	// Helper membuat grup rute
+	createRouteGroup := func(prefix string) *Map {
+		groupMap := &Map{Pairs: make(map[string]Object)}
+		cleanPrefix := "/" + strings.Trim(prefix, "/")
+
+		addGroupRoute := func(httpMethod string) *Builtin {
+			return &Builtin{
+				Fn: func(args ...Object) Object {
+					if len(args) < 2 {
+						return NIL
+					}
+					subPath := "/" + strings.Trim(args[0].Inspect(), "/")
+					if subPath == "/" {
+						subPath = ""
+					}
+					fullPath := cleanPrefix + subPath
+					registerRoute(httpMethod, fullPath, args[1])
+					return NIL
+				},
+			}
+		}
+
+		groupMap.Pairs["tangani"] = addGroupRoute("ALL")
+		groupMap.Pairs["rute"] = addGroupRoute("ALL")
+		groupMap.Pairs["dapatkan"] = addGroupRoute("GET")
+		groupMap.Pairs["pos"] = addGroupRoute("POST")
+		groupMap.Pairs["taruh"] = addGroupRoute("PUT")
+		groupMap.Pairs["hapus"] = addGroupRoute("DELETE")
+		groupMap.Pairs["tambal"] = addGroupRoute("PATCH")
+		groupMap.Pairs["opsi"] = addGroupRoute("OPTIONS")
+		groupMap.Pairs["kepala"] = addGroupRoute("HEAD")
+
+		return groupMap
+	}
+
+	webMap.Pairs["grup"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			if len(args) < 1 {
+				return NIL
+			}
+			prefix := args[0].Inspect()
+			grp := createRouteGroup(prefix)
+			// Jika diberikan fungsi callback: web.grup("/api", fungsi(api) { ... })
+			if len(args) >= 2 {
+				if fn, ok := args[1].(*Function); ok {
+					applyFunction(fn, []Object{grp}, env)
+				}
+			}
+			return grp
+		},
+	}
 
 	webHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if corsEnabled {
@@ -881,6 +944,37 @@ func InitGlobalEnvironment() *Environment {
 
 		bodyBytes, _ := io.ReadAll(r.Body)
 		reqMap.Pairs["badan"] = &String{Value: string(bodyBytes)}
+
+		// Auto-parse Cookie
+		cookieMap := &Map{Pairs: make(map[string]Object)}
+		for _, c := range r.Cookies() {
+			cookieMap.Pairs[c.Name] = &String{Value: c.Value}
+		}
+		reqMap.Pairs["cookie"] = cookieMap
+
+		// Auto-parse JSON payload jika Content-Type application/json
+		reqMap.Pairs["json"] = NIL
+		if len(bodyBytes) > 0 {
+			var parsedJSON interface{}
+			if err := json.Unmarshal(bodyBytes, &parsedJSON); err == nil {
+				reqMap.Pairs["json"] = convertGoToKuObject(parsedJSON)
+			}
+		}
+
+		// Auto-parse Form payload jika application/x-www-form-urlencoded atau multipart/form-data
+		formMap := &Map{Pairs: make(map[string]Object)}
+		r.Body = io.NopCloser(bytes.NewReader(bodyBytes))
+		if strings.Contains(r.Header.Get("Content-Type"), "multipart/form-data") {
+			_ = r.ParseMultipartForm(32 << 20) // 32MB max memory
+		} else {
+			_ = r.ParseForm()
+		}
+		for k, v := range r.Form {
+			if len(v) > 0 {
+				formMap.Pairs[k] = &String{Value: v[0]}
+			}
+		}
+		reqMap.Pairs["form"] = formMap
 
 		// Susun objek respons
 		respMap := &Map{Pairs: make(map[string]Object)}
@@ -963,6 +1057,110 @@ func InitGlobalEnvironment() *Environment {
 			},
 		}
 
+		respMap.Pairs["setCookie"] = &Builtin{
+			Fn: func(mArgs ...Object) Object {
+				// respon.setCookie(nama, nilai, [opsi])
+				if len(mArgs) < 2 {
+					return FALSE
+				}
+				cName := mArgs[0].Inspect()
+				cVal := mArgs[1].Inspect()
+				c := &http.Cookie{
+					Name:     cName,
+					Value:    cVal,
+					Path:     "/",
+					HttpOnly: true,
+				}
+				if len(mArgs) >= 3 {
+					if opts, ok := mArgs[2].(*Map); ok {
+						if p, hasP := opts.Pairs["jalur"]; hasP {
+							c.Path = p.Inspect()
+						}
+						if m, hasM := opts.Pairs["maksUmur"]; hasM {
+							if mi, ok := m.(*Integer); ok {
+								c.MaxAge = int(mi.Value)
+							}
+						}
+						if ho, hasHo := opts.Pairs["httpHanya"]; hasHo {
+							if hb, ok := ho.(*Boolean); ok {
+								c.HttpOnly = hb.Value
+							}
+						}
+						if sc, hasSc := opts.Pairs["aman"]; hasSc {
+							if sb, ok := sc.(*Boolean); ok {
+								c.Secure = sb.Value
+							}
+						}
+					}
+				}
+				http.SetCookie(w, c)
+				return respMap
+			},
+		}
+
+		respMap.Pairs["hapusCookie"] = &Builtin{
+			Fn: func(mArgs ...Object) Object {
+				if len(mArgs) < 1 {
+					return FALSE
+				}
+				cName := mArgs[0].Inspect()
+				http.SetCookie(w, &http.Cookie{
+					Name:   cName,
+					Value:  "",
+					Path:   "/",
+					MaxAge: -1,
+				})
+				return respMap
+			},
+		}
+
+		respMap.Pairs["alihkan"] = &Builtin{
+			Fn: func(mArgs ...Object) Object {
+				// respon.alihkan(url, [kode])
+				if len(mArgs) < 1 {
+					return FALSE
+				}
+				targetURL := mArgs[0].Inspect()
+				code := http.StatusFound // 302 default
+				if len(mArgs) >= 2 {
+					if cInt, ok := mArgs[1].(*Integer); ok {
+						code = int(cInt.Value)
+					}
+				}
+				http.Redirect(w, r, targetURL, code)
+				return respMap
+			},
+		}
+
+		respMap.Pairs["kirimBerkas"] = &Builtin{
+			Fn: func(mArgs ...Object) Object {
+				// respon.kirimBerkas(path)
+				if len(mArgs) < 1 {
+					return FALSE
+				}
+				fPath := mArgs[0].Inspect()
+				http.ServeFile(w, r, fPath)
+				return respMap
+			},
+		}
+
+		respMap.Pairs["unduh"] = &Builtin{
+			Fn: func(mArgs ...Object) Object {
+				// respon.unduh(path, [namaTampilan])
+				if len(mArgs) < 1 {
+					return FALSE
+				}
+				fPath := mArgs[0].Inspect()
+				downloadName := filepath.Base(fPath)
+				if len(mArgs) >= 2 {
+					downloadName = mArgs[1].Inspect()
+				}
+				w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", downloadName))
+				http.ServeFile(w, r, fPath)
+				return respMap
+			},
+		}
+
 		// Jalankan rantai middleware jika ada
 		var executeHandler func(mwIndex int)
 		executeHandler = func(mwIndex int) {
@@ -1022,6 +1220,12 @@ func InitGlobalEnvironment() *Environment {
 		},
 	}
 	webMap.Pairs["jalankan"] = webMap.Pairs["dengarkan"]
+	webMap.Pairs["_penangan"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			// Mengembalikan handler untuk kebutuhan pengujian unit test
+			return &NativeHandlerObject{Handler: webHandler}
+		},
+	}
 	env.Set("web", webMap)
 
 	// Registry koneksi basis data aktif untuk graceful shutdown
