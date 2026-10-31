@@ -5766,26 +5766,48 @@ func InitGlobalEnvironment() *Environment {
 			var iterCount int64 = 1000
 			bObj.Pairs["N"] = &Integer{Value: iterCount}
 
+			runtime.GC()
+			var memStart, memEnd runtime.MemStats
+			runtime.ReadMemStats(&memStart)
+
 			start := time.Now()
 			applyFunction(fn, []Object{bObj}, env)
 			elapsed := time.Since(start)
+			runtime.ReadMemStats(&memEnd)
 
 			// Sesuaikan jika terlalu cepat (< 100ms)
 			if elapsed < 100*time.Millisecond {
 				iterCount = 100000
 				bObj.Pairs["N"] = &Integer{Value: iterCount}
+				runtime.GC()
+				runtime.ReadMemStats(&memStart)
 				start = time.Now()
 				applyFunction(fn, []Object{bObj}, env)
 				elapsed = time.Since(start)
+				runtime.ReadMemStats(&memEnd)
 			}
 
 			nsPerOp := float64(elapsed.Nanoseconds()) / float64(iterCount)
-			fmt.Printf("⏱️  [TOLAK UKUR] %-30s %10d iterasi\t%10.2f ns/op\n", benchName, iterCount, nsPerOp)
+			bytesAllocated := int64(0)
+			if memEnd.TotalAlloc > memStart.TotalAlloc {
+				bytesAllocated = int64(memEnd.TotalAlloc - memStart.TotalAlloc)
+			}
+			allocsCount := int64(0)
+			if memEnd.Mallocs > memStart.Mallocs {
+				allocsCount = int64(memEnd.Mallocs - memStart.Mallocs)
+			}
+			bytesPerOp := float64(bytesAllocated) / float64(iterCount)
+			allocsPerOp := float64(allocsCount) / float64(iterCount)
+
+			fmt.Printf("⏱️  [TOLAK UKUR] %-30s %10d iterasi\t%10.2f ns/op\t%8.0f B/op\t%6.0f allocs/op\n",
+				benchName, iterCount, nsPerOp, bytesPerOp, allocsPerOp)
 
 			resMap := &Map{Pairs: make(map[string]Object)}
 			resMap.Pairs["nama"] = &String{Value: benchName}
 			resMap.Pairs["iterasi"] = &Integer{Value: iterCount}
 			resMap.Pairs["nsPerOp"] = &Float{Value: nsPerOp}
+			resMap.Pairs["bytesPerOp"] = &Float{Value: bytesPerOp}
+			resMap.Pairs["allocsPerOp"] = &Float{Value: allocsPerOp}
 			return resMap
 		},
 	}
