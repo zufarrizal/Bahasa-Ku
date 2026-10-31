@@ -1487,22 +1487,6 @@ func InitGlobalEnvironment() *Environment {
 			return &Boolean{Value: err == nil}
 		},
 	}
-	berkasMap.Pairs["tambah"] = &Builtin{
-		Fn: func(args ...Object) Object {
-			if len(args) < 2 {
-				return FALSE
-			}
-			filePath := args[0].Inspect()
-			data := args[1].Inspect()
-			f, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-			if err != nil {
-				return FALSE
-			}
-			defer f.Close()
-			_, err = f.WriteString(data)
-			return &Boolean{Value: err == nil}
-		},
-	}
 	berkasMap.Pairs["salin"] = &Builtin{
 		Fn: func(args ...Object) Object {
 			if len(args) < 2 {
