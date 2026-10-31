@@ -14,7 +14,7 @@ ARCH="$(uname -m)"
 
 if [ "$OS" = "Linux" ]; then
     if [ "$ARCH" = "x86_64" ] || [ "$ARCH" = "amd64" ]; then
-        URL="https://github.com/zufarrizal/Bahasa-Ku/releases/download/v0.3.5/ku-linux-amd64"
+        URL="https://github.com/zufarrizal/Bahasa-Ku/releases/download/v0.3.6/ku-linux-amd64"
     else
         echo "Arsitektur Linux ($ARCH) belum didukung secara resmi untuk rilis biner portabel."
         echo "Silakan gunakan Go untuk mengompilasi dari sumber: go install github.com/zufarrizal/bahasa-ku/cmd/ku@latest"
@@ -22,7 +22,7 @@ if [ "$OS" = "Linux" ]; then
     fi
 elif [ "$OS" = "Darwin" ]; then
     if [ "$ARCH" = "arm64" ] || [ "$ARCH" = "aarch64" ]; then
-        URL="https://github.com/zufarrizal/Bahasa-Ku/releases/download/v0.3.5/ku-darwin-arm64"
+        URL="https://github.com/zufarrizal/Bahasa-Ku/releases/download/v0.3.6/ku-darwin-arm64"
     else
         echo "Arsitektur macOS Intel ($ARCH) belum didukung secara biner portabel. Gunakan go install github.com/zufarrizal/bahasa-ku/cmd/ku@latest"
         exit 1
@@ -50,7 +50,7 @@ fi
 echo "[3/3] Memeriksa instalasi VS Code..."
 if command -v code &> /dev/null; then
     echo "      -> Memasang ekstensi VS Code otomatis..."
-    VSIX_URL="https://github.com/zufarrizal/Bahasa-Ku/releases/download/v0.3.5/bahasa-ku-vscode-0.2.0.vsix"
+    VSIX_URL="https://github.com/zufarrizal/Bahasa-Ku/releases/download/v0.3.6/bahasa-ku-vscode-0.2.0.vsix"
     curl -sL "$VSIX_URL" -o "$INSTALL_DIR/bahasa-ku.vsix"
     code --install-extension "$INSTALL_DIR/bahasa-ku.vsix" --force > /dev/null 2>&1 || true
     rm -f "$INSTALL_DIR/bahasa-ku.vsix"

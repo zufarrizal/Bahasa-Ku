@@ -24,7 +24,7 @@ import (
 	"github.com/zufarrizal/bahasa-ku/pkg/transpiler"
 )
 
-const version = "0.3.5 (Go Native Edition)"
+const version = "0.3.6 (Go Native Edition)"
 
 func init() {
 	evaluator.RegisterSubFileEvaluator(func(path string, env *evaluator.Environment) {
@@ -776,7 +776,7 @@ func scaffoldProject(projectType, folderName string) {
 
 	// 1. Buat berkas manifes ku.mod (identitas proyek Bahasa Ku)
 	modContent := fmt.Sprintf(`modul %s
-versi 0.3.5
+versi 0.3.6
 bahasa ku
 `, filepath.Base(folderName))
 
@@ -1190,7 +1190,7 @@ func checkLatestRelease(checkOnly bool) {
 
 	fmt.Println(" Selesai!")
 	latestTag := strings.TrimSpace(rel.TagName)
-	localTag := "v0.3.5"
+	localTag := "v0.3.6"
 
 	cleanVer := func(s string) []int {
 		s = strings.TrimPrefix(strings.TrimPrefix(strings.TrimSpace(s), "v"), "V")

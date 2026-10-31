@@ -12,8 +12,8 @@ Write-Host "       Pemasang Otomatis Bahasa Ku (Windows)       " -ForegroundColo
 Write-Host "==================================================" -ForegroundColor Cyan
 
 $InstallDir = "$env:LOCALAPPDATA\Bahasa-Ku"
-$ExeUrl = "https://github.com/zufarrizal/Bahasa-Ku/releases/download/v0.3.5/ku-windows-amd64.exe"
-$VsixUrl = "https://github.com/zufarrizal/Bahasa-Ku/releases/download/v0.3.5/bahasa-ku-vscode-0.2.0.vsix"
+$ExeUrl = "https://github.com/zufarrizal/Bahasa-Ku/releases/download/v0.3.6/ku-windows-amd64.exe"
+$VsixUrl = "https://github.com/zufarrizal/Bahasa-Ku/releases/download/v0.3.6/bahasa-ku-vscode-0.2.0.vsix"
 $ExeTarget = "$InstallDir\ku.exe"
 $VsixTarget = "$InstallDir\bahasa-ku.vsix"
 
