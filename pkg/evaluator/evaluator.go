@@ -1578,6 +1578,7 @@ func InitGlobalEnvironment() *Environment {
 
 			db, err := sql.Open(driver, dsn)
 			connMap := &Map{Pairs: make(map[string]Object)}
+			var debugSQL bool = false
 
 			if err != nil {
 				connMap.Pairs["terhubung"] = FALSE
@@ -1595,6 +1596,18 @@ func InitGlobalEnvironment() *Environment {
 			} else {
 				connMap.Pairs["terhubung"] = TRUE
 				connMap.Pairs["pesan"] = &String{Value: "Koneksi berhasil"}
+			}
+
+			connMap.Pairs["debug"] = &Builtin{
+				Fn: func(dArgs ...Object) Object {
+					// conn.debug(benar/salah) -> mengaktifkan / menonaktifkan pencatatan SQL real-time
+					if len(dArgs) > 0 {
+						debugSQL = isTruthy(dArgs[0])
+					} else {
+						debugSQL = true
+					}
+					return connMap
+				},
 			}
 
 			// Method eksekusi query
@@ -1623,12 +1636,17 @@ func InitGlobalEnvironment() *Environment {
 							}
 						}
 					}
+					startQ := time.Now()
 					var rows *sql.Rows
 					var qErr error
 					if len(queryParams) > 0 {
 						rows, qErr = db.Query(queryStr, queryParams...)
 					} else {
 						rows, qErr = db.Query(queryStr)
+					}
+					elapsedMs := float64(time.Since(startQ).Nanoseconds()) / 1e6
+					if debugSQL {
+						fmt.Printf("[DEBUG SQL] %.3f ms | %s | params: %v\n", elapsedMs, queryStr, queryParams)
 					}
 					if qErr != nil {
 						fmt.Printf("Galat kueri: %s\n", TerjemahkanGalat(qErr))
@@ -1691,11 +1709,16 @@ func InitGlobalEnvironment() *Environment {
 							}
 						}
 					}
+					startE := time.Now()
 					var exErr error
 					if len(queryParams) > 0 {
 						_, exErr = db.Exec(sqlStr, queryParams...)
 					} else {
 						_, exErr = db.Exec(sqlStr)
+					}
+					elapsedMs := float64(time.Since(startE).Nanoseconds()) / 1e6
+					if debugSQL {
+						fmt.Printf("[DEBUG SQL] %.3f ms | %s | params: %v\n", elapsedMs, sqlStr, queryParams)
 					}
 					if exErr != nil {
 						fmt.Printf("Galat eksekusi: %s\n", TerjemahkanGalat(exErr))
