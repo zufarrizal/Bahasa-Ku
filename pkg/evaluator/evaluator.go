@@ -107,6 +107,31 @@ type CallFrame struct {
 	Column   int
 }
 
+var globalCallStack []CallFrame
+var globalCallStackMutex sync.Mutex
+
+func pushCallFrame(frame CallFrame) {
+	globalCallStackMutex.Lock()
+	globalCallStack = append(globalCallStack, frame)
+	globalCallStackMutex.Unlock()
+}
+
+func popCallFrame() {
+	globalCallStackMutex.Lock()
+	if len(globalCallStack) > 0 {
+		globalCallStack = globalCallStack[:len(globalCallStack)-1]
+	}
+	globalCallStackMutex.Unlock()
+}
+
+func getCallStackSnapshot() []CallFrame {
+	globalCallStackMutex.Lock()
+	defer globalCallStackMutex.Unlock()
+	res := make([]CallFrame, len(globalCallStack))
+	copy(res, globalCallStack)
+	return res
+}
+
 type PanicObject struct {
 	Value      Object
 	StackTrace []CallFrame
@@ -5741,6 +5766,148 @@ func InitGlobalEnvironment() *Environment {
 	}
 	env.Set("konfigurasi", konfigurasiMap)
 
+	// Modul debug (Debugging Tingkat Lanjut, Profiler Durasi & Memori, Breakpoint Inspeksi)
+	debugMap := &Map{Pairs: make(map[string]Object)}
+
+	debugMap.Pairs["dump"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			parts := []string{}
+			for _, a := range args {
+				parts = append(parts, formatDumpIndo(a, 0))
+			}
+			dumpStr := strings.Join(parts, "\n")
+			fmt.Println(dumpStr)
+			return &String{Value: dumpStr}
+		},
+	}
+
+	debugMap.Pairs["jejak"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			// debug.jejak([pesan]) -> Mencetak dan mengembalikan stack trace saat ini
+			msg := "Jejak Eksekusi:"
+			if len(args) > 0 {
+				msg = fmt.Sprintf("Jejak Eksekusi (%s):", args[0].Inspect())
+			}
+			var sb strings.Builder
+			sb.WriteString(msg)
+			stackSnapshot := getCallStackSnapshot()
+			if len(stackSnapshot) > 0 {
+				for i, frame := range stackSnapshot {
+					fnName := frame.Function
+					if fnName == "" {
+						fnName = "<anonim>"
+					}
+					fileInfo := frame.File
+					if fileInfo == "" {
+						fileInfo = "berkas"
+					}
+					sb.WriteString(fmt.Sprintf("\n  [%d] %s() pada %s:%d:%d", i+1, fnName, fileInfo, frame.Line, frame.Column))
+				}
+			} else {
+				sb.WriteString("\n  [tingkat global]")
+			}
+			traceStr := sb.String()
+			fmt.Println(traceStr)
+			return &String{Value: traceStr}
+		},
+	}
+
+	debugMap.Pairs["profil"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			// debug.profil("namaBlok", fungsi() { ... }) -> mengembalikan { "nama": ..., "durasiMs": ..., "hasil": ... }
+			if len(args) < 2 {
+				return NIL
+			}
+			blockName := args[0].Inspect()
+			fn, isFn := args[1].(*Function)
+			if !isFn {
+				return NIL
+			}
+
+			start := time.Now()
+			res := applyFunction(fn, []Object{}, env)
+			elapsedNano := time.Since(start).Nanoseconds()
+			elapsedMs := float64(elapsedNano) / 1e6
+
+			fmt.Printf("[DEBUG PROFIL] '%s' selesai dalam %.3f ms\n", blockName, elapsedMs)
+
+			outMap := &Map{Pairs: make(map[string]Object)}
+			outMap.Pairs["nama"] = &String{Value: blockName}
+			outMap.Pairs["durasiMs"] = &Float{Value: elapsedMs}
+			outMap.Pairs["durasiTeks"] = &String{Value: fmt.Sprintf("%.3f ms", elapsedMs)}
+			outMap.Pairs["hasil"] = res
+			return outMap
+		},
+	}
+
+	debugMap.Pairs["memori"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			// debug.memori() -> Mengambil info runtime memory Go (Alloc, TotalAlloc, Sys, NumGC)
+			var m runtime.MemStats
+			runtime.ReadMemStats(&m)
+
+			toMB := func(b uint64) float64 {
+				return float64(b) / (1024 * 1024)
+			}
+
+			memMap := &Map{Pairs: make(map[string]Object)}
+			memMap.Pairs["alokasiBita"] = &Integer{Value: int64(m.Alloc)}
+			memMap.Pairs["alokasiMB"] = &Float{Value: toMB(m.Alloc)}
+			memMap.Pairs["totalAlokasiMB"] = &Float{Value: toMB(m.TotalAlloc)}
+			memMap.Pairs["sistemMB"] = &Float{Value: toMB(m.Sys)}
+			memMap.Pairs["jumlahGC"] = &Integer{Value: int64(m.NumGC)}
+			memMap.Pairs["jumlahGoroutine"] = &Integer{Value: int64(runtime.NumGoroutine())}
+			return memMap
+		},
+	}
+
+	debugMap.Pairs["kondisi"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			// debug.kondisi(syaratBoolean, pesanGalat) -> Mirip assert() di testing/debugging
+			if len(args) < 1 {
+				return TRUE
+			}
+			isOk := isTruthy(args[0])
+			if !isOk {
+				errMsg := "Penegasan kondisi (assertion) gagal"
+				if len(args) >= 2 {
+					errMsg = args[1].Inspect()
+				}
+				panicObj := &PanicObject{
+					Value:      &String{Value: errMsg},
+					StackTrace: getCallStackSnapshot(),
+				}
+				return panicObj
+			}
+			return TRUE
+		},
+	}
+
+	debugMap.Pairs["titikHenti"] = &Builtin{
+		Fn: func(args ...Object) Object {
+			// debug.titikHenti([label]) -> Breakpoint interaktif di console jika dijalankan di terminal
+			label := "Breakpoint tercapai"
+			if len(args) > 0 {
+				label = args[0].Inspect()
+			}
+			fmt.Printf("\n--- [DEBUG TITIK HENTI / BREAKPOINT]: %s ---\n", label)
+			fmt.Println("Variabel di lingkup saat ini:")
+			for k, v := range env.GetStore() {
+				// Filter fungsi internal agar rapi
+				if !strings.HasPrefix(k, "_") {
+					valStr := v.Inspect()
+					if len(valStr) > 60 {
+						valStr = valStr[:57] + "..."
+					}
+					fmt.Printf("  %s = %s\n", k, valStr)
+				}
+			}
+			fmt.Println("----------------------------------------------")
+			return TRUE
+		},
+	}
+	env.Set("debug", debugMap)
+
 	// Modul kompresi (Gzip)
 	kompresiMap := &Map{Pairs: make(map[string]Object)}
 	kompresiMap.Pairs["gzip"] = &Builtin{
@@ -10210,7 +10377,13 @@ func applyFunction(fn Object, args []Object, outerEnv *Environment) Object {
 			}
 		}
 
+		pushCallFrame(CallFrame{
+			Function: f.Name,
+			Line:     f.Token.Line,
+			Column:   f.Token.Column,
+		})
 		res := Eval(f.Body, fnEnv)
+		popCallFrame()
 
 		if pObj, isPanic := res.(*PanicObject); isPanic {
 			pObj.StackTrace = append(pObj.StackTrace, CallFrame{
