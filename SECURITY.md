@@ -7,8 +7,6 @@ Kami secara aktif memantau dan memberikan pembaruan keamanan untuk versi-versi b
 | Versi | Didukung Keamanan |
 | :--- | :--- |
 | v0.3.x | :white_check_mark: Ya (Versi Terkini) |
-| v0.2.x | :x: Tidak |
-| < v0.2.0 | :x: Tidak |
 
 ---
 
