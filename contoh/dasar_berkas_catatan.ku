@@ -1,0 +1,58 @@
+paket utama
+
+pakai "cetak"
+pakai "berkas"
+pakai "catatan"
+pakai "teks"
+pakai "enkoding"
+pakai "larik"
+
+fungsi utama() {
+    catatan.info("Memulai uji coba fondasi dasar berkas, log, dan teks")
+
+    cetak.tulis("=== 1. MANIPULASI BERKAS (TAMBAH, SALIN, PINDAH) ===")
+    var namaBerkas = "tes_log.txt"
+    berkas.tulis(namaBerkas, "Baris awal dokumen\n")
+    berkas.tambah(namaBerkas, "Baris kedua ditambahkan\n")
+    cetak.tulis("Isi berkas setelah ditambah:\n" + berkas.baca(namaBerkas))
+
+    var berkasSalinan = "tes_log_salin.txt"
+    berkas.salin(namaBerkas, berkasSalinan)
+    cetak.tulis("Apakah salinan ada?", berkas.ada(berkasSalinan))
+
+    var berkasPindah = "tes_log_pindah.txt"
+    berkas.pindah(berkasSalinan, berkasPindah)
+    cetak.tulis("Apakah berkas pindahan ada?", berkas.ada(berkasPindah))
+
+    // Bersihkan berkas uji coba
+    berkas.hapus(namaBerkas)
+    berkas.hapus(berkasPindah)
+
+    cetak.tulis("\n=== 2. TEKS PADDING & KARAKTER ===")
+    var nomorID = "42"
+    var idFormat = teks.padKiri(nomorID, 5, "0")
+    cetak.tulis("Pad kiri ID (5 digit):", idFormat)
+
+    var judul = "Bahasa Ku"
+    cetak.tulis("Pad kanan judul (15 char):", "'" + teks.padKanan(judul, 15, "-") + "'")
+    cetak.tulis("Karakter pertama:", teks.karakter(judul, 0))
+    cetak.tulis("Karakter kedelapan:", teks.karakter(judul, 7))
+
+    cetak.tulis("\n=== 3. ENKODING HEKSADESIMAL ===")
+    var kata = "Ku Lang"
+    var heksa = enkoding.kodekanHeksa(kata)
+    cetak.tulis("Teks asli:", kata)
+    cetak.tulis("Kode Heksa:", heksa)
+    cetak.tulis("Dekode Heksa:", enkoding.dekodekanHeksa(heksa))
+
+    cetak.tulis("\n=== 4. PENCARIAN LARIK (MENGANDUNG & INDEKS) ===")
+    var bahasa = ["Go", "Ku", "Python", "Rust"]
+    cetak.tulis("Daftar:", bahasa)
+    cetak.tulis("Apakah mengandung 'Ku'?", larik.mengandung(bahasa, "Ku"))
+    cetak.tulis("Apakah mengandung 'Java'?", larik.mengandung(bahasa, "Java"))
+    cetak.tulis("Indeks posisi 'Ku':", larik.indeks(bahasa, "Ku"))
+    cetak.tulis("Indeks posisi 'Java':", larik.indeks(bahasa, "Java"))
+
+    catatan.peringatan("Ini contoh pesan peringatan sistem!")
+    catatan.info("Program pengujian berhasil dieksekusi dengan sempurna.")
+}

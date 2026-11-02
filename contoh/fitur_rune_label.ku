@@ -1,0 +1,38 @@
+paket utama
+
+fungsi utama() {
+    cetak.tulis("=== DEMO ADOPSI FITUR GO LENGKAP DI BAHASA KU ===")
+
+    // 1. Unicode Rune & Byte String Indexing
+    var str = "Go世界"
+    cetak.tulis("Teks:", str)
+    cetak.tulis("Karakter pertama byte mentah (ASCII 'G'):", str[0])
+    cetak.tulis("Jumlah kode poin karakter Unicode:", bita.jumlahKarakter(str))
+    
+    var runes = bita.karakter(str)
+    cetak.tulis("Array code point Unicode (runes):", runes)
+    cetak.tulis("Konversi balik dari runes:", bita.dariKarakter(runes))
+
+    // 2. String Range Loop (Index byte & Karakter Rune)
+    cetak.tulis("\nIterasi karakter Unicode:")
+    var kata = "Ku-Bahasa"
+    untuk offset, kodeRune dalam kata {
+        cetak.tulis("  Byte offset:", offset, "| Karakter:", bita.dariKarakter(kodeRune), "(kode:", kodeRune, ")")
+    }
+
+    // 3. Labeled Loop (Break Label untuk keluar dari loop bersarang)
+    cetak.tulis("\nDemo Labeled Loop:")
+    var totalPutaran = 0
+Luar:
+    untuk var baris = 1; baris <= 5; baris = baris + 1 {
+        untuk var kolom = 1; kolom <= 5; kolom = kolom + 1 {
+            totalPutaran = totalPutaran + 1
+            cetak.tulis("  Memproses baris", baris, "kolom", kolom)
+            jika baris == 2 && kolom == 3 {
+                cetak.tulis("  >>> Menemukan kondisi target! Henti Luar sekarang.")
+                henti Luar
+            }
+        }
+    }
+    cetak.tulis("Selesai loop berlabel. Total iterasi yang dijalankan:", totalPutaran)
+}

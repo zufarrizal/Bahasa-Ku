@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <!-- Background Dark Squircle 512x512 -->
+  <rect width="512" height="512" rx="128" fill="#0A0E17" />
+
+  <defs>
+    <!-- Gradient Cyan ke Electric Blue khas Go Modern -->
+    <linearGradient id="kuGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00F0FF" />
+      <stop offset="100%" stop-color="#0066FF" />
+    </linearGradient>
+
+    <!-- Halus Bayangan Cahaya -->
+    <filter id="kuGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="14" flood-color="#00A3FF" flood-opacity="0.3" />
+    </filter>
+  </defs>
+
+  <!-- Tinggi < dan U Sama Persis: Y_awal = 166, Y_dasar = 346, Tinggi total = 180, Center Y = 256 -->
+  <g filter="url(#kuGlow)">
+    <!-- 1. Simbol '<' (Tinggi Sama Persis: dari Y=166 ke Y=256 ke Y=346) -->
+    <path d="M 226,166 L 136,256 L 226,346" 
+          stroke="url(#kuGrad)" 
+          stroke-width="50" 
+          stroke-linecap="round" 
+          stroke-linejoin="round" 
+          fill="none" />
+
+    <!-- 2. Huruf 'u' Murni Tanpa Ekor (Tinggi Sama Persis: dari Y=166 ke Y=296, lengkung R=50 ke Y=346) -->
+    <path d="M 286,166 
+             L 286,296 
+             A 50,50 0 0,0 386,296 
+             L 386,166" 
+          stroke="url(#kuGrad)" 
+          stroke-width="50" 
+          stroke-linecap="round" 
+          stroke-linejoin="round" 
+          fill="none" />
+  </g>
+</svg>

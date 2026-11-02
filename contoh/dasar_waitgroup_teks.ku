@@ -1,0 +1,54 @@
+paket utama
+
+pakai "cetak"
+pakai "sistem"
+pakai "teks"
+pakai "kanal"
+
+fungsi pekerja(id, kt) {
+    tunda kt.selesai()
+    cetak.tulis(teks.format("Pekerja #{0} mulai bertugas...", id))
+    sistem.tidur(1)
+    cetak.tulis(teks.format("Pekerja #{0} selesai!", id))
+}
+
+fungsi utama() {
+    cetak.tulis("=== Uji KelompokTunggu (WaitGroup), Utilitas Teks, & cobaTerima Kanal ===")
+
+    // 1. Uji KelompokTunggu (sync.WaitGroup khas Go)
+    var kt = sistem.kelompokTunggu()
+
+    cetak.tulis("Meluncurkan 3 pekerja paralel...")
+    untuk i := 1; i <= 3; i++ {
+        kt.tambah(1)
+        ku pekerja(i, kt)
+    }
+
+    cetak.tulis("Utama: Menunggu seluruh pekerja selesai...")
+    kt.tunggu()
+    cetak.tulis("Utama: Semua pekerja telah selesai 100%! 🎉")
+
+    // 2. Uji Utilitas Teks Lanjutan
+    var garis = teks.ulang("=", 25)
+    cetak.tulis(garis)
+
+    var kalimat = "Bahasa Ku sangat menyenangkan"
+    uji.benar(teks.awalan(kalimat, "Bahasa"))
+    uji.benar(teks.akhiran(kalimat, "menyenangkan"))
+    uji.sama(teks.indeks(kalimat, "Ku"), 7)
+    cetak.tulis("Indeks kata 'Ku':", teks.indeks(kalimat, "Ku"))
+
+    // 3. Uji cobaTerima pada Kanal (Non-blocking Channel)
+    var pipa = kanal.buat(1)
+    var data, ada = pipa.cobaTerima()
+    jika !ada {
+        cetak.tulis("Kanal masih kosong (non-blocking berhasil)!")
+    }
+
+    pipa.kirim("Pesan Kilat")
+    var data2, ada2 = pipa.cobaTerima()
+    jika ada2 {
+        cetak.tulis("Kanal berisi:", data2)
+        uji.sama(data2, "Pesan Kilat")
+    }
+}

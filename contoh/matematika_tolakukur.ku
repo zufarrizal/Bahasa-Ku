@@ -1,0 +1,22 @@
+paket utama
+
+pakai "cetak"
+pakai "uji"
+
+fungsi utama() {
+    cetak.tulis("=== Menjalankan Tolak Ukur Internal ===")
+
+    uji.tolakUkur("Tolak Ukur Penjumlahan Angka", fungsi(b) {
+        var total = 0
+        untuk i := 0; i < b.N; i++ {
+            total = total + i
+        }
+    })
+
+    uji.tolakUkur("Tolak Ukur Penggabungan Teks", fungsi(b) {
+        var kata = ""
+        untuk i := 0; i < 100; i++ {
+            kata = kata + "A"
+        }
+    })
+}

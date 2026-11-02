@@ -1,0 +1,47 @@
+paket utama
+
+pakai "cetak"
+
+fungsi periksaKoneksi() {
+    // Simulasi mengembalikan [hasil, error]
+    kembalikan "Koneksi Terhubung", kosong
+}
+
+fungsi utama() {
+    cetak.tulis("========================================")
+    cetak.tulis(" IDIOM MIKRO ESENSIAL GO DI BAHASA KU   ")
+    cetak.tulis("========================================")
+
+    // 1. Idiom 'jika' dengan short-statement initialization
+    jika var status, err = periksaKoneksi(); err == kosong {
+        cetak.tulis("1. [Jika Short-Statement]: Sukses ->", status)
+    }
+
+    // 2. Idiom Multi-value pada Kasus Pilih (Comma-separated switch cases)
+    var namaBerkas = "dokumen_rahasia.webp"
+    var tipeBerkas = ""
+
+    pilih namaBerkas[panjang(namaBerkas)-5:panjang(namaBerkas)] {
+    kasus ".webp", ".jpeg":
+        tipeBerkas = "Gambar Web Modern"
+    kasus ".docx", ".xlsx":
+        tipeBerkas = "Dokumen Kantor"
+    bawaan:
+        tipeBerkas = "Format Lainnya"
+    }
+    cetak.tulis("2. [Multi-Case Switch]: Berkas terdeteksi sebagai ->", tipeBerkas)
+
+    // 3. Immediately Invoked Function Expression (IIFE)
+    var nilaiKalkulasi = fungsi(a, b, pengali) {
+        kembalikan (a + b) * pengali
+    }(10, 20, 3)
+
+    cetak.tulis("3. [Fungsi Anonim Langsung (IIFE)]: (10 + 20) * 3 =", nilaiKalkulasi)
+
+    // 4. IIFE asinkron dengan Ku-routine
+    ku fungsi(pesan) {
+        cetak.tulis("4. [Ku-routine IIFE]:", pesan)
+    }("Goroutine anonim berjalan secara paralel!")
+
+    cetak.tulis("\nSemua idiom mikro Go sukses beroperasi! 🎉")
+}

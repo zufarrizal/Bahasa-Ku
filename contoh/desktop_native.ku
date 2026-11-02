@@ -1,0 +1,21 @@
+paket utama
+
+pakai "cetak"
+pakai "jendela"
+
+fungsi sapaNama(nama) {
+    kembalikan "Halo " + nama + ", antarmuka GUI Native Bahasa Ku (Wails-Style) aktif!"
+}
+
+fungsi utama() {
+    jendela.ikat("sapa", sapaNama)
+
+    jendela.buka({
+        "judul": "Aplikasi Desktop Native Bahasa Ku",
+        "lebar": 850,
+        "tinggi": 550,
+        "konten": "<h1>🚀 Desktop Native Bahasa Ku</h1><p id='hasil'>Klik tombol untuk menguji IPC dua arah:</p><button onclick='window.ku.panggil(\"sapa\", \"Zufar\").then(res => document.getElementById(\"hasil\").innerText = res)'>Uji Sambungan IPC</button>"
+    })
+}
+
+utama()

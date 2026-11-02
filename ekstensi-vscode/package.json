@@ -1,0 +1,71 @@
+{
+  "name": "bahasa-ku-vscode",
+  "displayName": "Dukungan Bahasa Ku",
+  "description": "Syntax Highlighting, IntelliSense Autocomplete, Snippet, dan Runner untuk Bahasa Ku",
+  "version": "0.2.0",
+  "publisher": "zufarrizal",
+  "main": "./extension.js",
+  "activationEvents": [
+    "onLanguage:ku"
+  ],
+  "icon": "icon.png",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Snippets"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zufarrizal/Bahasa-Ku"
+  },
+  "contributes": {
+    "languages": [
+      {
+        "id": "ku",
+        "aliases": [
+          "Bahasa Ku",
+          "ku"
+        ],
+        "extensions": [
+          ".ku"
+        ],
+        "icon": {
+          "light": "./icons/ku-icon.svg",
+          "dark": "./icons/ku-icon.svg"
+        },
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "ku",
+        "scopeName": "source.ku",
+        "path": "./syntaxes/ku.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "ku",
+        "path": "./snippets/ku.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "bahasa-ku.jalankanBerkas",
+        "title": "Bahasa Ku: Jalankan Berkas (.ku)",
+        "icon": "$(play)"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "bahasa-ku.jalankanBerkas",
+          "when": "resourceExtname == .ku",
+          "group": "navigation"
+        }
+      ]
+    }
+  }
+}

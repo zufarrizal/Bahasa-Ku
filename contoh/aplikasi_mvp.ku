@@ -1,0 +1,73 @@
+paket utama
+
+pakai "cetak"
+pakai "web"
+pakai "basisdata"
+
+fungsi utama() {
+    cetak.tulis("🚀 Memulai Server MVP Bahasa Ku...")
+
+    // 1. Inisialisasi Basis Data Portabel & Tabel
+    var db = basisdata.bukaBerkas("mvp_toko.db")
+    db.eksekusi("CREATE TABLE IF NOT EXISTS produk (id INTEGER PRIMARY KEY, nama TEXT, harga INTEGER, stok INTEGER);")
+
+    // Isi data awal jika kosong
+    var cek = db.tabel("produk").ambilSemua()
+    jika panjang(cek) == 0 {
+        db.tabel("produk").masukkan({"nama": "Kopi Ku Robusta", "harga": 25000, "stok": 50})
+        db.tabel("produk").masukkan({"nama": "Teh Ku Melati", "harga": 15000, "stok": 100})
+        db.tabel("produk").masukkan({"nama": "Cokelat Ku", "harga": 30000, "stok": 30})
+    }
+
+    // 2. Rantai Middleware Global (Logging & Auth Header)
+    web.gunakan(fungsi(minta, respon, lanjut) {
+        cetak.tulis("[AKSES]", minta["metode"], minta["jalur"])
+        lanjut()
+    })
+
+    // 3. Konfigurasi CORS & Berkas Statis
+    web.aktifkanCORS()
+    web.berkasStatis("/aset", "./public")
+
+    // 4. REST API CRUD dengan Query Builder
+    // GET /api/produk -> Ambil Semua
+    web.dapatkan("/api/produk", fungsi(minta, respon) {
+        var daftar = db.tabel("produk").urutkan("harga DESC").ambilSemua()
+        respons := respon.status(200)
+        respons.json({
+            "sukses": benar,
+            "total": panjang(daftar),
+            "data": daftar
+        })
+    })
+
+    // GET /api/produk/:id -> Ambil Satu
+    web.dapatkan("/api/produk/:id", fungsi(minta, respon) {
+        var id = minta["params"]["id"]
+        var item = db.tabel("produk").dimana("id", id).ambilSatu()
+        jika item == kosong {
+            respon.status(404).json({"sukses": salah, "pesan": "Produk tidak ditemukan"})
+            kembalikan
+        }
+        respon.status(200).json({"sukses": benar, "data": item})
+    })
+
+    // POST /api/produk -> Tambah Produk Baru
+    web.pos("/api/produk", fungsi(minta, respon) {
+        var badan = minta["badan"]
+        // Logika simpan data...
+        respon.status(201).json({"sukses": benar, "pesan": "Produk berhasil ditambahkan"})
+    })
+
+    // 5. Server Side Rendering (SSR) Tampilan Web
+    web.dapatkan("/", fungsi(minta, respon) {
+        respon.tampilkan("tampilan/index.html", {
+            "judul": "Portal MVP Bahasa Ku",
+            "keterangan": "Sistem Web & REST API Berdaulat Bahasa Indonesia",
+            "waktu": "2026"
+        })
+    })
+
+    cetak.tulis("✨ Server aktif! Buka browser di http://localhost:8080")
+    web.jalankan(8080)
+}

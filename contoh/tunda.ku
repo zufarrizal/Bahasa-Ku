@@ -1,0 +1,15 @@
+paket utama
+
+pakai "cetak"
+
+fungsi ujiTunda() {
+    cetak.tulis("1. Fungsi ujiTunda dimulai")
+    tunda cetak.tulis("4. Pesan tunda ke-1 (dieksekusi terakhir)")
+    tunda cetak.tulis("3. Pesan tunda ke-2 (LIFO: dieksekusi sebelum tunda ke-1)")
+    cetak.tulis("2. Fungsi ujiTunda selesai dieksekusi")
+}
+
+fungsi utama() {
+    cetak.tulis("=== Uji Fitur Tunda (Defer) ===")
+    ujiTunda()
+}

@@ -1,0 +1,32 @@
+MIT License
+
+Copyright (c) 2026 Zufar Rizal
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+### Pengakuan & Pernyataan Etika (Acknowledgments & Ethical Notice)
+
+1. **Inspirasi Desain:**
+   Bahasa pemrograman **Ku** dirancang sebagai proyek edukasi dan eksperimental yang terinspirasi oleh filosofi, kesederhanaan, dan sintaks bahasa pemrograman **Go** (dikembangkan oleh The Go Authors / Google LLC).
+2. **Keterbukaan & Batas Kepemilikan:**
+   Bahasa Ku tidak terafiliasi secara resmi dengan Google LLC atau The Go Authors. Seluruh nama dagang, merek, dan spesifikasi asli bahasa Go tetap merupakan hak milik dari pemegang hak ciptanya masing-masing.
+3. **Tujuan Proyek:**
+   Proyek ini bertujuan untuk mempermudah pembelajaran logika pemrograman bagi penutur Bahasa Indonesia (*educational & accessibility purposes*) melalui lokalisasi kata kunci dan konsep tata bahasa yang ramah pemula.

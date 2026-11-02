@@ -1,0 +1,75 @@
+paket utama
+
+// 1. Struct Embedding (Komposisi Tanpa Warisan Ala Go)
+tipe Makhluk struktur {
+    kategori teks
+}
+
+fungsi (m Makhluk) suara() {
+    kembalikan "Suara makhluk umum"
+}
+
+tipe Manusia struktur {
+    Makhluk // Embedded struct (anonymous field)
+    nama    teks
+    umur    angka
+}
+
+// 2. Type Switch & Type Assertion (x.(tipe) dan x.(Tipe))
+fungsi jelaskanNilai(x) {
+    pilih v := x.(tipe) {
+    kasus teks:
+        kembalikan "Tipe Teks: '" + v + "'"
+    kasus angka:
+        kembalikan "Tipe Angka: " + konversi.keTeks(v)
+    kasus Manusia:
+        kembalikan "Tipe Manusia bernama " + v.nama
+    bawaan:
+        kembalikan "Tipe tidak dikenal"
+    }
+}
+
+// 3. Named Return Values & Naked Return (kembalikan)
+fungsi hitungLingkaran(radius) (luas, keliling) {
+    luas = 3.14159 * radius * radius
+    keliling = 2.0 * 3.14159 * radius
+    kembalikan // Naked return: otomatis mengembalikan variabel luas dan keliling
+}
+
+fungsi utama() {
+    cetak.tulisBaris("=== DEMO FITUR FUNDAMENTAL GO DI BAHASA KU ===")
+
+    // Inisialisasi struct dengan embedding
+    var orang = Manusia({
+        "Makhluk": Makhluk({"kategori": "Homo Sapiens"}),
+        "nama": "Zufar",
+        "umur": 28
+    })
+
+    // Akses field dan method langsung via promotion
+    cetak.tulisBaris("\n1. Struct Embedding & Promotion:")
+    cetak.tulisBaris("   Nama        : " + orang.nama)
+    cetak.tulisBaris("   Kategori    : " + orang.kategori) // Dipromosikan dari Makhluk
+    cetak.tulisBaris("   Method suara: " + orang.suara())    // Dipromosikan dari Makhluk
+
+    // Type Switch
+    cetak.tulisBaris("\n2. Type Switch (pilih v := x.(tipe)):")
+    cetak.tulisBaris("   - " + jelaskanNilai("Bahasa Pemrograman Ku"))
+    cetak.tulisBaris("   - " + jelaskanNilai(100))
+    cetak.tulisBaris("   - " + jelaskanNilai(orang))
+
+    // Type Assertion
+    cetak.tulisBaris("\n3. Type Assertion (x.(Tipe)):")
+    var dataApapun = "Halo Dunia!"
+    var hasilTeks = dataApapun.(teks)
+    cetak.tulisBaris("   Hasil asersi teks: " + hasilTeks)
+
+    // Named Return Values & Naked Return
+    cetak.tulisBaris("\n4. Named Return Values & Naked Return:")
+    var l, k = hitungLingkaran(7.0)
+    cetak.tulisBaris("   Radius  : 7.0")
+    cetak.tulisBaris("   Luas    : " + konversi.keTeks(l))
+    cetak.tulisBaris("   Keliling: " + konversi.keTeks(k))
+
+    cetak.tulisBaris("\nSemua fitur fundamental Go berhasil dijalankan!")
+}

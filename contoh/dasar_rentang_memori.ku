@@ -1,0 +1,47 @@
+paket utama
+
+pakai "cetak"
+pakai "larik"
+pakai "teks"
+pakai "sistem"
+pakai "waktu"
+
+fungsi utama() {
+    cetak.tulis("=== 1. PEMBANGKIT RENTANG BILANGAN & GABUNGAN LARIK ===")
+    var deret5 = larik.rentang(5)
+    cetak.tulis("Rentang(5):", deret5)
+
+    var deret10Sampai15 = larik.rentang(10, 16)
+    cetak.tulis("Rentang(10, 16):", deret10Sampai15)
+
+    var deretGenap = larik.rentang(0, 11, 2)
+    cetak.tulis("Rentang genap(0, 11, step 2):", deretGenap)
+
+    var gabungan = larik.gabungSemua([1, 2], [3, 4], [5])
+    cetak.tulis("Larik gabung semua:", gabungan)
+
+    var matriks2D = [[10, 20], [30, 40], [50]]
+    cetak.tulis("Larik diratakan (flatten):", larik.rata(matriks2D))
+
+    cetak.tulis("\n=== 2. VALIDASI STRING TEKS (KOSONG, HURUF, ANGKA) ===")
+    cetak.tulis("Apakah '   ' kosong?", teks.apakahKosong("   "))
+    cetak.tulis("Apakah 'Bahasa' kosong?", teks.apakahKosong("Bahasa"))
+    cetak.tulis("Apakah 'BahasaKu' huruf semua?", teks.apakahHuruf("BahasaKu"))
+    cetak.tulis("Apakah 'Ku2026' huruf semua?", teks.apakahHuruf("Ku2026"))
+    cetak.tulis("Apakah '2026' angka semua?", teks.apakahAngka("2026"))
+    cetak.tulis("Apakah '2026A' angka semua?", teks.apakahAngka("2026A"))
+
+    cetak.tulis("\n=== 3. MONITORING RUNTIME & CPU SISTEM ===")
+    var mem = sistem.memori()
+    cetak.tulis("Alokasi memori aktif:", konversi.desimal(mem["alokasiMB"], 2), "MB")
+    cetak.tulis("Jumlah inti prosesor CPU:", sistem.jumlahCPU())
+
+    cetak.tulis("\n=== 4. KALKULASI DURASI & WAKTU LANJUTAN ===")
+    var tSekarang = waktu.detikUnix()
+    var tPlusMenit = waktu.tambahMenit(tSekarang, 15)
+    var tPlusJam = waktu.tambahJam(tSekarang, 2)
+    cetak.tulis("Timestamp saat ini:", tSekarang)
+    cetak.tulis("Timestamp +15 Menit:", tPlusMenit)
+    cetak.tulis("Timestamp +2 Jam:", tPlusJam)
+    cetak.tulis("Selisih detik (+2 jam):", waktu.selisihDetik(tSekarang, tPlusJam))
+}

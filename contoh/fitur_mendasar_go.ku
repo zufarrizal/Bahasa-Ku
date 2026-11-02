@@ -1,0 +1,85 @@
+paket utama
+
+pakai "cetak"
+pakai "kanal"
+pakai "atomik"
+pakai "konteks"
+pakai "sistem"
+pakai "konversi"
+
+// 1. Komposisi Struct Embedding (Promoted Field & Method ala Go)
+tipe Entitas struktur {
+    id angka
+    status teks
+}
+
+fungsi (e Entitas) ApakahAktif() {
+    kembalikan e.status == "aktif"
+}
+
+tipe Pengguna struktur {
+    dasar Entitas // Embedding komposisi
+    nama teks
+}
+
+fungsi utama() {
+    cetak.tulis("========================================")
+    cetak.tulis(" FITUR MENDASAR ALA GO DI BAHASA KU    ")
+    cetak.tulis("========================================")
+
+    // Demo 1: Komposisi Struct
+    var user = Pengguna({
+        "nama": "Budi Santoso",
+        "dasar": Entitas({"id": 101, "status": "aktif"})
+    })
+    // Field dan method dari Entitas langsung dipromosikan (user.status & user.ApakahAktif)
+    cetak.format("Pengguna: %s | Status: %s | Aktif? %v\n", user.nama, user.status, user.ApakahAktif())
+
+    // Demo 2: kanal.pilih (select statement multiplexing)
+    var ch1 = kanal.buat(1)
+    var ch2 = kanal.buat(1)
+    ch1.kirim("Pesan Kilat dari Goroutine 1")
+
+    kanal.pilih({
+        "kanal": ch1,
+        "aksi": fungsi(pesan) {
+            cetak.tulis("kanal.pilih menerima:", pesan)
+        }
+    }, {
+        "kanal": ch2,
+        "aksi": fungsi(pesan) {
+            cetak.tulis("kanal.pilih menerima dari ch2:", pesan)
+        }
+    }, {
+        "bawaan": fungsi() {
+            cetak.tulis("Tidak ada kanal yang siap")
+        }
+    })
+
+    // Demo 3: Lock-free Concurrency dengan modul atomik
+    var counter = 100
+    atomik.tambah(counter, 25)
+    cetak.format("Nilai counter atomik (100 + 25): %d\n", counter)
+    var berhasil = atomik.tukar(counter, 125, 200)
+    cetak.format("Hasil CAS (Compare-And-Swap 125 -> 200): %v, Nilai akhir: %d\n", berhasil, counter)
+
+    // Demo 4: RWMutex (Kunci Baca & Tulis)
+    var rw = sistem.kunciBacaTulis()
+    rw.kunciBaca()
+    cetak.tulis("Membaca data bersama dengan RWMutex (Shared Read Lock)...")
+    rw.bukaBaca()
+
+    // Demo 5: Konteks Pembatalan & Timeout
+    var ctx, batal = konteks.denganBatasWaktu(100)
+    cetak.tulis("Konteks aktif, apakah dibatalkan?", ctx.apakahBatal())
+    batal()
+    cetak.tulis("Konteks setelah dibatalkan:", ctx.apakahBatal(), "-", ctx.galat())
+
+    // Demo 6: Nilai Awal Default (Zero Values) & Type Inspection
+    var angkaAwal = konversi.nilaiAwal("angka")
+    var teksAwal = konversi.nilaiAwal("teks")
+    cetak.format("Zero value angka: %d, teks: '%s'\n", angkaAwal, teksAwal)
+    cetak.format("Apakah 'user' adalah struktur Pengguna? %v\n", konversi.apakahTipe(user, "Pengguna"))
+
+    cetak.tulis("Semua fitur mendasar Go sukses dieksekusi! 🎉")
+}

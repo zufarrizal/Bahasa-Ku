@@ -1,0 +1,42 @@
+paket utama
+
+pakai "cetak"
+
+fungsi utama() {
+    cetak.tulis("=== Uji Coba Operator Gabungan & Pemotongan Slice ===")
+
+    // 1. Uji Operator Gabungan (+=, -=, *=, /=)
+    var skor = 100
+    skor += 25
+    cetak.tulis("100 += 25 ->", skor)
+
+    skor -= 15
+    cetak.tulis("125 -= 15 ->", skor)
+
+    skor *= 2
+    cetak.tulis("110 *= 2 ->", skor)
+
+    skor /= 4
+    cetak.tulis("220 /= 4 ->", skor)
+
+    // 2. Uji Pemotongan Slice Array [mulai:selesai]
+    cetak.tulis("\n--- Pemotongan Slice Array [awal:akhir] ---")
+    var alfabet = ["A", "B", "C", "D", "E", "F"]
+    cetak.tulis("Array utuh:", alfabet)
+
+    var potong1 = alfabet[1:4]
+    cetak.tulis("alfabet[1:4]:", potong1)
+
+    var potongAwal = alfabet[:3]
+    cetak.tulis("alfabet[:3]:", potongAwal)
+
+    var potongAkhir = alfabet[3:]
+    cetak.tulis("alfabet[3:]:", potongAkhir)
+
+    // 3. Uji Pemotongan Substring
+    cetak.tulis("\n--- Pemotongan Substring Teks ---")
+    var judul = "Bahasa Ku Keren"
+    cetak.tulis("Teks utuh:", judul)
+    cetak.tulis("judul[0:6]:", judul[0:6])
+    cetak.tulis("judul[7:]:", judul[7:])
+}

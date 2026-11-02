@@ -1,0 +1,25 @@
+paket utama
+
+pakai "cetak"
+pakai "web"
+
+fungsi sapaHalaman(permintaan) {
+    kembalikan "<h1>Selamat Datang di Web Bahasa Ku!</h1><p>Server web HTTP native yang ditulis dengan Bahasa Ku.</p><a href='/api'>Coba Endpoint JSON API</a>"
+}
+
+fungsi ambilDataJson(permintaan) {
+    kembalikan {
+        "status": "sukses",
+        "pesan": "API REST Bahasa Ku Berfungsi 100%!",
+        "jalur": permintaan.jalur,
+        "metode": permintaan.metode
+    }
+}
+
+fungsi utama() {
+    web.tangani("/", sapaHalaman)
+    web.tangani("/api", ambilDataJson)
+
+    cetak.tulis("Server web Bahasa Ku aktif di http://localhost:8080")
+    web.dengarkan(":8080")
+}

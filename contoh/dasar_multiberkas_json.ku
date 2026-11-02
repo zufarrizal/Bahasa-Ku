@@ -1,0 +1,62 @@
+paket utama
+
+pakai "cetak"
+pakai "json"
+pakai "larik"
+pakai "./contoh/pembantu.ku"
+
+fungsi utama() {
+    cetak.tulis("=== Uji Multiberkas, Modul JSON, & Modul Larik (Functional) ===")
+
+    // 1. Uji Pemanggilan Fungsi dari berkas pembantu.ku
+    var hasilKali = kalikanTiga(10)
+    var hasilTambah = jumlahkan(20, 30)
+    cetak.tulis("Hasil impor kalikanTiga(10) =", hasilKali)
+    cetak.tulis("Hasil impor jumlahkan(20, 30) =", hasilTambah)
+    uji.sama(hasilKali, 30)
+    uji.sama(hasilTambah, 50)
+
+    // 2. Uji Modul JSON (kodekan & urai)
+    var dataPengguna = {
+        "nama": "Ahmad",
+        "umur": 28,
+        "aktif": benar
+    }
+    var teksJson = json.kodekan(dataPengguna)
+    cetak.tulis("Hasil json.kodekan:", teksJson)
+
+    var dataKembali = json.urai(teksJson)
+    cetak.tulis("Nama hasil urai:", dataKembali["nama"])
+    uji.sama(dataKembali["nama"], "Ahmad")
+
+    // 3. Uji Modul Larik (saring, petakan, reduksi, temukan)
+    var angkaList = [1, 2, 3, 4, 5, 6, 7, 8]
+
+    // Saring hanya angka genap
+    var genap = larik.saring(angkaList, fungsi(n) {
+        kembalikan n % 2 == 0
+    })
+    cetak.tulis("Larik saring genap:", genap)
+    uji.sama(genap, [2, 4, 6, 8])
+
+    // Petakan setiap angka dikali dua
+    var dobel = larik.petakan(genap, fungsi(n) {
+        kembalikan n * 2
+    })
+    cetak.tulis("Larik petakan (x2):", dobel)
+    uji.sama(dobel, [4, 8, 12, 16])
+
+    // Reduksi menjumlahkan seluruh elemen
+    var total = larik.reduksi(dobel, fungsi(akumulator, n) {
+        kembalikan akumulator + n
+    }, 0)
+    cetak.tulis("Larik reduksi total:", total)
+    uji.sama(total, 40)
+
+    // Temukan angka yang lebih besar dari 10
+    var ketemu = larik.temukan(dobel, fungsi(n) {
+        kembalikan n > 10
+    })
+    cetak.tulis("Larik temukan (> 10):", ketemu)
+    uji.sama(ketemu, 12)
+}

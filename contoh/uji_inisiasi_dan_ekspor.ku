@@ -1,0 +1,24 @@
+paket utama
+
+pakai "cetak"
+pakai "./contoh/modul_ekspor.ku"
+
+var statusInisiasi = ""
+
+// 1. Fungsi inisiasi() otomatis dipanggil sebelum utama()
+fungsi inisiasi() {
+    statusInisiasi = "BERHASIL_DIINISIALISASI"
+    cetak.tulis("1. [inisiasi()] Berjalan otomatis sebelum fungsi utama!")
+}
+
+fungsi utama() {
+    cetak.tulis("2. [utama()] Status inisiasi:", statusInisiasi)
+
+    // Uji Simbol Terekspor (Huruf Kapital)
+    cetak.tulis("3. [Ekspor Publik] Versi:", VersiPublik, "| Nama:", NamaAplikasi)
+    cetak.tulis("4. [Ekspor Fungsi] 15 + 25 =", HitungTambah(15, 25))
+
+    // Uji Simbol Privat (Harus bernilai kosong / tidak terekspor)
+    var privat = rahasiaInternal ?? "TIDAK_DAPAT_DIAKSES"
+    cetak.tulis("5. [Privat Simbol] rahasiaInternal:", privat)
+}

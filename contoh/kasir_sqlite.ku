@@ -1,0 +1,50 @@
+paket utama
+
+pakai "cetak"
+pakai "basisdata"
+pakai "konversi"
+
+fungsi utama() {
+    cetak.tulis("========================================")
+    cetak.tulis("   APLIKASI KASIR TOKO - BAHASA KU     ")
+    cetak.tulis("    (Didukung SQLite Lokal Portabel)   ")
+    cetak.tulis("========================================")
+
+    // 1. Membuka koneksi basis data SQLite berkas lokal
+    var db = basisdata.bukaBerkas("toko_demo.db")
+
+    // 2. Buat tabel transaksi jika belum ada
+    db.eksekusi("CREATE TABLE IF NOT EXISTS barang (id INTEGER PRIMARY KEY AUTOINCREMENT, nama TEXT, harga REAL, stok INTEGER)")
+    db.eksekusi("DELETE FROM barang") // reset demo
+
+    // 3. Tambahkan beberapa data barang
+    db.eksekusi("INSERT INTO barang (nama, harga, stok) VALUES (?, ?, ?)", "Buku Catatan", 15000, 20)
+    db.eksekusi("INSERT INTO barang (nama, harga, stok) VALUES (?, ?, ?)", "Pulpen Gel 0.5", 7500, 50)
+    db.eksekusi("INSERT INTO barang (nama, harga, stok) VALUES (?, ?, ?)", "Kopi Susu Literan", 85000, 10)
+
+    cetak.tulis("Data barang berhasil diinisialisasi ke SQLite.\n")
+
+    // 4. Kueri data barang
+    var daftar = db.kueri("SELECT id, nama, harga, stok FROM barang ORDER BY harga ASC")
+
+    cetak.tulis("DAFTAR KATALOG BARANG:")
+    var totalNilaiStok = 0
+
+    untuk _, bita dalam daftar {
+        var subtotal = konversi.keAngka(bita["harga"]) * konversi.keAngka(bita["stok"])
+        totalNilaiStok = totalNilaiStok + subtotal
+
+        cetak.format("- [%s] %s | Harga: %s | Stok: %s unit | Nilai: %s\n",
+            bita["id"],
+            bita["nama"],
+            konversi.formatUang(bita["harga"], "Rp"),
+            bita["stok"],
+            konversi.formatUang(subtotal, "Rp")
+        )
+    }
+
+    cetak.tulis("\n----------------------------------------")
+    cetak.format("TOTAL ESTIMASI NILAI STOK: %s\n", konversi.formatUang(totalNilaiStok, "Rp"))
+    cetak.tulis("----------------------------------------")
+    cetak.tulis("Transaksi kasir SQLite sukses dijalankan!")
+}

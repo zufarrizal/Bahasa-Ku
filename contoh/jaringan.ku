@@ -1,0 +1,31 @@
+paket utama
+
+pakai "cetak"
+pakai "jaringan"
+
+fungsi utama() {
+    cetak.tulis("=== Uji Coba Modul Jaringan (HTTP Client) ===")
+    cetak.tulis("Mengambil data dari API publik (httpbin.org)...")
+
+    // 1. Mengambil data HTTP GET
+    var respon = jaringan.ambil("https://httpbin.org/get")
+    cetak.tulis("Status HTTP:", respon.status)
+    cetak.tulis("Apakah sukses?", respon.sukses)
+
+    jika respon.sukses {
+        cetak.tulis("URL Permintaan:", respon.json.url)
+    }
+
+    // 2. Mengirim data HTTP POST (JSON)
+    cetak.tulis("\nMengirim data HTTP POST...")
+    var kiriman = {
+        "bahasa": "Ku",
+        "pembuat": "Zufar Rizal",
+        "tahun": 2026
+    }
+    var responPost = jaringan.kirim("https://httpbin.org/post", kiriman)
+    cetak.tulis("Status POST:", responPost.status)
+    jika responPost.sukses {
+        cetak.tulis("Data yang diterima server:", responPost.json.json)
+    }
+}

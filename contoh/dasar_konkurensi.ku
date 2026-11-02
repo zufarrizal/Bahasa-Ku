@@ -1,0 +1,31 @@
+paket utama
+
+pakai "cetak"
+pakai "sistem"
+
+// Fungsi yang dieksekusi secara asinkron di latar belakang (Ku-routine)
+fungsi tugasLatar(namaTugas, delayDetik) {
+    cetak.tulis("🚀 [KU-ROUTINE]", namaTugas, "mulai berjalan di latar belakang...")
+    sistem.tidur(delayDetik)
+    cetak.tulis("🏁 [KU-ROUTINE]", namaTugas, "selesai!")
+}
+
+fungsi utama() {
+    cetak.tulis("=== Uji Konkurensi Ku-Routine (Kata Kunci 'ku') ===")
+
+    // 1. Menjalankan fungsi di latar belakang secara bersamaan (konkuren)
+    ku tugasLatar("Pengunduhan Aset", 1)
+    ku tugasLatar("Sinkronisasi Cloud", 2)
+
+    // 2. Menjalankan fungsi anonim di latar belakang
+    ku fungsi() {
+        sistem.tidur(1)
+        cetak.tulis("✨ [KU-ROUTINE ANONIM] Menyelesaikan kalkulasi latar belakang!")
+    }()
+
+    cetak.tulis("Utama: Seluruh Ku-routine telah dilepas ke latar belakang!")
+    cetak.tulis("Utama: Menunggu sebentar agar semua tugas latar selesai...")
+
+    sistem.tidur(3)
+    cetak.tulis("=== Selesai Semua Proses Konkurensi ===")
+}

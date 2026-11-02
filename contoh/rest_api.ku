@@ -1,0 +1,54 @@
+paket utama
+
+pakai "cetak"
+pakai "web"
+
+// Handler GET dengan parameter dinamis
+fungsi detailProduk(konteks) {
+    var id = konteks.parameter.id
+    var format = konteks.query.format ?? "lengkap"
+
+    kembalikan {
+        "status": "sukses",
+        "data": {
+            "id": id,
+            "nama": "Kopi Arabika Ku",
+            "harga": 35000,
+            "stok": 120,
+            "format_diminta": format
+        }
+    }
+}
+
+// Handler POST menerima JSON payload
+fungsi tambahProduk(konteks) {
+    var data = konteks.badanJson ?? {}
+    kembalikan {
+        "status": "tersimpan",
+        "pesan": "Produk berhasil ditambahkan ke katalog!",
+        "payload": data
+    }
+}
+
+fungsi beranda(konteks) {
+    kembalikan {
+        "nama_layanan": "REST API Server Bahasa Ku",
+        "versi": "0.2.0",
+        "endpoint": [
+            "GET /api/produk/:id",
+            "POST /api/produk"
+        ]
+    }
+}
+
+fungsi utama() {
+    cetak.tulis("Memulai REST API Server Bahasa Ku pada port 8080...")
+    web.aktifkanCORS("*")
+
+    web.dapatkan("/", beranda)
+    web.dapatkan("/api/produk/:id", detailProduk)
+    web.pos("/api/produk", tambahProduk)
+
+    // Untuk demo script, jalankan server
+    web.jalankan(":8080")
+}
